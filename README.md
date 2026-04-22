@@ -1,0 +1,65 @@
+# OrchardLog / Sadownik+
+
+OrchardLog / Sadownik+ to aplikacja webowa do zarzadzania sadem budowana w stacku:
+`Next.js + React + TypeScript + PostgreSQL + Supabase`.
+
+Repo zawiera aktualna implementacje MVP 0.1 oraz dokumentacje, z ktorej korzystamy
+jako source of truth podczas dalszej pracy.
+
+## Szybki start lokalny
+
+1. Zainstaluj zaleznosci:
+
+```bash
+pnpm install
+```
+
+2. Uruchom lokalne narzedzia Supabase i zresetuj baze wedlug projektu:
+
+```bash
+supabase start
+supabase db reset
+```
+
+3. Uruchom aplikacje:
+
+```bash
+pnpm dev
+```
+
+4. W osobnych krokach weryfikuj jakosc:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+## Gdzie jest dokumentacja robocza
+
+- glowny indeks dokumentacji:
+  `documents/README.md`
+- minimalny zestaw materialow do implementacji:
+  `documents/01_implementation_materials/README.md`
+- nadrzedny plan wdrozenia:
+  `documents/01_implementation_materials/implementation_master_plan.md`
+- szybki kontekst sesyjny:
+  `documents/00_overview_and_checklists/session_handoff.md`
+- workflow narzedzi lokalnych:
+  `documents/00_overview_and_checklists/local_dev_tools_quickstart.md`
+
+## Aktualny kierunek prac
+
+Aktualnie repo obejmuje:
+
+- auth, onboarding, `active_orchard` i protected shell,
+- core orchard structure dla `plots`, `varieties` i `trees`,
+- orchard settings i members management w obecnym MVP simplification,
+- przygotowany baseline pod kolejne moduły `activities` i `harvest_records`.
+
+## Ważna zasada
+
+Dokumenty z `documents/archive/` nie sa materialem implementacyjnym.
+Jesli pojawi sie konflikt miedzy archiwum a aktywnymi dokumentami, pierwszenstwo
+ma aktualna dokumentacja z `documents/`.

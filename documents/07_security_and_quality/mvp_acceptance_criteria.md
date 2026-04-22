@@ -17,8 +17,9 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 ## 2. Membership i role
 
 - `owner` moze zobaczyc liste czlonkow orchard.
-- `owner` moze zaprosic `worker`.
+- `owner` moze dodac istniejace konto jako `worker`.
 - `owner` moze dezaktywowac membership.
+- system blokuje duplikat aktywnego membership i reaktywuje `revoked` membership zamiast tworzyc drugi rekord.
 - Jesli UI wlacza dodatkowe role w danym releasie, `owner` moze tez zmienic role membership zgodnie z aktywnym modelem uprawnien.
 - `worker` nie widzi ani nie wykonuje operacji zarzadzania membership.
 - `worker` moze edytowac `plots`, `trees`, `varieties`, `activities` i `harvest_records` w aktywnym orchard.
@@ -27,7 +28,7 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 
 - User moze dodac dzialke z podstawowymi danymi.
 - User moze edytowac dane dzialki.
-- User moze zobaczyc liste dzialek i szczegoly jednej dzialki.
+- User moze zobaczyc liste dzialek i przejsc do create / edit flow; dedykowany detail page moze pozostac odlozony.
 - Dwie dzialki tego samego orchard nie moga miec tej samej nazwy.
 - Dzialke da sie zarchiwizowac bez utraty historii.
 
@@ -36,7 +37,7 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 - User moze dodac pojedyncze drzewo do wybranej dzialki.
 - Drzewo moze byc zapisane bez przypisanej odmiany.
 - User moze edytowac dane drzewa.
-- User moze zobaczyc liste drzew i szczegoly jednego drzewa.
+- User moze zobaczyc liste drzew i przejsc do create / edit flow; dedykowany detail page moze pozostac odlozony.
 - Drzewa mozna filtrowac po dzialce, gatunku, odmianie i kondycji.
 - System nie pozwala zapisac aktywnego drzewa w zajetej lokalizacji logicznej `plot + row + position`.
 
@@ -45,7 +46,7 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 - User moze dodac, edytowac i przegladac odmiany.
 - Odmiana jest prywatna per `orchard`.
 - System nie pozwala na duplikat `species + name` w obrebie jednego orchard.
-- Szczegoly odmiany pokazuja dane opisowe i powiazane drzewa, jesli istnieja.
+- Lista i formularz create / edit sa obowiazkowe; dedykowany detail page odmiany moze pozostac odlozony.
 
 ## 6. Aktywnosci i dziennik prac
 

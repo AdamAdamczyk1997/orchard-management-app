@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeSpeciesInput } from "@/lib/domain/species";
 import {
   checkboxBoolean,
   optionalDateInput,
@@ -18,64 +19,67 @@ const treeConditionStatusSchema = z.enum([
 
 export const treeFormSchema = z
   .object({
-    plot_id: trimmedString().uuid("Choose a valid plot."),
-    variety_id: optionalUuidString("Choose a valid variety."),
-    species: trimmedString()
-      .min(2, "Species must have at least 2 characters.")
-      .max(120, "Species must have at most 120 characters."),
+    plot_id: trimmedString().uuid("Wybierz poprawna dzialke."),
+    variety_id: optionalUuidString("Wybierz poprawna odmiane."),
+    species: z.preprocess(
+      normalizeSpeciesInput,
+      trimmedString()
+        .min(2, "Gatunek musi miec co najmniej 2 znaki.")
+        .max(120, "Gatunek moze miec maksymalnie 120 znakow."),
+    ),
     tree_code: optionalTrimmedString().refine(
       (value) => !value || value.length <= 64,
-      "Tree code must have at most 64 characters.",
+      "Kod drzewa moze miec maksymalnie 64 znaki.",
     ),
     display_name: optionalTrimmedString().refine(
       (value) => !value || value.length <= 120,
-      "Display name must have at most 120 characters.",
+      "Nazwa wyswietlana moze miec maksymalnie 120 znakow.",
     ),
     section_name: optionalTrimmedString().refine(
       (value) => !value || value.length <= 80,
-      "Section must have at most 80 characters.",
+      "Sekcja moze miec maksymalnie 80 znakow.",
     ),
-    row_number: optionalNumberInput("Row number must be a number.").refine(
+    row_number: optionalNumberInput("Numer rzedu musi byc liczba.").refine(
       (value) => value === undefined || value > 0,
-      "Row number must be greater than 0.",
+      "Numer rzedu musi byc wiekszy od 0.",
     ),
     position_in_row: optionalNumberInput(
-      "Position in row must be a number.",
+      "Pozycja w rzedzie musi byc liczba.",
     ).refine(
       (value) => value === undefined || value > 0,
-      "Position in row must be greater than 0.",
+      "Pozycja w rzedzie musi byc wieksza od 0.",
     ),
     row_label: optionalTrimmedString().refine(
       (value) => !value || value.length <= 80,
-      "Row label must have at most 80 characters.",
+      "Etykieta rzedu moze miec maksymalnie 80 znakow.",
     ),
     position_label: optionalTrimmedString().refine(
       (value) => !value || value.length <= 80,
-      "Position label must have at most 80 characters.",
+      "Etykieta pozycji moze miec maksymalnie 80 znakow.",
     ),
     planted_at: optionalDateInput(),
     acquired_at: optionalDateInput(),
     rootstock: optionalTrimmedString().refine(
       (value) => !value || value.length <= 120,
-      "Rootstock must have at most 120 characters.",
+      "Podkladka moze miec maksymalnie 120 znakow.",
     ),
     pollinator_info: optionalTrimmedString().refine(
       (value) => !value || value.length <= 200,
-      "Pollinator info must have at most 200 characters.",
+      "Informacje o zapylaczu moga miec maksymalnie 200 znakow.",
     ),
     condition_status: treeConditionStatusSchema,
     health_status: optionalTrimmedString().refine(
       (value) => !value || value.length <= 120,
-      "Health status must have at most 120 characters.",
+      "Stan zdrowotny moze miec maksymalnie 120 znakow.",
     ),
     development_stage: optionalTrimmedString().refine(
       (value) => !value || value.length <= 120,
-      "Development stage must have at most 120 characters.",
+      "Etap rozwoju moze miec maksymalnie 120 znakow.",
     ),
     last_harvest_at: optionalDateInput(),
     notes: optionalTrimmedString().refine(
       (value) => !value || value.length <= 1000,
-      "Notes must have at most 1000 characters.",
+      "Notatki moga miec maksymalnie 1000 znakow.",
     ),
     location_verified: checkboxBoolean,
   })
@@ -86,7 +90,7 @@ export const treeFormSchema = z
     if (hasRowNumber !== hasPosition) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Row number and position in row must be filled together.",
+        message: "Numer rzedu i pozycja w rzedzie musza byc podane razem.",
         path: hasRowNumber ? ["position_in_row"] : ["row_number"],
       });
     }
@@ -95,19 +99,19 @@ export const treeFormSchema = z
 export const createTreeSchema = treeFormSchema;
 
 export const updateTreeSchema = treeFormSchema.safeExtend({
-  tree_id: trimmedString().uuid("Choose a valid tree."),
+  tree_id: trimmedString().uuid("Wybierz poprawne drzewo."),
 });
 
 export const treeListFiltersSchema = z.object({
   q: optionalTrimmedString().refine(
     (value) => !value || value.length <= 120,
-    "Search must have at most 120 characters.",
+    "Fraza wyszukiwania moze miec maksymalnie 120 znakow.",
   ),
-  plot_id: optionalUuidString("Choose a valid plot."),
-  variety_id: optionalUuidString("Choose a valid variety."),
+  plot_id: optionalUuidString("Wybierz poprawna dzialke."),
+  variety_id: optionalUuidString("Wybierz poprawna odmiane."),
   species: optionalTrimmedString().refine(
     (value) => !value || value.length <= 120,
-    "Species filter must have at most 120 characters.",
+    "Filtr gatunku moze miec maksymalnie 120 znakow.",
   ),
   condition_status: z
     .enum(["new", "good", "warning", "critical", "removed", "all"])

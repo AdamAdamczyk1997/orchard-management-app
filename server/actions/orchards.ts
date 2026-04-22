@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { readCurrentProfile } from "@/lib/auth/get-current-profile";
 import { requireSessionUser } from "@/lib/auth/require-session-user";
-import {
-  persistActiveOrchardCookie,
-} from "@/lib/orchard-context/active-orchard-cookie";
+import { persistActiveOrchardCookie } from "@/lib/orchard-context/active-orchard-cookie";
 import { listAccessibleOrchards } from "@/lib/orchard-context/list-accessible-orchards";
 import { resolveActiveOrchardContext } from "@/lib/orchard-context/resolve-active-orchard";
+import {
+  listOrchardMembersForOrchard,
+  readOrchardDetailsForOrchard,
+} from "@/lib/orchard-data/orchards";
 import {
   createErrorResult,
   createSuccessResult,
@@ -18,12 +21,17 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formDataToObject } from "@/lib/validation/form-data";
 import {
   createOrchardSchema,
+  deactivateOrchardMembershipSchema,
+  inviteOrchardMemberSchema,
   setActiveOrchardSchema,
+  updateOrchardSchema,
 } from "@/lib/validation/orchards";
 import type {
   ActionResult,
   ActiveOrchardContext,
   CreateOrchardRpcResult,
+  OrchardDetails,
+  OrchardMembershipSummary,
   OrchardSummary,
 } from "@/types/contracts";
 
@@ -49,6 +57,71 @@ type OrchardMembershipWithOrchard = {
     | null;
 };
 
+type InviteOrchardMemberRpcResult = {
+  membership_id: string;
+  orchard_id: string;
+  profile_id: string;
+  email: string;
+  display_name: string | null;
+  role: OrchardMembershipSummary["role"];
+  status: OrchardMembershipSummary["status"];
+  joined_at: string | null;
+};
+
+function requireOwnerRole<T>(
+  role: OrchardSummary["my_role"] | OrchardMembershipSummary["role"] | undefined,
+) {
+  if (role === "owner") {
+    return null;
+  }
+
+  return createErrorResult<T>(
+    "FORBIDDEN",
+    "Tylko wlasciciel sadu moze zarzadzac tym obszarem.",
+  );
+}
+
+function mapInviteMemberError<T>(error: PostgrestError): ActionResult<T> {
+  if (error.code === "42501") {
+    return createErrorResult(
+      "FORBIDDEN",
+      "Tylko wlasciciel sadu moze zarzadzac czlonkami.",
+    );
+  }
+
+  if (error.code === "P0001") {
+    return createErrorResult(
+      "NOT_FOUND",
+      "Nie znaleziono konta o podanym adresie email.",
+      {
+        email: "To konto nie istnieje jeszcze w aplikacji.",
+      },
+    );
+  }
+
+  if (error.code === "23505") {
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "To konto ma juz aktywny dostep do tego sadu.",
+      {
+        email: "To konto ma juz aktywne czlonkostwo w tym sadzie.",
+      },
+    );
+  }
+
+  if (error.code === "22023") {
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "Sprawdz formularz i popraw zaznaczone pola.",
+    );
+  }
+
+  return createErrorResult(
+    "ORCHARD_MEMBER_INVITE_FAILED",
+    "Nie udalo sie dodac czlonka do sadu.",
+  );
+}
+
 export async function listMyOrchards(): Promise<ActionResult<OrchardSummary[]>> {
   const user = await requireSessionUser();
   const supabase = await createSupabaseServerClient();
@@ -72,7 +145,10 @@ export async function listMyOrchards(): Promise<ActionResult<OrchardSummary[]>> 
     .eq("profile_id", user.id);
 
   if (error) {
-    return createErrorResult("ORCHARD_LIST_FAILED", error.message);
+    return createErrorResult(
+      "ORCHARD_LIST_FAILED",
+      "Nie udalo sie pobrac listy sadow.",
+    );
   }
 
   const orchards = ((data ?? []) as OrchardMembershipWithOrchard[])
@@ -105,13 +181,13 @@ export async function getActiveOrchardContext(): Promise<
   const context = await resolveActiveOrchardContext();
 
   if (!context.authenticated) {
-    return createErrorResult("UNAUTHORIZED", "Authentication is required.");
+    return createErrorResult("UNAUTHORIZED", "Musisz sie zalogowac, aby kontynuowac.");
   }
 
   if (context.error_code === "PROFILE_BOOTSTRAP_REQUIRED") {
     return createErrorResult(
       "PROFILE_BOOTSTRAP_REQUIRED",
-      "Profile bootstrap did not complete correctly.",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
     );
   }
 
@@ -144,7 +220,7 @@ export async function createOrchard(
     .single();
 
   if (error) {
-    return createErrorResult("ORCHARD_CREATE_FAILED", error.message);
+    return createErrorResult("ORCHARD_CREATE_FAILED", "Nie udalo sie utworzyc sadu.");
   }
 
   const rpcResult = data as CreateOrchardRpcResult;
@@ -165,11 +241,190 @@ export async function createOrchard(
   redirect("/dashboard");
 }
 
+export async function updateOrchard(
+  _previousState: ActionResult<OrchardDetails>,
+  formData: FormData,
+): Promise<ActionResult<OrchardDetails>> {
+  const parsed = updateOrchardSchema.safeParse(formDataToObject(formData));
+
+  if (!parsed.success) {
+    return createValidationErrorResult(parsed.error);
+  }
+
+  const context = await resolveActiveOrchardContext();
+
+  if (!context.authenticated) {
+    return createErrorResult("UNAUTHORIZED", "Musisz sie zalogowac, aby kontynuowac.");
+  }
+
+  if (context.error_code === "PROFILE_BOOTSTRAP_REQUIRED" || !context.profile) {
+    return createErrorResult(
+      "PROFILE_BOOTSTRAP_REQUIRED",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
+    );
+  }
+
+  if (!context.orchard || !context.membership) {
+    return createErrorResult(
+      "NO_ACTIVE_ORCHARD",
+      "Wybierz sad, aby zapisac jego ustawienia.",
+    );
+  }
+
+  const ownerError = requireOwnerRole<OrchardDetails>(context.membership.role);
+
+  if (ownerError) {
+    return ownerError;
+  }
+
+  const orchard = await readOrchardDetailsForOrchard(context.orchard.id);
+
+  if (!orchard) {
+    return createErrorResult("NOT_FOUND", "Nie znaleziono wybranego sadu.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("orchards")
+    .update({
+      name: parsed.data.name,
+      code: parsed.data.code ?? null,
+      description: parsed.data.description ?? null,
+    })
+    .eq("id", orchard.id)
+    .select(
+      "id, name, code, description, status, created_by_profile_id, created_at, updated_at",
+    )
+    .single();
+
+  if (error) {
+    return createErrorResult(
+      "ORCHARD_UPDATE_FAILED",
+      "Nie udalo sie zapisac ustawien sadu.",
+    );
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings/orchard");
+
+  return createSuccessResult(
+    data as OrchardDetails,
+    "Ustawienia sadu zostaly zapisane.",
+  );
+}
+
+export async function listOrchardMembers(): Promise<
+  ActionResult<OrchardMembershipSummary[]>
+> {
+  const context = await resolveActiveOrchardContext();
+
+  if (!context.authenticated) {
+    return createErrorResult("UNAUTHORIZED", "Musisz sie zalogowac, aby kontynuowac.");
+  }
+
+  if (context.error_code === "PROFILE_BOOTSTRAP_REQUIRED" || !context.profile) {
+    return createErrorResult(
+      "PROFILE_BOOTSTRAP_REQUIRED",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
+    );
+  }
+
+  if (!context.orchard || !context.membership) {
+    return createErrorResult(
+      "NO_ACTIVE_ORCHARD",
+      "Wybierz sad, aby zobaczyc liste czlonkow.",
+    );
+  }
+
+  const ownerError = requireOwnerRole<OrchardMembershipSummary[]>(
+    context.membership.role,
+  );
+
+  if (ownerError) {
+    return ownerError;
+  }
+
+  const members = await listOrchardMembersForOrchard(context.orchard.id);
+
+  return createSuccessResult(members);
+}
+
+export async function inviteOrchardMember(
+  _previousState: ActionResult<OrchardMembershipSummary>,
+  formData: FormData,
+): Promise<ActionResult<OrchardMembershipSummary>> {
+  const parsed = inviteOrchardMemberSchema.safeParse(formDataToObject(formData));
+
+  if (!parsed.success) {
+    return createValidationErrorResult(parsed.error);
+  }
+
+  const context = await resolveActiveOrchardContext();
+
+  if (!context.authenticated) {
+    return createErrorResult("UNAUTHORIZED", "Musisz sie zalogowac, aby kontynuowac.");
+  }
+
+  if (context.error_code === "PROFILE_BOOTSTRAP_REQUIRED" || !context.profile) {
+    return createErrorResult(
+      "PROFILE_BOOTSTRAP_REQUIRED",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
+    );
+  }
+
+  if (!context.orchard || !context.membership) {
+    return createErrorResult(
+      "NO_ACTIVE_ORCHARD",
+      "Wybierz sad, aby dodac czlonka.",
+    );
+  }
+
+  const ownerError = requireOwnerRole<OrchardMembershipSummary>(
+    context.membership.role,
+  );
+
+  if (ownerError) {
+    return ownerError;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .rpc("invite_orchard_member_by_email", {
+      p_orchard_id: context.orchard.id,
+      p_email: parsed.data.email,
+      p_role: parsed.data.role,
+    })
+    .single();
+
+  if (error) {
+    return mapInviteMemberError(error);
+  }
+
+  revalidatePath("/settings/members");
+
+  const membership = data as InviteOrchardMemberRpcResult;
+
+  return createSuccessResult(
+    {
+      id: membership.membership_id,
+      orchard_id: membership.orchard_id,
+      profile_id: membership.profile_id,
+      email: membership.email,
+      display_name: membership.display_name,
+      role: membership.role,
+      status: membership.status,
+      joined_at: membership.joined_at,
+    },
+    "Czlonek zostal dodany do sadu.",
+  );
+}
+
 export async function setActiveOrchard(formData: FormData) {
   const parsed = setActiveOrchardSchema.safeParse(formDataToObject(formData));
 
   if (!parsed.success) {
-    throw new Error("Invalid orchard selection.");
+    throw new Error("Wybrany sad jest niepoprawny.");
   }
 
   const user = await requireSessionUser();
@@ -179,12 +434,57 @@ export async function setActiveOrchard(formData: FormData) {
   );
 
   if (!selectedOrchard) {
-    throw new Error("Selected orchard is not accessible to the current user.");
+    throw new Error("Wybrany sad nie jest dostepny dla tego konta.");
   }
 
   await persistActiveOrchardCookie(selectedOrchard.orchard.id);
   revalidatePath("/", "layout");
   redirect("/dashboard");
+}
+
+export async function deactivateOrchardMembership(formData: FormData) {
+  const parsed = deactivateOrchardMembershipSchema.safeParse(formDataToObject(formData));
+  const redirectTarget = "/settings/members";
+
+  if (!parsed.success) {
+    redirect(redirectTarget);
+  }
+
+  const context = await resolveActiveOrchardContext();
+
+  if (
+    !context.authenticated ||
+    context.error_code === "PROFILE_BOOTSTRAP_REQUIRED" ||
+    !context.profile ||
+    !context.orchard ||
+    !context.membership
+  ) {
+    redirect(redirectTarget);
+  }
+
+  if (context.membership.role !== "owner") {
+    redirect("/dashboard");
+  }
+
+  const members = await listOrchardMembersForOrchard(context.orchard.id);
+  const membership = members.find((member) => member.id === parsed.data.membership_id);
+
+  if (!membership || membership.status !== "active" || membership.role === "owner") {
+    redirect(redirectTarget);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  await supabase
+    .from("orchard_memberships")
+    .update({
+      status: "revoked",
+    })
+    .eq("id", membership.id)
+    .eq("orchard_id", context.orchard.id);
+
+  revalidatePath("/settings/members");
+  revalidatePath("/", "layout");
+  redirect(redirectTarget);
 }
 
 export async function markOnboardingDismissed() {
@@ -194,7 +494,7 @@ export async function markOnboardingDismissed() {
   if (!profile) {
     return createErrorResult(
       "PROFILE_BOOTSTRAP_REQUIRED",
-      "Profile bootstrap did not complete correctly.",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
     );
   }
 
@@ -207,13 +507,16 @@ export async function markOnboardingDismissed() {
     .eq("id", user.id);
 
   if (error) {
-    return createErrorResult("PROFILE_UPDATE_FAILED", error.message);
+    return createErrorResult(
+      "PROFILE_UPDATE_FAILED",
+      "Nie udalo sie zapisac preferencji onboardingu.",
+    );
   }
 
   revalidatePath("/orchards/new");
 
   return createSuccessResult(
     undefined,
-    "Onboarding intro preference saved.",
+    "Ustawienie onboardingu zostalo zapisane.",
   );
 }

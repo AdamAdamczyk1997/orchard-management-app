@@ -65,6 +65,8 @@ type OrchardFormInput = {
   description?: string
 }
 
+type UpdateOrchardInput = OrchardFormInput
+
 type CreateOrchardInput = OrchardFormInput & {
   dismiss_intro?: boolean
 }
@@ -89,6 +91,17 @@ type OrchardMembershipSummary = {
   joined_at?: string | null
 }
 
+type OrchardDetails = {
+  id: string
+  name: string
+  code?: string | null
+  description?: string | null
+  status: "active" | "archived"
+  created_by_profile_id: string
+  created_at?: string
+  updated_at?: string
+}
+
 type InviteOrchardMemberInput = {
   email: string
   role: "worker" | "manager" | "viewer"
@@ -106,6 +119,9 @@ Uwagi Phase 1:
 
 - `active_orchard` jest utrwalany w `httpOnly` cookie `ol_active_orchard`
 - standardowe formularze domenowe nadal nie przesylaja recznie `orchard_id`
+- obecny UI MVP dla `inviteOrchardMember` korzysta z tego kontraktu future-ready,
+  ale aktualnie wysyla tylko role `worker` i dodaje istniejace konto od razu jako
+  aktywne membership
 
 ## 4. Kontrakt formularza dzialki
 
@@ -326,11 +342,61 @@ type ActivitySummary = {
   activity_type: ActivityFormInput["activity_type"]
   activity_subtype?: "winter_pruning" | "summer_pruning" | null
   activity_date: string
+  season_year: number
+  season_phase?: string | null
   status: "planned" | "done" | "skipped" | "cancelled"
   title: string
   plot_name?: string
+  tree_display_name?: string | null
   scope_count?: number
   performed_by_display?: string | null
+}
+
+type ActivityListFilters = {
+  date_from?: string
+  date_to?: string
+  plot_id?: string
+  tree_id?: string
+  activity_type?: ActivityFormInput["activity_type"] | "all"
+  status?: "planned" | "done" | "skipped" | "cancelled" | "all"
+  performed_by_profile_id?: string
+}
+
+type ActivityScopeSummary = {
+  id: string
+  scope_order?: number | null
+  scope_level: "plot" | "section" | "row" | "location_range" | "tree"
+  section_name?: string | null
+  row_number?: number | null
+  from_position?: number | null
+  to_position?: number | null
+  tree_id?: string | null
+  tree_display_name?: string | null
+  notes?: string | null
+}
+
+type ActivityMaterialSummary = {
+  id: string
+  name: string
+  category?: string | null
+  quantity?: number | null
+  unit?: string | null
+  notes?: string | null
+}
+
+type ActivityDetails = ActivitySummary & {
+  orchard_id: string
+  description?: string | null
+  work_duration_minutes?: number | null
+  cost_amount?: number | null
+  weather_notes?: string | null
+  result_notes?: string | null
+  performed_by_profile_id?: string | null
+  created_by_profile_id: string
+  scopes: ActivityScopeSummary[]
+  materials: ActivityMaterialSummary[]
+  created_at: string
+  updated_at: string
 }
 
 type SeasonalActivitySummary = {
@@ -345,7 +411,27 @@ type SeasonalActivitySummary = {
     last_activity_date: string | null
   }>
 }
+
+type SeasonalActivityCoverage = Array<{
+  activity_id: string
+  activity_date: string
+  status: "planned" | "done" | "skipped" | "cancelled"
+  plot_id: string
+  plot_name: string
+  activity_type: ActivityFormInput["activity_type"]
+  activity_subtype?: "winter_pruning" | "summer_pruning" | null
+  scope: ActivityScopeSummary
+}>
 ```
+
+Uwagi Phase 3:
+
+- `ActivityFormInput.scopes` powinno zawierac co najmniej jeden scope dla dedykowanych
+  sezonowych flow `pruning`, `mowing` i `spraying`; dla calej dzialki jest to scope `plot`
+- `getActivityDetails` powinno zwracac parent record razem z uporzadkowanymi
+  `activity_scopes` i `activity_materials` w jednym payloadzie
+- `getSeasonalActivityCoverage` powinno opierac sie na zapisanych `activity_scopes`,
+  a nie na inferencji z samych statusow drzew lub dzialek
 
 ## 8. Kontrakt formularza zbioru
 

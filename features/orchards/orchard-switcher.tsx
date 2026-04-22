@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { getOrchardRoleLabel } from "@/lib/domain/labels";
 import { Select } from "@/components/ui/select";
 import { setActiveOrchard } from "@/server/actions/orchards";
 import type { OrchardSummary } from "@/types/contracts";
@@ -19,6 +20,7 @@ export function OrchardSwitcher({
   return (
     <form action={setActiveOrchard} ref={formRef}>
       <Select
+        aria-label="Wybierz aktywny sad"
         defaultValue={activeOrchardId}
         disabled={orchards.length <= 1}
         name="orchard_id"
@@ -26,7 +28,7 @@ export function OrchardSwitcher({
       >
         {orchards.map((orchard) => (
           <option key={orchard.id} value={orchard.id}>
-            {orchard.name} ({orchard.my_role})
+            {orchard.name} ({getOrchardRoleLabel(orchard.my_role)})
           </option>
         ))}
       </Select>

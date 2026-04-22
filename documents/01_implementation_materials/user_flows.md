@@ -100,8 +100,6 @@ System ma bezpiecznie obsluzyc nieprawidlowy working context zapisany w sesji UI
 - nieprawidlowy cookie context nie daje dostepu do cudzych danych
 - user dostaje przewidywalny redirect do poprawnego orchard albo onboardingu
 
-### Wynik
-
 - wszystkie widoki pracuja na nowym `active_orchard`
 - user nie podaje recznie `orchard_id` w kolejnych formularzach
 
@@ -109,24 +107,49 @@ System ma bezpiecznie obsluzyc nieprawidlowy working context zapisany w sesji UI
 
 ### Cel
 
-`owner` zaprasza pracownika lub zmienia role czlonka orchard.
+`owner` zarzadza dostepem do orchard w aktualnym MVP UI.
 
 ### Kroki
 
 1. `owner` przechodzi do `Orchard members`.
-2. Widzi liste aktywnych i zaproszonych membership.
-3. Wybiera `Invite member`.
-4. Podaje email i role, przy czym MVP UI gwarantuje co najmniej role `worker`, a dodatkowe role moga pozostac ukryte do czasu ich aktywacji.
-5. System tworzy albo aktualizuje rekord `orchard_memberships` ze statusem `invited`.
-6. `owner` moze pozniej:
-   - zmienic role, jesli dana rola jest aktywna w releasie
-   - odwolac zaproszenie
-   - zdezaktywowac membership
+2. Widzi liste membership z `email`, `display_name`, `role`, `status` i `joined_at`.
+3. Wybiera `Dodaj pracownika`.
+4. Podaje email istniejacego konta; aktualny UI nie wystawia wyboru roli i dodaje tylko `worker`.
+5. System:
+   - wyszukuje profil po emailu
+   - blokuje dodanie, jesli konto nie istnieje
+   - blokuje duplikat aktywnego membership
+   - reaktywuje istniejace `revoked` membership zamiast tworzyc drugi rekord
+6. Po poprawnym zapisie user pojawia sie od razu jako `active worker`.
+7. `owner` moze odebrac dostep przez zmiane statusu membership na `revoked`.
+8. Zmiana roli membership pozostaje odlozona poza obecny UI MVP.
 
 ### Wynik
 
-- membership jest zarzadzany jawnie
+- membership jest zarzadzany jawnie i bez duplikatow
 - `worker` nie ma dostepu do tego flow
+
+## Flow 1e - edycja ustawien aktywnego orchard
+
+### Cel
+
+`owner` aktualizuje podstawowe dane aktywnego orchard.
+
+### Kroki
+
+1. `owner` przechodzi do `Orchard settings`.
+2. Widzi formularz z aktualnymi wartosciami:
+   - `name`
+   - `code`
+   - `description`
+3. Aktualizuje dane i zapisuje formularz.
+4. System waliduje formularz i zapisuje zmiany w aktywnym orchard.
+5. `worker` po bezposrednim wejsciu na ten ekran dostaje czytelny stan `forbidden`.
+
+### Wynik
+
+- podstawowe dane orchard sa zaktualizowane
+- tylko `owner` moze wykonac ten flow
 
 ## Flow 2 - dodanie pierwszej dzialki
 
@@ -140,12 +163,14 @@ Uzytkownik dodaje dzialke, aby zaczac ewidencje sadu.
 2. Wybiera akcje `dodaj dzialke`.
 3. Uzupelnia podstawowe dane:
    - nazwa
+   - kod opcjonalnie
    - lokalizacja opisowa
    - powierzchnia opcjonalnie
    - typ gleby opcjonalnie
    - typ nawodnienia opcjonalnie
-4. System waliduje wymagane pola i unikalnosc nazwy w obrebie aktywnego `orchard`.
-5. Po poprawnym zapisie uzytkownik wraca do listy dzialek.
+4. Jesli da sie bezpiecznie rozpoznac wspolny wzorzec dotychczasowych kodow dzialek, system moze zaproponowac kolejny `code`, ale nie nadpisuje wartosci wpisanej recznie przez usera.
+5. System waliduje wymagane pola i unikalnosc nazwy w obrebie aktywnego `orchard`.
+6. Po poprawnym zapisie uzytkownik wraca do listy dzialek.
 
 ### Wynik
 
@@ -165,9 +190,10 @@ Uzytkownik zapisuje baze odmian potrzebna do dalszej pracy z drzewami.
 3. Podaje co najmniej:
    - `species`
    - `name`
-4. Opcjonalnie uzupelnia opis, cechy, notatki pielegnacyjne i flagę `is_favorite`.
-5. System waliduje wymagane pola i unikalnosc `species + name` w obrebie aktywnego `orchard`.
-6. Po poprawnym zapisie uzytkownik wraca do listy odmian.
+4. Pole `species` oferuje presety `apple`, `pear`, `plum`, `cherry`, ale pozwala tez wpisac wlasna wartosc.
+5. Opcjonalnie uzupelnia opis, cechy, notatki pielegnacyjne i flage `is_favorite`.
+6. System waliduje wymagane pola i unikalnosc `species + name` w obrebie aktywnego `orchard`.
+7. Po poprawnym zapisie uzytkownik wraca do listy odmian.
 
 ### Wynik
 
@@ -193,12 +219,13 @@ Uzytkownik zapisuje jedno konkretne drzewo w systemie.
    - status kondycji
    - data posadzenia opcjonalnie
    - notatki opcjonalnie
-5. System sprawdza:
+5. Pole `species` oferuje presety `apple`, `pear`, `plum`, `cherry`, ale pozwala tez wpisac wlasna wartosc.
+6. System sprawdza:
    - czy dzialka nalezy do aktywnego `orchard`
    - czy odmiana nalezy do aktywnego `orchard`
    - czy wybrana dzialka nie jest `archived`
    - czy lokalizacja nie koliduje z aktywnym drzewem
-6. Po zapisie system wraca do listy drzew w aktywnym orchard.
+7. Po zapisie system wraca do listy drzew w aktywnym orchard.
 
 ### Wynik
 

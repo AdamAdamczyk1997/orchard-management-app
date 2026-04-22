@@ -57,6 +57,7 @@ To sa dokumenty, na podstawie ktorych przygotowujemy migracje SQL, RLS, API, for
 Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i implementacje:
 
 - `00_overview_and_checklists/codex_working_prompt.md`
+- `00_overview_and_checklists/session_handoff.md`
 - `00_overview_and_checklists/startup_materials_checklist.md`
 - `01_implementation_materials/README.md`
 - `01_implementation_materials/implementation_master_plan.md`
@@ -116,6 +117,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 ### `00_overview_and_checklists`
 
 - `codex_working_prompt.md`
+- `session_handoff.md`
 - `startup_materials_checklist.md`
 
 ### `01_implementation_materials`

@@ -35,15 +35,15 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
-| `email` | tak | brak | poprawny format email |
-| `role` | tak | `worker` | MVP UI gwarantuje `worker`; model i kontrakty pozostaja future-ready na `manager`, `viewer` |
+| `email` | tak | brak | poprawny format email; konto musi juz istniec |
+| `role` | tak | `worker` | aktualny UI wysyla ukryte `worker`; model i kontrakty pozostaja future-ready na `manager`, `viewer` |
 
 ## 4. Formularz dzialki
 
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
 | `name` | tak | brak | unikalna nazwa w obrebie aktywnego `orchard` |
-| `code` | nie | brak | opcjonalny skrot, najlepiej unikalny jesli uzywany |
+| `code` | nie | bezpieczna sugestia lub brak | opcjonalny skrot, najlepiej unikalny jesli uzywany; create flow moze zaproponowac kolejny kod, ale nie nadpisuje wartosci wpisanej recznie |
 | `description` | nie | brak | dluzszy opis dzialki |
 | `location_name` | nie | brak | opis lokalizacji |
 | `area_m2` | nie | brak | liczba dodatnia |
@@ -69,7 +69,7 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
 | `plot_id` | tak | ostatnio uzyta dzialka lub brak | musi nalezec do aktywnego `orchard` |
-| `species` | tak | brak | tekst lub slownik gatunkow |
+| `species` | tak | `apple` lub brak | preset `apple`, `pear`, `plum`, `cherry` albo wlasna wartosc |
 | `variety_id` | nie | brak | jesli ustawione, odmiana tego samego `orchard` |
 | `tree_code` | nie | brak | opcjonalny identyfikator terenowy |
 | `display_name` | nie | brak | przyjazna nazwa |
@@ -102,7 +102,7 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
-| `species` | tak | brak | gatunek |
+| `species` | tak | `apple` lub brak | preset `apple`, `pear`, `plum`, `cherry` albo wlasna wartosc |
 | `name` | tak | brak | unikalne razem z `species` w obrebie aktywnego `orchard` |
 | `description` | nie | brak | opis ogolny |
 | `care_notes` | nie | brak | zalecenia pielegnacyjne |
@@ -149,11 +149,15 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 - Dla `pruning` `activity_subtype` jest wymagane.
 - Jedna aktywnosc moze miec wiele rekordow `activity_scopes`.
+- W dedykowanym flow sezonowym `pruning`, `mowing` i `spraying` powinny zapisywac
+  co najmniej jeden rekord `activity_scopes`; dla calej dzialki jest to scope `plot`.
 - Dla `scope_level = plot` nie wymagamy dodatkowych pol lokalizacyjnych.
 - Dla `scope_level = section` wymagane jest `section_name`.
 - Dla `scope_level = row` wymagane jest `row_number`.
 - Dla `scope_level = location_range` wymagane sa `row_number`, `from_position`, `to_position`.
 - Dla `scope_level = tree` wymagane jest `tree_id`.
+- `scope_order`, jesli jest przesylane, powinno byc dodatnia liczba calkowita i sluzy tylko
+  do zachowania kolejnosci zakresow w UI.
 - Jesli aktywnosc ma `tree_id` na poziomie glownego formularza, system powinien dopilnowac spojnosci z `activity_scopes` albo automatycznie utworzyc scope typu `tree`.
 - Dla `spraying` UI powinno mocno eksponowac sekcje materialow, pogody i efektu zabiegu.
 
@@ -232,4 +236,8 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | `name` | tak | obecna wartosc | nazwa orchard |
 | `code` | nie | obecna wartosc | skrot |
 | `description` | nie | obecna wartosc | opis |
-| `status` | tak | `active` | `active`, `archived` |
+
+Uwagi:
+
+- aktualny formularz settings jest owner-only
+- w obecnym release nie edytujemy z tego poziomu `status`

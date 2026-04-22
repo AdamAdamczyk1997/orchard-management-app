@@ -41,7 +41,7 @@ describe("phase 2 validation", () => {
 
     expect(parsed.success).toBe(false);
     expect(parsed.error?.flatten().fieldErrors.area_m2).toContain(
-      "Area must be greater than 0.",
+      "Powierzchnia musi byc wieksza od 0.",
     );
   });
 
@@ -74,7 +74,7 @@ describe("phase 2 validation", () => {
 
     expect(parsed.success).toBe(false);
     expect(parsed.error?.flatten().fieldErrors.position_in_row).toContain(
-      "Row number and position in row must be filled together.",
+      "Numer rzedu i pozycja w rzedzie musza byc podane razem.",
     );
   });
 

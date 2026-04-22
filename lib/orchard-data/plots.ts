@@ -80,3 +80,20 @@ export async function listPlotOptionsForOrchard(orchardId: string) {
     left.name.localeCompare(right.name),
   );
 }
+
+export async function listPlotCodesForOrchard(orchardId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("plots")
+    .select("code")
+    .eq("orchard_id", orchardId)
+    .not("code", "is", null);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as Array<{ code: string | null }>)
+    .map((row) => row.code)
+    .filter((code): code is string => typeof code === "string" && code.length > 0);
+}

@@ -11,7 +11,7 @@ co musi znalezc sie w pierwszej uzywalnej wersji aplikacji, a co mozna swiadomie
 - Pierwsza wersja jest `web-first`, dostepna z przegladarki na telefonie i komputerze.
 - W MVP aplikacja obsluguje podstawowy model `orchard` z rolami `owner` i `worker`.
 - Dane domenowe sa prywatne per `orchard`.
-- Interfejs w MVP moze byc przygotowany tylko po polsku.
+- Interfejs MVP jest domyslnie po polsku; przelacznik PL / EN pozostaje poza zakresem obecnego wydania.
 - UI MVP pracuje zawsze w jednym `active_orchard`.
 - Model danych ma byc od razu gotowy na rozwoj o lokalizacje drzew, masowe zakladanie rekordow i raportowanie zbiorow, nawet jesli nie wszystkie ekrany wejda do pierwszego wydania.
 
@@ -144,16 +144,18 @@ Pierwsze wydanie ma byc przydatne w codziennej pracy, nawet bez map, zdjec, przy
 
 - dashboard z podstawowym przegladem danych
 - ekran `Create orchard`
-- lista dzialek
-- szczegoly dzialki
-- lista drzew
-- szczegoly drzewa
-- lista odmian
-- szczegoly odmiany
+- lista dzialek + create / edit
+- lista drzew + create / edit
+- lista odmian + create / edit
 - dziennik prac
 - lista zbiorow
 - `season summary`
 - ekran `Orchard members`
+- ekran `Orchard settings`
+
+Uwaga implementacyjna:
+
+- dedykowane detail pages dla `plots`, `varieties` i `trees` moga pozostac odlozone poza bazowy zakres obecnego MVP, o ile listy i formularze create / edit daja sprawny flow operacyjny
 
 ## Zakres wersji 0.2 - `should have`
 
@@ -225,7 +227,7 @@ Pierwsze wydanie ma byc przydatne w codziennej pracy, nawet bez map, zdjec, przy
 - onboarding orchard i `active_orchard` wchodza do MVP 0.1, bo sa rdzeniem modelu dostepu.
 - Masowe dodawanie drzew jest bardzo wazne, ale trafia do 0.2, aby nie blokowac startu rdzenia aplikacji.
 - Raport lokalizacji odmiany trafia do 0.2 razem z dopracowanym modelem lokalizacji.
-- Interfejs MVP jest projektowany pod jezyk polski.
+- Interfejs MVP jest projektowany pod jezyk polski, a pelne PL / EN i18n jest odlozone.
 
 ## Tematy do potwierdzenia pozniej - nie blokuja startu implementacji
 

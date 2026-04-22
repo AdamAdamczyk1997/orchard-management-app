@@ -54,50 +54,51 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-            Trees
+            Drzewa
           </p>
           <h2 className="text-2xl font-semibold text-[#1f2a1f]">
-            Tree structure in {orchard.name}
+            Struktura drzew w sadzie {orchard.name}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-[#5b6155]">
-            Trees connect plots, varieties, and field location. This structure will later power orchard work logs and harvest records.
+            Drzewa lacza dzialki, odmiany i lokalizacje terenowe. Ta struktura bedzie
+            pozniej zasilac dziennik prac oraz wpisy zbiorow.
           </p>
         </div>
-        <LinkButton href="/trees/new">Create tree</LinkButton>
+        <LinkButton href="/trees/new">Utworz drzewo</LinkButton>
       </div>
 
       <Card className="grid gap-4">
         <div className="grid gap-1">
-          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardTitle className="text-lg">Filtry</CardTitle>
           <CardDescription>
-            Narrow the tree list by plot, variety, species, condition, or active state.
+            Zawęź liste drzew po dzialce, odmianie, gatunku, kondycji lub aktywnosci.
           </CardDescription>
         </div>
         <form className="grid gap-4 lg:grid-cols-3" method="get">
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Search</span>
+            <span className="text-sm font-medium text-[#304335]">Szukaj</span>
             <Input
               defaultValue={filters.q ?? ""}
               name="q"
-              placeholder="Tree code or display name"
+              placeholder="Kod drzewa lub nazwa"
             />
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Plot</span>
+            <span className="text-sm font-medium text-[#304335]">Dzialka</span>
             <Select defaultValue={filters.plot_id ?? ""} name="plot_id">
-              <option value="">All plots</option>
+              <option value="">Wszystkie dzialki</option>
               {plotOptions.map((plot) => (
                 <option key={plot.id} value={plot.id}>
                   {plot.name}
-                  {plot.status === "archived" ? " (archived)" : ""}
+                  {plot.status === "archived" ? " (zarchiwizowana)" : ""}
                 </option>
               ))}
             </Select>
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Variety</span>
+            <span className="text-sm font-medium text-[#304335]">Odmiana</span>
             <Select defaultValue={filters.variety_id ?? ""} name="variety_id">
-              <option value="">All varieties</option>
+              <option value="">Wszystkie odmiany</option>
               {varietyOptions.map((variety) => (
                 <option key={variety.id} value={variety.id}>
                   {variety.species} - {variety.name}
@@ -106,33 +107,33 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
             </Select>
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Species</span>
+            <span className="text-sm font-medium text-[#304335]">Gatunek</span>
             <Input
               defaultValue={filters.species ?? ""}
               name="species"
-              placeholder="e.g. apple"
+              placeholder="np. apple"
             />
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Condition</span>
+            <span className="text-sm font-medium text-[#304335]">Kondycja</span>
             <Select
               defaultValue={filters.condition_status ?? "all"}
               name="condition_status"
             >
-              <option value="all">All conditions</option>
-              <option value="new">New</option>
-              <option value="good">Good</option>
-              <option value="warning">Warning</option>
-              <option value="critical">Critical</option>
-              <option value="removed">Removed</option>
+              <option value="all">Wszystkie stany</option>
+              <option value="new">Nowe</option>
+              <option value="good">Dobre</option>
+              <option value="warning">Uwaga</option>
+              <option value="critical">Krytyczne</option>
+              <option value="removed">Usuniete</option>
             </Select>
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Active state</span>
+            <span className="text-sm font-medium text-[#304335]">Aktywnosc</span>
             <Select defaultValue={filters.is_active ?? "true"} name="is_active">
-              <option value="true">Active only</option>
-              <option value="false">Inactive only</option>
-              <option value="all">All trees</option>
+              <option value="true">Tylko aktywne</option>
+              <option value="false">Tylko nieaktywne</option>
+              <option value="all">Wszystkie drzewa</option>
             </Select>
           </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
@@ -140,10 +141,10 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#efe6d3] px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#e5d9bf]"
               type="submit"
             >
-              Apply
+              Zastosuj
             </button>
             <LinkButton href="/trees" variant="ghost">
-              Clear
+              Wyczyść
             </LinkButton>
           </div>
         </form>

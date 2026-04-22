@@ -17,8 +17,8 @@ export function RegisterForm() {
       <Field
         error={state.field_errors?.display_name}
         htmlFor="display_name"
-        hint="Optional. Shown in the app shell and orchard context."
-        label="Display name"
+        hint="Opcjonalnie. Widoczna w aplikacji i w kontekscie sadu."
+        label="Nazwa wyswietlana"
       >
         <Input id="display_name" name="display_name" />
       </Field>
@@ -28,8 +28,8 @@ export function RegisterForm() {
       <Field
         error={state.field_errors?.password}
         htmlFor="password"
-        hint="At least 8 characters."
-        label="Password"
+        hint="Co najmniej 8 znakow."
+        label="Haslo"
       >
         <Input
           autoComplete="new-password"
@@ -39,13 +39,13 @@ export function RegisterForm() {
         />
       </Field>
       <FormMessage state={state} />
-      <SubmitButton pendingLabel="Creating account...">
-        Create account
+      <SubmitButton pendingLabel="Tworzenie konta...">
+        Utworz konto
       </SubmitButton>
       <p className="text-sm text-[#5b6155]">
-        Already have an account?{" "}
+        Masz juz konto?{" "}
         <Link className="font-medium text-[#274430]" href="/login">
-          Sign in
+          Zaloguj sie
         </Link>
       </p>
     </form>

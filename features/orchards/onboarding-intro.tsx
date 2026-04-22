@@ -6,22 +6,27 @@ type OnboardingIntroProps = {
 
 export function OnboardingIntro({ compact = false }: OnboardingIntroProps) {
   return (
-    <Card className="grid gap-4 bg-[#264430] text-white">
+    <Card className="grid gap-4 bg-[#1f3a28] text-white shadow-[0_30px_80px_rgba(31,58,40,0.22)]">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#d7c5a1]">
-        Orchard context
+        Kontekst sadu
       </p>
-      <CardTitle className="text-white">
+      <CardTitle className="text-2xl leading-tight text-[#eda01b]">
         {compact
-          ? "Create the orchard that you want to work in."
-          : "Create your first orchard to start using the app."}
+          ? "Utworz sad, w ktorym chcesz pracowac."
+          : "Utworz pierwszy sad, aby zaczac korzystac z aplikacji."}
       </CardTitle>
-      <CardDescription className="text-[#d7e3d8]">
-        OrchardLog separates account identity from orchard ownership. Your first orchard creates the base working context, membership, and protected shell for the rest of the product.
+      <CardDescription className="text-[15px] text-[#133a08]">
+        OrchardLog oddziela konto uzytkownika od wlasnosci sadu. Pierwszy sad
+        tworzy podstawowy kontekst pracy, czlonkostwo oraz chroniony shell dla
+        dalszej czesci produktu.
       </CardDescription>
-      <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-[#d7e3d8]">
-        <p>1. Create the orchard record.</p>
-        <p>2. The app creates your `owner` membership automatically.</p>
-        <p>3. `active_orchard` is resolved and the protected shell opens.</p>
+      <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-[#28591a]">
+        <p>1. Tworzysz rekord sadu.</p>
+        <p>2. Aplikacja automatycznie nadaje Ci role `owner`.</p>
+        <p>
+          3. `active_orchard` ustawia sie po stronie serwera i otwiera sie shell
+          aplikacji.
+        </p>
       </div>
     </Card>
   );

@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
+import { SPECIES_PRESETS } from "@/lib/domain/species";
+import { DatalistInput } from "@/components/ui/datalist-input";
 import { Field } from "@/components/ui/field";
 import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
@@ -39,93 +41,96 @@ export function VarietyForm({
       <Field
         error={state.field_errors?.species}
         htmlFor="species"
-        label="Species"
+        hint="Wybierz z listy albo wpisz wlasny gatunek."
+        label="Gatunek"
       >
-        <Input
+        <DatalistInput
           defaultValue={variety?.species ?? ""}
           id="species"
+          listId="variety-species-presets"
           name="species"
-          placeholder="e.g. apple"
+          options={SPECIES_PRESETS}
+          placeholder="np. apple"
         />
       </Field>
-      <Field error={state.field_errors?.name} htmlFor="name" label="Variety name">
+      <Field error={state.field_errors?.name} htmlFor="name" label="Nazwa odmiany">
         <Input
           defaultValue={variety?.name ?? ""}
           id="name"
           name="name"
-          placeholder="e.g. Ligol"
+          placeholder="np. Ligol"
         />
       </Field>
       <Field
         error={state.field_errors?.ripening_period}
         htmlFor="ripening_period"
-        label="Ripening period"
+        label="Okres dojrzewania"
       >
         <Input
           defaultValue={variety?.ripening_period ?? ""}
           id="ripening_period"
           name="ripening_period"
-          placeholder="e.g. September-October"
+          placeholder="np. wrzesien-pazdziernik"
         />
       </Field>
       <Field
         error={state.field_errors?.origin_country}
         htmlFor="origin_country"
-        label="Origin country"
+        label="Kraj pochodzenia"
       >
         <Input
           defaultValue={variety?.origin_country ?? ""}
           id="origin_country"
           name="origin_country"
-          placeholder="Optional"
+          placeholder="Opcjonalnie"
         />
       </Field>
       <Field
         error={state.field_errors?.description}
         htmlFor="description"
-        label="Description"
+        label="Opis"
       >
         <Textarea
           defaultValue={variety?.description ?? ""}
           id="description"
           name="description"
-          placeholder="Short general description."
+          placeholder="Krotki opis odmiany."
         />
       </Field>
       <Field
         error={state.field_errors?.characteristics}
         htmlFor="characteristics"
-        label="Characteristics"
+        label="Charakterystyka"
       >
         <Textarea
           defaultValue={variety?.characteristics ?? ""}
           id="characteristics"
           name="characteristics"
-          placeholder="Taste, storage, fruit size, and other features."
+          placeholder="Smak, przechowywanie, wielkosc owocu i inne cechy."
         />
       </Field>
       <Field
         error={state.field_errors?.care_notes}
         htmlFor="care_notes"
-        label="Care notes"
+        label="Notatki pielegnacyjne"
       >
         <Textarea
           defaultValue={variety?.care_notes ?? ""}
           id="care_notes"
           name="care_notes"
-          placeholder="Practical orchard care notes."
+          placeholder="Praktyczne notatki pielegnacyjne dla sadu."
         />
       </Field>
       <Field
         error={state.field_errors?.resistance_notes}
         htmlFor="resistance_notes"
-        label="Resistance notes"
+        label="Odpornosc i podatnosc"
       >
         <Textarea
           defaultValue={variety?.resistance_notes ?? ""}
           id="resistance_notes"
           name="resistance_notes"
-          placeholder="Disease resistance or sensitivity."
+          placeholder="Notatki o odpornosci na choroby lub wrazliwosci."
         />
       </Field>
       <label className="flex items-start gap-3 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3 text-sm text-[#4f584e]">
@@ -136,15 +141,15 @@ export function VarietyForm({
           name="is_favorite"
           type="checkbox"
         />
-        <span>Mark this variety as favorite.</span>
+        <span>Oznacz te odmiane jako ulubiona.</span>
       </label>
       <FormMessage state={state} />
       <div className="flex flex-wrap gap-3">
-        <SubmitButton pendingLabel={mode === "create" ? "Creating variety..." : "Saving variety..."}>
-          {mode === "create" ? "Create variety" : "Save variety"}
+        <SubmitButton pendingLabel={mode === "create" ? "Tworzenie odmiany..." : "Zapisywanie odmiany..."}>
+          {mode === "create" ? "Utworz odmiane" : "Zapisz odmiane"}
         </SubmitButton>
         <LinkButton href="/varieties" variant="secondary">
-          Back to varieties
+          Wroc do odmian
         </LinkButton>
       </div>
     </form>

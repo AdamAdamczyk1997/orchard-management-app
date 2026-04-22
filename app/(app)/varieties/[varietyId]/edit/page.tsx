@@ -32,11 +32,12 @@ export default async function EditVarietyPage({
     <div className="grid gap-6">
       <Card className="grid gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Edit variety
+          Edycja odmiany
         </p>
         <CardTitle>{variety.name}</CardTitle>
         <CardDescription>
-          Update variety knowledge used later by trees, activities, and harvest summaries.
+          Zmien informacje o odmianie wykorzystywane pozniej przez drzewa,
+          aktywnosci i podsumowania zbiorow.
         </CardDescription>
       </Card>
       <Card className="grid gap-5">

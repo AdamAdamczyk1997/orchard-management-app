@@ -49,9 +49,10 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   return (
     <ProtectedAppShell
       activeOrchard={context.orchard}
+      activeRole={context.membership.role}
       availableOrchards={context.available_orchards}
+      canManageOrchard={context.membership.role === "owner"}
       profile={context.profile}
-      roleLabel={context.membership.role}
     >
       {children}
     </ProtectedAppShell>

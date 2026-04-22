@@ -27,9 +27,9 @@ function mapPlotMutationError<T>(error: PostgrestError): ActionResult<T> {
     if (error.message.includes("plots_orchard_id_name_key")) {
       return createErrorResult(
         "DUPLICATE_PLOT_NAME",
-        "A plot with this name already exists in the active orchard.",
+        "Masz juz dzialke o tej nazwie w aktywnym sadzie.",
         {
-          name: "Choose a different plot name.",
+          name: "Wybierz inna nazwe dzialki.",
         },
       );
     }
@@ -37,15 +37,15 @@ function mapPlotMutationError<T>(error: PostgrestError): ActionResult<T> {
     if (error.message.includes("uq_plots_orchard_code")) {
       return createErrorResult(
         "VALIDATION_ERROR",
-        "A plot with this code already exists in the active orchard.",
+        "Masz juz dzialke o tym kodzie w aktywnym sadzie.",
         {
-          code: "Choose a different plot code.",
+          code: "Wybierz inny kod dzialki.",
         },
       );
     }
   }
 
-  return createErrorResult("PLOT_MUTATION_FAILED", error.message);
+  return createErrorResult("PLOT_MUTATION_FAILED", "Nie udalo sie zapisac dzialki.");
 }
 
 function buildPlotRedirectTarget(path?: string) {
@@ -66,7 +66,7 @@ export async function createPlot(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby dodac dzialke.");
   }
 
   const supabase = await createSupabaseServerClient();
@@ -108,13 +108,13 @@ export async function updatePlot(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby zapisac dzialke.");
   }
 
   const existingPlot = await readPlotByIdForOrchard(orchard.id, parsed.data.plot_id);
 
   if (!existingPlot) {
-    return createErrorResult("NOT_FOUND", "Plot not found.");
+    return createErrorResult("NOT_FOUND", "Nie znaleziono wybranej dzialki.");
   }
 
   const supabase = await createSupabaseServerClient();

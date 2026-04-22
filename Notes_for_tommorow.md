@@ -1,3 +1,5 @@
+- dodać wizualizacje działek tak by urzytkownik widział
+
 ## Future idea — customer / marketplace module
 
 W przyszłości warto rozważyć rozszerzenie OrchardLog / Sadownik+ o moduł **customer / marketplace**, który pozwoli połączyć sadowników z klientami zainteresowanymi zakupem owoców.

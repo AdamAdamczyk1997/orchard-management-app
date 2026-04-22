@@ -30,11 +30,11 @@ export default async function EditPlotPage({ params }: EditPlotPageProps) {
     <div className="grid gap-6">
       <Card className="grid gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Edit plot
+          Edycja dzialki
         </p>
         <CardTitle>{plot.name}</CardTitle>
         <CardDescription>
-          Update the basic information and lifecycle state of this plot inside the active orchard.
+          Zmien podstawowe informacje oraz status zycia tej dzialki w aktywnym sadzie.
         </CardDescription>
       </Card>
       <Card className="grid gap-5">

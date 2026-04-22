@@ -7,21 +7,24 @@ export default function BootstrapErrorPage() {
       <Card className="grid w-full gap-5">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-            Profile bootstrap error
+            Blad przygotowania profilu
           </p>
-          <CardTitle>We could not find the profile required for this account.</CardTitle>
+          <CardTitle>Nie znaleziono profilu wymaganego dla tego konta.</CardTitle>
           <CardDescription>
-            The database trigger that should create `profiles` after auth did not complete correctly. This is a safe-stop page so the app does not continue with an inconsistent working context.
+            Trigger bazy danych, ktory powinien utworzyc rekord `profiles` po
+            logowaniu, nie zakonczyl sie poprawnie. To bezpieczny ekran stopu,
+            aby aplikacja nie kontynuowala pracy z niespojnym kontekstem.
           </CardDescription>
         </div>
         <div className="rounded-2xl border border-[#e6d7bb] bg-[#fbfaf7] px-4 py-3 text-sm leading-6 text-[#5b6155]">
-          Re-run the auth bootstrap check or sign out and try again after validating the baseline migrations and triggers.
+          Sprawdz migracje i triggery odpowiedzialne za bootstrap profilu, a potem
+          sprobuj zalogowac sie ponownie.
         </div>
         <Link
           className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#2c5b3b] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#234a30]"
           href="/login"
         >
-          Go to sign in
+          Wroc do logowania
         </Link>
       </Card>
     </main>

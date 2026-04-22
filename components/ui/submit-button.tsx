@@ -12,7 +12,7 @@ type SubmitButtonProps = {
 
 export function SubmitButton({
   children,
-  pendingLabel = "Saving...",
+  pendingLabel = "Zapisywanie...",
   className,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();

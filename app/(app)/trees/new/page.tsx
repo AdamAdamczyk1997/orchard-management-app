@@ -25,16 +25,17 @@ export default async function NewTreePage() {
       <div className="grid gap-6">
         <Card className="grid gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-            Create tree
+            Nowe drzewo
           </p>
-          <CardTitle>Create a plot first</CardTitle>
+          <CardTitle>Najpierw utworz dzialke</CardTitle>
           <CardDescription>
-            Trees need an active plot. Add at least one active plot in the orchard before creating a tree record.
+            Drzewa wymagaja aktywnej dzialki. Dodaj lub przywroc co najmniej jedna
+            aktywna dzialke, zanim zapiszesz rekord drzewa.
           </CardDescription>
           <div className="flex flex-wrap gap-3">
-            <LinkButton href="/plots/new">Create plot</LinkButton>
+            <LinkButton href="/plots/new">Utworz dzialke</LinkButton>
             <LinkButton href="/trees" variant="secondary">
-              Back to trees
+              Wroc do drzew
             </LinkButton>
           </div>
         </Card>
@@ -46,11 +47,12 @@ export default async function NewTreePage() {
     <div className="grid gap-6">
       <Card className="grid gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Create tree
+          Nowe drzewo
         </p>
         <CardTitle>{orchard.name}</CardTitle>
         <CardDescription>
-          Save a single tree record with its plot, optional variety, and baseline location fields.
+          Zapisz pojedyncze drzewo razem z dzialka, opcjonalna odmiana i podstawowa
+          lokalizacja w sadzie.
         </CardDescription>
       </Card>
       <TreeForm

@@ -94,6 +94,12 @@ Na dzis realnie pokryte automatycznie:
 - trigger spojnosc `tree -> plot -> variety -> orchard`
 - konflikt aktywnej lokalizacji drzewa
 - automatyczne `is_active = false` dla drzewa `removed`
+- create / edit / filter / status / delete `activities`
+- transakcyjny zapis `activities + activity_scopes + activity_materials`
+- walidacja `pruning -> activity_subtype`
+- walidacja `activity_scopes` i `materials` z JSON payloadow
+- RLS dla `activities`, `activity_scopes` i `activity_materials`
+- write permissions `worker` dla aktywnosci w swoim orchard
 - RLS dla `plots`, `varieties` i `trees`
 - write permissions `worker` dla danych operacyjnych
 - brak delete permissions dla `worker` na `plots`
@@ -173,8 +179,9 @@ Jesli zespol wybierze inny zestaw narzedzi, logika planu testow pozostaje taka s
 
 ### Membership
 
-- `owner` moze zaprosic `worker`
-- `owner` moze zmienic role membership
+- `owner` moze dodac istniejace konto jako `worker`
+- aktywny duplikat membership jest blokowany, a `revoked` membership jest reaktywowany
+- zmiana roli membership jest testowana dopiero po aktywacji tego flow w UI
 - `worker` nie moze zarzadzac membership
 
 ### Dzialki

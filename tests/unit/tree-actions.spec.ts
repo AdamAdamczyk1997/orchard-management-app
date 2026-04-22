@@ -66,7 +66,7 @@ describe("tree server actions", () => {
 
     expect(result.success).toBe(false);
     expect(result.error_code).toBe("PLOT_ARCHIVED");
-    expect(result.field_errors?.plot_id).toBe("Choose an active plot.");
+    expect(result.field_errors?.plot_id).toBe("Wybierz aktywna dzialke.");
     expect(readVarietyByIdForOrchardMock).not.toHaveBeenCalled();
     expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
     expect(revalidatePathMock).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe("tree server actions", () => {
 
     expect(result.success).toBe(false);
     expect(result.error_code).toBe("VALIDATION_ERROR");
-    expect(result.field_errors?.variety_id).toBe("Choose a valid variety.");
+    expect(result.field_errors?.variety_id).toBe("Wybierz poprawna odmiane.");
     expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
     expect(revalidatePathMock).not.toHaveBeenCalled();
     expect(redirectMock).not.toHaveBeenCalled();

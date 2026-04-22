@@ -654,12 +654,14 @@ Naglowek wpisu dziennika prac.
 - FK: `created_by_profile_id -> profiles.id on delete restrict`
 - CHECK: `activity_type in (...)`
 - CHECK: `status in ('planned', 'done', 'skipped', 'cancelled')`
+- CHECK: dla `activity_type = 'pruning'` `activity_subtype in ('winter_pruning', 'summer_pruning')`, a dla pozostalych typow `activity_subtype is null`
 - CHECK: `work_duration_minutes >= 0` gdy ustawione
 - CHECK: `cost_amount >= 0` gdy ustawione
 - index on `orchard_id`
 - index on `(plot_id, activity_date desc)`
 - index on `(orchard_id, activity_type, status, activity_date desc)`
 - index on `(performed_by_profile_id, activity_date desc)`
+- index on `(orchard_id, season_year, activity_date desc)`
 
 ```sql
 create table activities (
@@ -701,7 +703,11 @@ create table activities (
   season_year integer not null,
   season_phase text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  check (
+    (activity_type = 'pruning' and activity_subtype in ('winter_pruning', 'summer_pruning'))
+    or (activity_type <> 'pruning' and activity_subtype is null)
+  )
 );
 
 create index idx_activities_orchard_id on activities(orchard_id);
@@ -710,6 +716,8 @@ create index idx_activities_orchard_type_status_date
   on activities(orchard_id, activity_type, status, activity_date desc);
 create index idx_activities_performed_by_date
   on activities(performed_by_profile_id, activity_date desc);
+create index idx_activities_orchard_season_date
+  on activities(orchard_id, season_year, activity_date desc);
 ```
 
 ### `activity_scopes`
@@ -737,6 +745,7 @@ Dokladny zakres wykonania aktywnosci sezonowej.
 - FK: `activity_id -> activities.id on delete cascade`
 - FK: `tree_id -> trees.id on delete set null`
 - CHECK: `scope_level in ('plot', 'section', 'row', 'location_range', 'tree')`
+- CHECK: `scope_order > 0` gdy ustawione
 - CHECK: `row_number > 0` gdy ustawione
 - CHECK: `from_position > 0` i `to_position > 0` gdy ustawione
 - CHECK: `to_position >= from_position` gdy oba ustawione
@@ -747,7 +756,7 @@ Dokladny zakres wykonania aktywnosci sezonowej.
 create table activity_scopes (
   id uuid primary key default gen_random_uuid(),
   activity_id uuid not null references activities(id) on delete cascade,
-  scope_order integer,
+  scope_order integer check (scope_order is null or scope_order > 0),
   scope_level text not null
     check (scope_level in ('plot', 'section', 'row', 'location_range', 'tree')),
   section_name text,
@@ -761,6 +770,38 @@ create table activity_scopes (
   check (
     (from_position is null and to_position is null)
     or (from_position is not null and to_position is not null and to_position >= from_position)
+  ),
+  check (
+    (scope_level = 'plot'
+      and section_name is null
+      and row_number is null
+      and from_position is null
+      and to_position is null
+      and tree_id is null)
+    or
+    (scope_level = 'section'
+      and section_name is not null
+      and row_number is null
+      and from_position is null
+      and to_position is null
+      and tree_id is null)
+    or
+    (scope_level = 'row'
+      and row_number is not null
+      and from_position is null
+      and to_position is null
+      and tree_id is null)
+    or
+    (scope_level = 'location_range'
+      and row_number is not null
+      and from_position is not null
+      and to_position is not null
+      and tree_id is null)
+    or
+    (scope_level = 'tree'
+      and tree_id is not null
+      and from_position is null
+      and to_position is null)
   )
 );
 

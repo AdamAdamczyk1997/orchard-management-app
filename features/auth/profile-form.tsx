@@ -24,13 +24,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
   return (
     <form action={action} className="grid gap-5">
-      <Field htmlFor="email" hint="Managed by Supabase Auth." label="Email">
+      <Field htmlFor="email" hint="To pole jest zarzadzane przez Supabase Auth." label="Email">
         <Input defaultValue={profile.email} disabled id="email" name="email" />
       </Field>
       <Field
         error={state.field_errors?.display_name}
         htmlFor="display_name"
-        label="Display name"
+        label="Nazwa wyswietlana"
       >
         <Input
           defaultValue={profile.display_name ?? ""}
@@ -41,14 +41,14 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       <Field
         error={state.field_errors?.locale}
         htmlFor="locale"
-        label="Locale"
+        label="Jezyk"
       >
         <Input defaultValue={profile.locale ?? "pl"} id="locale" name="locale" />
       </Field>
       <Field
         error={state.field_errors?.timezone}
         htmlFor="timezone"
-        label="Timezone"
+        label="Strefa czasowa"
       >
         <Input
           defaultValue={profile.timezone ?? "Europe/Warsaw"}
@@ -57,7 +57,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         />
       </Field>
       <FormMessage state={state} />
-      <SubmitButton pendingLabel="Saving profile...">Save profile</SubmitButton>
+      <SubmitButton pendingLabel="Zapisywanie profilu...">Zapisz profil</SubmitButton>
     </form>
   );
 }

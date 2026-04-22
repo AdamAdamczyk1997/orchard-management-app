@@ -20,11 +20,11 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
       <Card className="w-full max-w-xl">
         <div className="mb-6 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-            Phase 1
+            Dostep do aplikacji
           </p>
-          <CardTitle>Secure access and orchard onboarding</CardTitle>
+          <CardTitle>Logowanie i przygotowanie pierwszego sadu</CardTitle>
           <CardDescription>
-            Authentication stays separate from orchard working context. Sign in or create your account to continue.
+            Konto uzytkownika pozostaje oddzielone od kontekstu pracy w sadzie. Zaloguj sie lub utworz konto, aby kontynuowac.
           </CardDescription>
         </div>
         {children}

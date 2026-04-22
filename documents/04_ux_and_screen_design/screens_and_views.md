@@ -25,6 +25,8 @@ W aktualnym vertical slice zostaly wdrozone lub domkniete projektowo przede wszy
 - `create orchard / onboarding`
 - `dashboard` jako minimalny protected shell
 - `profile settings`
+- `orchard settings` jako owner-only screen
+- `members` jako owner-only screen
 - orchard switcher w naglowku shell
 
 ### Aktualizacja Phase 2
@@ -97,6 +99,7 @@ Najwazniejsze elementy:
   - dodaj drzewo
   - dodaj aktywnosc
   - dodaj zbior
+  - dla `owner`: przejscie do `Orchard settings` i `Orchard members`
 
 Uwaga Phase 1:
 
@@ -159,6 +162,7 @@ tworzenie i edycja dzialki.
 Najwazniejsze elementy:
 
 - dane podstawowe
+- pole `code` z bezpieczna sugestia kolejnego numeru, jesli istniejace kody maja czytelny wspolny wzorzec
 - status
 - pola opcjonalne lokalizacji i gleby
 - w kolejnej iteracji sekcja ustawien ukladu dzialki
@@ -211,7 +215,7 @@ dodanie lub edycja pojedynczego drzewa.
 Najwazniejsze elementy:
 
 - wybor dzialki
-- gatunek
+- gatunek z presetami `apple`, `pear`, `plum`, `cherry` oraz opcja wlasnej wartosci
 - odmiana opcjonalna
 - pola lokalizacji
 - pola stanu drzewa
@@ -254,7 +258,7 @@ tworzenie i edycja wpisu w bazie odmian.
 
 Najwazniejsze elementy:
 
-- gatunek
+- gatunek z presetami `apple`, `pear`, `plum`, `cherry` oraz opcja wlasnej wartosci
 - nazwa
 - opis
 - pielegnacja
@@ -349,13 +353,17 @@ zarzadzanie czlonkami orchard przez `owner`.
 
 Najwazniejsze elementy:
 
-- lista aktywnych i zaproszonych membership
-- email i rola
+- lista aktywnych i odebranych membership
+- email, `display_name`, rola, status i `joined_at`
 - status membership
 - akcje:
-  - zapros czlonka
-  - zmien role, jesli dana rola jest aktywna w releasie
-  - odwolaj / dezaktywuj membership
+  - dodaj istniejace konto po emailu jako `worker`
+  - reaktywuj `revoked` membership zamiast tworzenia duplikatu
+  - dezaktywuj membership
+
+Uwaga implementacyjna:
+
+- aktualny UI MVP nie wystawia zmiany roli membership; model pozostaje future-ready na `manager` i `viewer`
 
 ### 19. Profil / ustawienia konta
 
@@ -379,7 +387,11 @@ Najwazniejsze elementy:
 - `name`
 - `code`
 - `description`
-- status orchard
+
+Uwaga implementacyjna:
+
+- aktualny formularz settings edytuje tylko `name`, `code` i `description`
+- ekran jest owner-only; worker przy bezposrednim wejsciu powinien dostac czytelny stan `forbidden`
 
 ## Ekrany wersji 0.2
 

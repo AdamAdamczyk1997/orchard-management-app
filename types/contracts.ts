@@ -17,6 +17,27 @@ export type TreeConditionStatus =
   | "warning"
   | "critical"
   | "removed";
+export type ActivityType =
+  | "watering"
+  | "fertilizing"
+  | "spraying"
+  | "pruning"
+  | "inspection"
+  | "planting"
+  | "harvest"
+  | "mowing"
+  | "weeding"
+  | "disease_observation"
+  | "pest_observation"
+  | "other";
+export type ActivityStatus = "planned" | "done" | "skipped" | "cancelled";
+export type ActivityScopeLevel =
+  | "plot"
+  | "section"
+  | "row"
+  | "location_range"
+  | "tree";
+export type ActivityPruningSubtype = "winter_pruning" | "summer_pruning";
 
 export type ProfileSummary = {
   id: string;
@@ -36,6 +57,8 @@ export type OrchardFormInput = {
   description?: string;
 };
 
+export type UpdateOrchardInput = OrchardFormInput;
+
 export type OrchardSummary = {
   id: string;
   name: string;
@@ -43,6 +66,17 @@ export type OrchardSummary = {
   status: OrchardStatus;
   my_role: OrchardMembershipRole;
   membership_status: OrchardMembershipStatus;
+};
+
+export type OrchardDetails = {
+  id: string;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  status: OrchardStatus;
+  created_by_profile_id: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type OrchardMembershipSummary = {
@@ -97,6 +131,11 @@ export type UpdateProfileInput = {
 
 export type CreateOrchardInput = OrchardFormInput & {
   dismiss_intro?: boolean;
+};
+
+export type InviteOrchardMemberInput = {
+  email: string;
+  role: "worker" | "manager" | "viewer";
 };
 
 export type SetActiveOrchardInput = {
@@ -245,4 +284,125 @@ export type TreeListFilters = {
   species?: string;
   condition_status?: TreeConditionStatus | "all";
   is_active?: "true" | "false" | "all";
+};
+
+export type ActiveMemberOption = {
+  profile_id: string;
+  email: string;
+  display_name?: string | null;
+  role: OrchardMembershipRole;
+  label: string;
+};
+
+export type TreeOption = {
+  id: string;
+  plot_id: string;
+  plot_name: string;
+  label: string;
+  is_active: boolean;
+};
+
+export type ActivityScopeInput = {
+  scope_order?: number;
+  scope_level: ActivityScopeLevel;
+  section_name?: string;
+  row_number?: number;
+  from_position?: number;
+  to_position?: number;
+  tree_id?: string | null;
+  notes?: string;
+};
+
+export type ActivityMaterialInput = {
+  name: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  notes?: string;
+};
+
+export type ActivityFormInput = {
+  plot_id: string;
+  tree_id?: string | null;
+  activity_type: ActivityType;
+  activity_subtype?: ActivityPruningSubtype | null;
+  activity_date: string;
+  title: string;
+  description?: string;
+  status: ActivityStatus;
+  work_duration_minutes?: number;
+  cost_amount?: number;
+  weather_notes?: string;
+  result_notes?: string;
+  performed_by_profile_id?: string | null;
+  performed_by?: string;
+  season_year?: number;
+  season_phase?: string;
+  scopes?: ActivityScopeInput[];
+  materials?: ActivityMaterialInput[];
+};
+
+export type ActivityScopeSummary = {
+  id: string;
+  scope_order?: number | null;
+  scope_level: ActivityScopeLevel;
+  section_name?: string | null;
+  row_number?: number | null;
+  from_position?: number | null;
+  to_position?: number | null;
+  tree_id?: string | null;
+  tree_display_name?: string | null;
+  notes?: string | null;
+};
+
+export type ActivityMaterialSummary = {
+  id: string;
+  name: string;
+  category?: string | null;
+  quantity?: number | null;
+  unit?: string | null;
+  notes?: string | null;
+};
+
+export type ActivitySummary = {
+  id: string;
+  orchard_id: string;
+  plot_id: string;
+  tree_id?: string | null;
+  activity_type: ActivityType;
+  activity_subtype?: ActivityPruningSubtype | null;
+  activity_date: string;
+  season_year: number;
+  season_phase?: string | null;
+  status: ActivityStatus;
+  title: string;
+  description?: string | null;
+  plot_name?: string;
+  tree_display_name?: string | null;
+  scope_count?: number;
+  material_count?: number;
+  performed_by_display?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ActivityListFilters = {
+  date_from?: string;
+  date_to?: string;
+  plot_id?: string;
+  tree_id?: string;
+  activity_type?: ActivityType | "all";
+  status?: ActivityStatus | "all";
+  performed_by_profile_id?: string;
+};
+
+export type ActivityDetails = ActivitySummary & {
+  work_duration_minutes?: number | null;
+  cost_amount?: number | null;
+  weather_notes?: string | null;
+  result_notes?: string | null;
+  performed_by_profile_id?: string | null;
+  created_by_profile_id: string;
+  scopes: ActivityScopeSummary[];
+  materials: ActivityMaterialSummary[];
 };

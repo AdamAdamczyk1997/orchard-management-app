@@ -22,7 +22,7 @@ export async function getCurrentProfile(): Promise<ActionResult<ProfileSummary>>
   if (!profile) {
     return createErrorResult(
       "PROFILE_BOOTSTRAP_REQUIRED",
-      "Profile bootstrap did not complete correctly.",
+      "Nie udalo sie poprawnie przygotowac profilu po logowaniu.",
     );
   }
 
@@ -53,7 +53,10 @@ export async function updateProfile(
     .single();
 
   if (error) {
-    return createErrorResult("PROFILE_UPDATE_FAILED", error.message);
+    return createErrorResult(
+      "PROFILE_UPDATE_FAILED",
+      "Nie udalo sie zapisac zmian profilu.",
+    );
   }
 
   revalidatePath("/settings/profile");
@@ -61,6 +64,6 @@ export async function updateProfile(
 
   return createSuccessResult(
     data as ProfileSummary,
-    "Profile updated successfully.",
+    "Profil zostal zapisany.",
   );
 }

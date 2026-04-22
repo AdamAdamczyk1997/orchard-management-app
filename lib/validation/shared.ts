@@ -54,7 +54,7 @@ export function optionalNumberInput(message: string) {
   }, z.number({ message }).optional());
 }
 
-export function optionalDateInput(message = "Enter a valid date.") {
+export function optionalDateInput(message = "Podaj poprawna date.") {
   return z.preprocess((value) => {
     if (typeof value === "string") {
       const trimmed = value.trim();

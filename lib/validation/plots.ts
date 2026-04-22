@@ -9,31 +9,31 @@ const plotStatusSchema = z.enum(["planned", "active", "archived"]);
 
 export const plotFormSchema = z.object({
   name: trimmedString()
-    .min(2, "Plot name must have at least 2 characters.")
-    .max(120, "Plot name must have at most 120 characters."),
+    .min(2, "Nazwa dzialki musi miec co najmniej 2 znaki.")
+    .max(120, "Nazwa dzialki moze miec maksymalnie 120 znakow."),
   code: optionalTrimmedString().refine(
     (value) => !value || value.length <= 32,
-    "Code must have at most 32 characters.",
+    "Kod moze miec maksymalnie 32 znaki.",
   ),
   description: optionalTrimmedString().refine(
     (value) => !value || value.length <= 500,
-    "Description must have at most 500 characters.",
+    "Opis moze miec maksymalnie 500 znakow.",
   ),
   location_name: optionalTrimmedString().refine(
     (value) => !value || value.length <= 160,
-    "Location must have at most 160 characters.",
+    "Opis lokalizacji moze miec maksymalnie 160 znakow.",
   ),
-  area_m2: optionalNumberInput("Area must be a number.").refine(
+  area_m2: optionalNumberInput("Powierzchnia musi byc liczba.").refine(
     (value) => value === undefined || value > 0,
-    "Area must be greater than 0.",
+    "Powierzchnia musi byc wieksza od 0.",
   ),
   soil_type: optionalTrimmedString().refine(
     (value) => !value || value.length <= 120,
-    "Soil type must have at most 120 characters.",
+    "Typ gleby moze miec maksymalnie 120 znakow.",
   ),
   irrigation_type: optionalTrimmedString().refine(
     (value) => !value || value.length <= 120,
-    "Irrigation type must have at most 120 characters.",
+    "Typ nawadniania moze miec maksymalnie 120 znakow.",
   ),
   status: plotStatusSchema,
 });
@@ -41,11 +41,11 @@ export const plotFormSchema = z.object({
 export const createPlotSchema = plotFormSchema;
 
 export const updatePlotSchema = plotFormSchema.extend({
-  plot_id: trimmedString().uuid("Choose a valid plot."),
+  plot_id: trimmedString().uuid("Wybierz poprawna dzialke."),
 });
 
 export const plotStatusActionSchema = z.object({
-  plot_id: trimmedString().uuid("Choose a valid plot."),
+  plot_id: trimmedString().uuid("Wybierz poprawna dzialke."),
   redirect_to: optionalTrimmedString(),
 });
 

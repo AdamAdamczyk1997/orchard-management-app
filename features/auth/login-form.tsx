@@ -20,7 +20,7 @@ export function LoginForm() {
       <Field
         error={state.field_errors?.password}
         htmlFor="password"
-        label="Password"
+        label="Haslo"
       >
         <Input
           autoComplete="current-password"
@@ -30,13 +30,13 @@ export function LoginForm() {
         />
       </Field>
       <FormMessage state={state} />
-      <SubmitButton pendingLabel="Signing in...">Sign in</SubmitButton>
+      <SubmitButton pendingLabel="Logowanie...">Zaloguj sie</SubmitButton>
       <div className="flex items-center justify-between text-sm text-[#5b6155]">
         <Link className="font-medium text-[#274430]" href="/register">
-          Create account
+          Utworz konto
         </Link>
         <Link className="font-medium text-[#274430]" href="/reset-password">
-          Forgot password?
+          Nie pamietasz hasla?
         </Link>
       </div>
     </form>

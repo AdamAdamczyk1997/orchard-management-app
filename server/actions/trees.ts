@@ -25,14 +25,14 @@ function mapTreeMutationError<T>(error: PostgrestError): ActionResult<T> {
   ) {
     return createErrorResult(
       "LOCATION_CONFLICT",
-      "Another active tree already uses this location on the selected plot.",
+      "W tej lokalizacji na wybranej dzialce istnieje juz aktywne drzewo.",
       {
-        position_in_row: "Choose a free row and position combination.",
+        position_in_row: "Wybierz wolny rzad i pozycje.",
       },
     );
   }
 
-  return createErrorResult("TREE_MUTATION_FAILED", error.message);
+  return createErrorResult("TREE_MUTATION_FAILED", "Nie udalo sie zapisac drzewa.");
 }
 
 function buildTreePayload(input: ReturnType<typeof createTreeSchema.parse>) {
@@ -74,23 +74,27 @@ export async function createTree(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby dodac drzewo.");
   }
 
   const plot = await readPlotByIdForOrchard(orchard.id, parsed.data.plot_id);
 
   if (!plot) {
-    return createErrorResult("VALIDATION_ERROR", "Choose a plot from the active orchard.", {
-      plot_id: "Choose a valid plot.",
-    });
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "Wybierz dzialke z aktywnego sadu.",
+      {
+        plot_id: "Wybierz poprawna dzialke.",
+      },
+    );
   }
 
   if (plot.status === "archived") {
     return createErrorResult(
       "PLOT_ARCHIVED",
-      "Trees cannot be saved to an archived plot.",
+      "Nie mozna zapisac drzewa na zarchiwizowanej dzialce.",
       {
-        plot_id: "Choose an active plot.",
+        plot_id: "Wybierz aktywna dzialke.",
       },
     );
   }
@@ -101,9 +105,9 @@ export async function createTree(
     if (!variety) {
       return createErrorResult(
         "VALIDATION_ERROR",
-        "Choose a variety from the active orchard.",
+        "Wybierz odmiane z aktywnego sadu.",
         {
-          variety_id: "Choose a valid variety.",
+          variety_id: "Wybierz poprawna odmiane.",
         },
       );
     }
@@ -126,7 +130,10 @@ export async function createTree(
   const tree = await readTreeByIdForOrchard(orchard.id, data.id);
 
   if (!tree) {
-    return createErrorResult("TREE_MUTATION_FAILED", "Tree saved but could not be reloaded.");
+    return createErrorResult(
+      "TREE_MUTATION_FAILED",
+      "Drzewo zostalo zapisane, ale nie udalo sie go ponownie odczytac.",
+    );
   }
 
   revalidatePath("/trees");
@@ -147,29 +154,33 @@ export async function updateTree(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby zapisac drzewo.");
   }
 
   const existingTree = await readTreeByIdForOrchard(orchard.id, parsed.data.tree_id);
 
   if (!existingTree) {
-    return createErrorResult("NOT_FOUND", "Tree not found.");
+    return createErrorResult("NOT_FOUND", "Nie znaleziono wybranego drzewa.");
   }
 
   const plot = await readPlotByIdForOrchard(orchard.id, parsed.data.plot_id);
 
   if (!plot) {
-    return createErrorResult("VALIDATION_ERROR", "Choose a plot from the active orchard.", {
-      plot_id: "Choose a valid plot.",
-    });
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "Wybierz dzialke z aktywnego sadu.",
+      {
+        plot_id: "Wybierz poprawna dzialke.",
+      },
+    );
   }
 
   if (plot.status === "archived") {
     return createErrorResult(
       "PLOT_ARCHIVED",
-      "Trees cannot be saved to an archived plot.",
+      "Nie mozna zapisac drzewa na zarchiwizowanej dzialce.",
       {
-        plot_id: "Choose an active plot.",
+        plot_id: "Wybierz aktywna dzialke.",
       },
     );
   }
@@ -180,9 +191,9 @@ export async function updateTree(
     if (!variety) {
       return createErrorResult(
         "VALIDATION_ERROR",
-        "Choose a variety from the active orchard.",
+        "Wybierz odmiane z aktywnego sadu.",
         {
-          variety_id: "Choose a valid variety.",
+          variety_id: "Wybierz poprawna odmiane.",
         },
       );
     }

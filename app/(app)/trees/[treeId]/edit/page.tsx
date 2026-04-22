@@ -41,16 +41,17 @@ export default async function EditTreePage({ params }: EditTreePageProps) {
       <div className="grid gap-6">
         <Card className="grid gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-            Edit tree
+            Edycja drzewa
           </p>
-          <CardTitle>No active plot available</CardTitle>
+          <CardTitle>Brak aktywnej dzialki</CardTitle>
           <CardDescription>
-            This tree can no longer be saved because the orchard does not have any active plot available. Create or restore a plot first.
+            Tego drzewa nie da sie teraz zapisac, bo w sadzie nie ma zadnej
+            aktywnej dzialki. Najpierw utworz lub przywroc dzialke.
           </CardDescription>
           <div className="flex flex-wrap gap-3">
-            <LinkButton href="/plots/new">Create plot</LinkButton>
+            <LinkButton href="/plots/new">Utworz dzialke</LinkButton>
             <LinkButton href="/trees" variant="secondary">
-              Back to trees
+              Wroc do drzew
             </LinkButton>
           </div>
         </Card>
@@ -62,13 +63,14 @@ export default async function EditTreePage({ params }: EditTreePageProps) {
     <div className="grid gap-6">
       <Card className="grid gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Edit tree
+          Edycja drzewa
         </p>
         <CardTitle>
-          {tree.display_name ?? tree.tree_code ?? `${tree.species} tree`}
+          {tree.display_name ?? tree.tree_code ?? `${tree.species} drzewo`}
         </CardTitle>
         <CardDescription>
-          Update placement, health, and baseline location details for this tree.
+          Zmien polozenie, kondycje i podstawowe informacje lokalizacyjne tego
+          drzewa.
         </CardDescription>
       </Card>
       <TreeForm
@@ -76,7 +78,7 @@ export default async function EditTreePage({ params }: EditTreePageProps) {
         mode="edit"
         plotHint={
           selectedPlotIsArchived
-            ? "The current plot is archived. Choose an active plot before saving."
+            ? "Obecna dzialka jest zarchiwizowana. Przed zapisem wybierz aktywna dzialke."
             : undefined
         }
         plotOptions={activePlots}

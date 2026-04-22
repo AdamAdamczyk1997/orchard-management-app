@@ -24,6 +24,10 @@ dokumenty z `documents/archive/` zachowujemy jako kontekst historyczny, ale nie 
   Lokalizacja: [`documents/00_overview_and_checklists/local_dev_tools_quickstart.md`](./local_dev_tools_quickstart.md)
   Praktyczna sciaga do lokalnej pracy z `node`, `pnpm`, `docker` i `supabase`, z podzialem na komendy bezpieczne diagnostycznie i komendy zmieniajace lokalny stan projektu.
 
+- [x] `session_handoff.md`
+  Lokalizacja: [`documents/00_overview_and_checklists/session_handoff.md`](./session_handoff.md)
+  Krotki plik przekazania stanu projektu do nowego chatu lub nowej sesji, z czescia stabilna i polami `UZUPELNIJ SAM`.
+
 - [x] `mvp_scope_and_priorities.md`
   Lokalizacja: [`documents/02_product_documents/mvp_scope_and_priorities.md`](../02_product_documents/mvp_scope_and_priorities.md)
   Co ma wejsc do wersji 0.1, co do 0.2, a co zostaje poza MVP.

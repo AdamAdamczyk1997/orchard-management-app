@@ -82,7 +82,7 @@ Backend tooling, UI shell scaffolding, and documentation cleanup can run in para
 
 - [x] Establish the migration workflow based on [schema_migration_plan.md](../05_technical/schema_migration_plan.md).
 - [x] Decide the shared `updated_at` trigger strategy and add it to the base setup if used globally.
-- [ ] Prepare local Supabase development workflow and a repeatable reset path for schema + seed.
+- [x] Prepare local Supabase development workflow and a repeatable reset path for schema + seed.
 
 #### Backend / server actions
 
@@ -112,7 +112,7 @@ Backend tooling, UI shell scaffolding, and documentation cleanup can run in para
 
 - [x] Set up the baseline test stack from [test_plan.md](../07_security_and_quality/test_plan.md).
 - [x] Prepare a seed strategy for local development and integration tests.
-- [ ] Add CI checks for `typecheck`, `lint`, and at least the first unit/integration test entrypoints.
+- [x] Add CI checks for `typecheck`, `lint`, and at least the first unit/integration test entrypoints.
 
 #### Documentation sync
 
@@ -190,7 +190,8 @@ Auth UI, onboarding UI, and membership screens can proceed in parallel once the 
 
 - [x] Implement `signUp`, `signIn`, `signOut`, `resetPassword`, `getCurrentProfile`, and `updateProfile`.
 - [x] Implement `createOrchard`, `listMyOrchards`, `getActiveOrchardContext`, and `setActiveOrchard`.
-- [ ] Implement `updateOrchard`, `listOrchardMembers`, `inviteOrchardMember`, `updateOrchardMembershipRole`, and `deactivateOrchardMembership`.
+- [x] Implement `updateOrchard`, `listOrchardMembers`, `inviteOrchardMember`, and `deactivateOrchardMembership`.
+- [ ] Implement `updateOrchardMembershipRole`.
 - [x] Make `ActiveOrchardContext` the standard server-side input for protected layouts and orchard-aware screens.
 
 #### Frontend / UI
@@ -198,8 +199,8 @@ Auth UI, onboarding UI, and membership screens can proceed in parallel once the 
 - [x] Build the auth flow screens and protected app shell.
 - [x] Build the `Create orchard` onboarding screen for first login without membership.
 - [x] Build the orchard switcher and `No active orchard` / `No orchard yet` states.
-- [ ] Build `Orchard members` list and invite form.
-- [ ] Build orchard settings/edit flow.
+- [x] Build `Orchard members` list and invite form.
+- [x] Build orchard settings/edit flow.
 
 #### Authorization / RLS
 
@@ -212,7 +213,8 @@ Auth UI, onboarding UI, and membership screens can proceed in parallel once the 
 
 - [x] Validate one active `owner` per orchard in MVP.
 - [ ] Validate invite/update membership role transitions.
-- [ ] Implement `NO_ACTIVE_ORCHARD`, `ORCHARD_MEMBERSHIP_REQUIRED`, and `ORCHARD_ONBOARDING_REQUIRED`.
+- [x] Implement `NO_ACTIVE_ORCHARD` and `ORCHARD_ONBOARDING_REQUIRED`.
+- [ ] Implement `ORCHARD_MEMBERSHIP_REQUIRED`.
 - [x] Enforce that "Never show again" only dismisses onboarding guidance and does not bypass first orchard creation.
 
 #### Testing / seed data
@@ -402,18 +404,18 @@ Activity form implementation, summaries, and test cases can progress in parallel
 
 #### Backend / server actions
 
-- [ ] Implement `listActivities`, `getActivityDetails`, `createActivity`, `updateActivity`, `changeActivityStatus`, and `deleteActivity`.
+- [x] Implement `listActivities`, `getActivityDetails`, `createActivity`, `updateActivity`, `changeActivityStatus`, and `deleteActivity`.
 - [ ] Implement `getSeasonalActivitySummary` and `getSeasonalActivityCoverage`.
-- [ ] Save `activities`, `activity_scopes`, and `activity_materials` transactionally as one logical operation.
-- [ ] Ensure `performed_by_profile_id` resolves only to active membership within the same orchard.
+- [x] Save `activities`, `activity_scopes`, and `activity_materials` transactionally as one logical operation.
+- [x] Ensure `performed_by_profile_id` resolves only to active membership within the same orchard.
 
 #### Frontend / UI
 
-- [ ] Build the activity list with filters by type, status, date, plot, and performer.
-- [ ] Build the activity form supporting multiple scopes and multiple materials.
-- [ ] Build UI for `winter_pruning` and `summer_pruning` as explicit `activity_subtype` choices.
-- [ ] Build UI for `mowing` on a whole plot or selected rows.
-- [ ] Build UI for `spraying` with materials, quantities, units, weather notes, and result notes.
+- [x] Build the activity list with filters by type, status, date, plot, and performer.
+- [x] Build the activity form supporting multiple scopes and multiple materials.
+- [x] Build UI for `winter_pruning` and `summer_pruning` as explicit `activity_subtype` choices.
+- [x] Build UI for `mowing` on a whole plot or selected rows.
+- [x] Build UI for `spraying` with materials, quantities, units, weather notes, and result notes.
 - [ ] Build details views and progress/history views for seasonal work.
 
 #### Authorization / RLS
@@ -428,20 +430,20 @@ Activity form implementation, summaries, and test cases can progress in parallel
 - [x] Enforce `activity_subtype` for pruning in MVP.
 - [x] Enforce valid `activity_scopes` per `scope_level`.
 - [x] Enforce plot/tree consistency and same-orchard performer membership.
-- [ ] Map `ACTIVITY_SCOPE_INVALID`, `PRUNING_SUBTYPE_REQUIRED`, `TREE_NOT_IN_PLOT`, and related business errors.
+- [x] Map `ACTIVITY_SCOPE_INVALID`, `PRUNING_SUBTYPE_REQUIRED`, `TREE_NOT_IN_PLOT`, and related business errors.
 
 #### Testing / seed data
 
-- [ ] Add unit tests for `season_year`, `season_phase`, scope validation, and activity summaries.
-- [ ] Add integration tests for transactional writes of activities with scopes and materials.
+- [x] Add unit tests for `season_year`, `season_phase`, scope validation, and activity summaries.
+- [x] Add integration tests for transactional writes of activities with scopes and materials.
 - [ ] Add E2E coverage for multi-scope spraying, pruning with subtype, and plot-wide mowing.
 - [x] Extend seed data with repeated activities performed by different profiles across one season.
 
 #### Documentation sync
 
-- [ ] Keep activity behavior aligned with [business_rules.md](../03_domain_and_business_rules/business_rules.md) and [statuses_and_lifecycles.md](../03_domain_and_business_rules/statuses_and_lifecycles.md).
-- [ ] Keep the activity form aligned with [forms_and_fields.md](../04_ux_and_screen_design/forms_and_fields.md).
-- [ ] Keep activity filters, route flow, and UI states aligned with the UX documents.
+- [x] Keep activity behavior aligned with [business_rules.md](../03_domain_and_business_rules/business_rules.md) and [statuses_and_lifecycles.md](../03_domain_and_business_rules/statuses_and_lifecycles.md).
+- [x] Keep the activity form aligned with [forms_and_fields.md](../04_ux_and_screen_design/forms_and_fields.md).
+- [x] Keep activity filters, route flow, and UI states aligned with the UX documents.
 
 **Deliverables**
 
@@ -618,7 +620,7 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 - [ ] Implement or finalize dashboard-level reads such as `getDashboardSummary`, `getRecentActivities`, and `getUpcomingActivities`.
 - [ ] Review server-action responses for consistent `ActionResult<T>` behavior.
-- [ ] Confirm `exportAccountData` stays deferred to Phase 6 and is not accidentally exposed in MVP.
+- [x] Confirm `exportAccountData` stays deferred to Phase 6 and is not accidentally exposed in MVP.
 
 #### Frontend / UI
 
@@ -630,7 +632,7 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 #### Authorization / RLS
 
 - [x] Run a full RLS review across `profiles`, `orchards`, `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials`, and `harvest_records`.
-- [ ] Confirm `worker` cannot manage memberships or export account data.
+- [x] Confirm `worker` cannot manage memberships or export account data.
 - [x] Confirm `super_admin`, `owner`, and `worker` behavior matches the current access matrix.
 
 #### Validation / error handling
@@ -644,7 +646,7 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 - [ ] Complete regression coverage for the critical end-to-end flows.
 - [x] Finalize the local/demo seed dataset for onboarding, orchard structure, activities, and harvests.
 - [ ] Run a focused security and isolation test pass for cross-orchard access.
-- [ ] Confirm the minimal CI gate for merge and release readiness.
+- [x] Confirm the minimal CI gate for merge and release readiness.
 
 #### Documentation sync
 
@@ -862,8 +864,8 @@ Rationale:
 
 ### Foundation ready
 
-- [ ] Repo structure, environment setup, migration workflow, and test baseline are documented and working.
-- [ ] Active source-of-truth documents are known and linked.
+- [x] Repo structure, environment setup, migration workflow, and test baseline are documented and working.
+- [x] Active source-of-truth documents are known and linked.
 
 ### Identity and orchard context ready
 
@@ -874,15 +876,15 @@ Rationale:
 
 ### Core orchard structure ready
 
-- [ ] `plots`, `varieties`, and `trees` CRUD flows work inside the active orchard.
-- [ ] Constraints and indexes cover uniqueness and core integrity rules.
-- [ ] `owner` and `worker` permissions behave as expected.
+- [x] `plots`, `varieties`, and `trees` CRUD flows work inside the active orchard.
+- [x] Constraints and indexes cover uniqueness and core integrity rules.
+- [x] `owner` and `worker` permissions behave as expected.
 
 ### Seasonal activities ready
 
-- [ ] Activities, scopes, and materials save and load transactionally.
-- [ ] Pruning subtype, spraying materials, and multi-scope activity rules are enforced.
-- [ ] Field-work history and filtering are usable on mobile.
+- [x] Activities, scopes, and materials save and load transactionally.
+- [x] Pruning subtype, spraying materials, and multi-scope activity rules are enforced.
+- [x] Field-work history and filtering are usable on mobile.
 
 ### Harvest and season summary ready
 

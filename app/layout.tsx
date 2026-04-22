@@ -4,7 +4,15 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "OrchardLog / Sadownik+",
-  description: "Orchard management workspace for OrchardLog / Sadownik+.",
+  description: "Przestrzen do zarzadzania sadem w OrchardLog / Sadownik+.",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        type: "image/svg+xml",
+      },
+    ],
+  },
 };
 
 type RootLayoutProps = Readonly<{

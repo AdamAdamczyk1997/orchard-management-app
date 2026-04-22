@@ -10,9 +10,10 @@ export function VarietyList({ varieties }: VarietyListProps) {
   if (varieties.length === 0) {
     return (
       <Card className="grid gap-3">
-        <CardTitle>No varieties yet</CardTitle>
+        <CardTitle>Brak odmian</CardTitle>
         <CardDescription>
-          Add the first variety so trees and later harvest records can reference orchard-specific variety data.
+          Dodaj pierwsza odmiane, aby drzewa i przyszle wpisy zbioru mogly
+          korzystac z danych odmianowych przypisanych do sadu.
         </CardDescription>
       </Card>
     );
@@ -27,25 +28,25 @@ export function VarietyList({ varieties }: VarietyListProps) {
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-lg">{variety.name}</CardTitle>
                 <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
-                  {variety.species}
+                {variety.species}
                 </span>
                 {variety.is_favorite ? (
                   <span className="rounded-full border border-[#dfd3bb] px-3 py-1 text-xs font-medium text-[#5b6155]">
-                    Favorite
+                    Ulubiona
                   </span>
                 ) : null}
               </div>
               <CardDescription>
                 {variety.ripening_period
-                  ? `Ripening: ${variety.ripening_period}`
-                  : "No ripening period noted yet."}
+                  ? `Dojrzewanie: ${variety.ripening_period}`
+                  : "Brak zapisanego okresu dojrzewania."}
               </CardDescription>
             </div>
             <Link
               className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
               href={`/varieties/${variety.id}/edit`}
             >
-              Edit
+              Edytuj
             </Link>
           </div>
           {variety.description ? (
@@ -53,12 +54,12 @@ export function VarietyList({ varieties }: VarietyListProps) {
           ) : null}
           <div className="grid gap-2 text-sm text-[#5b6155] sm:grid-cols-2">
             <p>
-              <span className="font-medium text-[#304335]">Origin:</span>{" "}
-              {variety.origin_country ?? "Not set"}
+              <span className="font-medium text-[#304335]">Pochodzenie:</span>{" "}
+              {variety.origin_country ?? "Brak"}
             </p>
             <p>
-              <span className="font-medium text-[#304335]">Resistance notes:</span>{" "}
-              {variety.resistance_notes ?? "Not set"}
+              <span className="font-medium text-[#304335]">Odpornosc:</span>{" "}
+              {variety.resistance_notes ?? "Brak"}
             </p>
           </div>
         </Card>

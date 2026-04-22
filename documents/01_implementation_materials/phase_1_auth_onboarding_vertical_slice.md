@@ -28,6 +28,8 @@ Use it together with:
 - protected shell:
   - `/dashboard`
   - `/settings/profile`
+  - `/settings/orchard`
+  - `/settings/members`
 - `active_orchard` resolution and persistence
 - server actions:
   - `signUp`
@@ -40,6 +42,10 @@ Use it together with:
   - `listMyOrchards`
   - `getActiveOrchardContext`
   - `setActiveOrchard`
+  - `updateOrchard`
+  - `listOrchardMembers`
+  - `inviteOrchardMember`
+  - `deactivateOrchardMembership`
 - SQL RPC:
   - `create_orchard_with_owner_membership(...)`
 
@@ -175,7 +181,6 @@ Cookie policy:
 ## Deferred items
 
 - membership management UI
-- orchard edit/settings UI beyond profile settings
 - standalone global admin UI for `super_admin`
 - full password recovery flow
 - domain CRUD modules:

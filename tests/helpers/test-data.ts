@@ -156,6 +156,64 @@ export async function addWorkerMembership(options: {
   };
 }
 
+export async function inviteOrchardMemberByEmailAsUser(
+  client: SupabaseClient<any>,
+  input: {
+    orchardId: string;
+    email: string;
+    role?: "worker" | "manager" | "viewer";
+  },
+) {
+  const { data, error } = await client
+    .rpc("invite_orchard_member_by_email", {
+      p_orchard_id: input.orchardId,
+      p_email: input.email,
+      p_role: input.role ?? "worker",
+    })
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    membership_id: string;
+    orchard_id: string;
+    profile_id: string;
+    email: string;
+    display_name: string | null;
+    role: "owner" | "worker" | "manager" | "viewer";
+    status: "invited" | "active" | "revoked";
+    joined_at: string | null;
+  };
+}
+
+export async function updateMembershipAsAdmin(options: {
+  membershipId: string;
+  patch: Record<string, unknown>;
+}) {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("orchard_memberships")
+    .update(options.patch)
+    .eq("id", options.membershipId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    id: string;
+    orchard_id: string;
+    profile_id: string;
+    role: "owner" | "worker" | "manager" | "viewer";
+    status: "invited" | "active" | "revoked";
+    joined_at: string | null;
+  };
+}
+
 export async function createPlotAsUser(
   client: SupabaseClient<any>,
   input: {
@@ -381,6 +439,58 @@ export async function updateTreeAsUser(
     position_in_row: number | null;
     condition_status: "new" | "good" | "warning" | "critical" | "removed";
     is_active: boolean;
+  };
+}
+
+export async function createActivityAsUser(
+  client: SupabaseClient<any>,
+  input: {
+    parent: Record<string, unknown>;
+    scopes?: Array<Record<string, unknown>>;
+    materials?: Array<Record<string, unknown>>;
+  },
+) {
+  const { data, error } = await client
+    .rpc("create_activity_with_children", {
+      p_parent: input.parent,
+      p_scopes: input.scopes ?? [],
+      p_materials: input.materials ?? [],
+    })
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    activity_id: string;
+  };
+}
+
+export async function updateActivityAsUser(
+  client: SupabaseClient<any>,
+  input: {
+    activityId: string;
+    parent: Record<string, unknown>;
+    scopes?: Array<Record<string, unknown>>;
+    materials?: Array<Record<string, unknown>>;
+  },
+) {
+  const { data, error } = await client
+    .rpc("update_activity_with_children", {
+      p_activity_id: input.activityId,
+      p_parent: input.parent,
+      p_scopes: input.scopes ?? [],
+      p_materials: input.materials ?? [],
+    })
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    activity_id: string;
   };
 }
 

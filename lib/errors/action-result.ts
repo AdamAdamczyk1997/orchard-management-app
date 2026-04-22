@@ -31,7 +31,7 @@ export function createErrorResult<T>(
 
 export function createValidationErrorResult<T>(
   error: ZodError,
-  message = "Please correct the highlighted fields.",
+  message = "Sprawdz formularz i popraw zaznaczone pola.",
 ): ActionResult<T> {
   const field_errors = error.issues.reduce<Record<string, string>>(
     (accumulator, issue) => {

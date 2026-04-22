@@ -19,13 +19,14 @@ type PlotFormProps = {
   action: PlotFormAction;
   mode: "create" | "edit";
   plot?: PlotSummary;
+  suggestedCode?: string;
 };
 
 const initialPlotFormState: ActionResult<PlotSummary> = {
   success: false,
 };
 
-export function PlotForm({ action, mode, plot }: PlotFormProps) {
+export function PlotForm({ action, mode, plot, suggestedCode }: PlotFormProps) {
   const [state, formAction] = useActionState(action, initialPlotFormState);
 
   return (
@@ -33,25 +34,29 @@ export function PlotForm({ action, mode, plot }: PlotFormProps) {
       {mode === "edit" && plot ? (
         <input name="plot_id" type="hidden" value={plot.id} />
       ) : null}
-      <Field error={state.field_errors?.name} htmlFor="name" label="Plot name">
+      <Field error={state.field_errors?.name} htmlFor="name" label="Nazwa dzialki">
         <Input
           defaultValue={plot?.name ?? ""}
           id="name"
           name="name"
-          placeholder="e.g. North Block"
+          placeholder="np. Kwatera Polnocna"
         />
       </Field>
       <Field
         error={state.field_errors?.code}
-        hint="Optional short code used in lists."
+        hint={
+          suggestedCode && mode === "create"
+            ? `Proponowany kolejny kod: ${suggestedCode}`
+            : "Opcjonalny skrot widoczny na listach."
+        }
         htmlFor="code"
-        label="Code"
+        label="Kod"
       >
         <Input
-          defaultValue={plot?.code ?? ""}
+          defaultValue={plot?.code ?? suggestedCode ?? ""}
           id="code"
           name="code"
-          placeholder="e.g. N-01"
+          placeholder="np. DZ-01"
         />
       </Field>
       <Field
@@ -60,28 +65,28 @@ export function PlotForm({ action, mode, plot }: PlotFormProps) {
         label="Status"
       >
         <Select defaultValue={plot?.status ?? "active"} id="status" name="status">
-          <option value="active">Active</option>
-          <option value="planned">Planned</option>
-          <option value="archived">Archived</option>
+          <option value="active">Aktywna</option>
+          <option value="planned">Planowana</option>
+          <option value="archived">Zarchiwizowana</option>
         </Select>
       </Field>
       <Field
         error={state.field_errors?.location_name}
         htmlFor="location_name"
-        label="Location name"
+        label="Opis lokalizacji"
       >
         <Input
           defaultValue={plot?.location_name ?? ""}
           id="location_name"
           name="location_name"
-          placeholder="e.g. North side by the road"
+          placeholder="np. Po polnocnej stronie przy drodze"
         />
       </Field>
       <Field
         error={state.field_errors?.area_m2}
         htmlFor="area_m2"
-        hint="Optional size in square meters."
-        label="Area (m2)"
+        hint="Opcjonalna powierzchnia w metrach kwadratowych."
+        label="Powierzchnia (m2)"
       >
         <Input
           defaultValue={plot?.area_m2 ?? ""}
@@ -95,46 +100,46 @@ export function PlotForm({ action, mode, plot }: PlotFormProps) {
       <Field
         error={state.field_errors?.soil_type}
         htmlFor="soil_type"
-        label="Soil type"
+        label="Typ gleby"
       >
         <Input
           defaultValue={plot?.soil_type ?? ""}
           id="soil_type"
           name="soil_type"
-          placeholder="e.g. clay loam"
+          placeholder="np. glina pylasta"
         />
       </Field>
       <Field
         error={state.field_errors?.irrigation_type}
         htmlFor="irrigation_type"
-        label="Irrigation type"
+        label="Typ nawadniania"
       >
         <Input
           defaultValue={plot?.irrigation_type ?? ""}
           id="irrigation_type"
           name="irrigation_type"
-          placeholder="e.g. drip line"
+          placeholder="np. linia kroplujaca"
         />
       </Field>
       <Field
         error={state.field_errors?.description}
         htmlFor="description"
-        label="Description"
+        label="Opis"
       >
         <Textarea
           defaultValue={plot?.description ?? ""}
           id="description"
           name="description"
-          placeholder="Optional notes about this plot."
+          placeholder="Opcjonalne notatki o tej dzialce."
         />
       </Field>
       <FormMessage state={state} />
       <div className="flex flex-wrap gap-3">
-        <SubmitButton pendingLabel={mode === "create" ? "Creating plot..." : "Saving plot..."}>
-          {mode === "create" ? "Create plot" : "Save plot"}
+        <SubmitButton pendingLabel={mode === "create" ? "Tworzenie dzialki..." : "Zapisywanie dzialki..."}>
+          {mode === "create" ? "Utworz dzialke" : "Zapisz dzialke"}
         </SubmitButton>
         <LinkButton href="/plots" variant="secondary">
-          Back to plots
+          Wroc do dzialek
         </LinkButton>
       </div>
     </form>

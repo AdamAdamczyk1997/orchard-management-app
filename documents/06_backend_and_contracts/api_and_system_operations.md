@@ -40,8 +40,8 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 | `setActiveOrchard` | zmiana kontekstu pracy | `orchard_id` | nowy aktywny kontekst sesji | 0.1 |
 | `updateOrchard` | edycja podstawowych danych orchard | `orchard_id` + dane formularza | zaktualizowany rekord `orchards` | 0.1 |
 | `listOrchardMembers` | lista membership orchard | `orchard_id` opcjonalnie, zwykle z contextu | lista `orchard_memberships` | 0.1 |
-| `inviteOrchardMember` | zaproszenie nowego czlonka | email, role | nowy lub zaktualizowany membership `invited` | 0.1 |
-| `updateOrchardMembershipRole` | zmiana roli czlonka | `membership_id`, `role` | zaktualizowany membership | 0.1 |
+| `inviteOrchardMember` | dodanie istniejacego czlonka do orchard | email, role | nowy lub zreaktywowany membership `active` | 0.1 |
+| `updateOrchardMembershipRole` | zmiana roli czlonka | `membership_id`, `role` | zaktualizowany membership | pozniej |
 | `deactivateOrchardMembership` | odwolanie lub dezaktywacja membership | `membership_id` | membership ze statusem `revoked` | 0.1 |
 
 ### Zalecana walidacja dla orchard i membership
@@ -53,6 +53,9 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - `worker` nie moze wykonywac mutacji na `orchard_memberships`
 - w MVP jeden `orchard` ma dokladnie jednego aktywnego `owner`
 - w Phase 1 nie ma osobnego admin shell dla `super_admin` bez membership
+- obecny UI MVP dla `inviteOrchardMember` wspiera tylko dodanie istniejacego konta
+  jako `worker`; pelny flow `invited -> acceptance` pozostaje odlozony
+- przy probie ponownego dodania tego samego usera aktywny duplikat jest blokowany, a `revoked` membership jest reaktywowany
 
 ## 3. Operacje dla dzialek
 
@@ -151,6 +154,8 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - `performed_by_profile_id`, jesli ustawione, musi nalezec do tego samego `orchard`
 - dla `activity_type = 'pruning'` w MVP wymagane jest `activity_subtype`
 - `activity_scopes` powinny byc zapisywane transakcyjnie razem z rekordem `activities`
+- dedykowane sezonowe flow `pruning`, `mowing` i `spraying` powinny zapisywac co najmniej
+  jeden rekord `activity_scopes`; dla calej dzialki powinien to byc scope `plot`
 - dla `scope_level = 'tree'` `tree_id` w `activity_scopes` musi nalezec do tej samej dzialki co `plot_id`
 - dla `scope_level = 'location_range'` wymagane sa `row_number`, `from_position`, `to_position`
 - jedna aktywnosc moze miec wiele `activity_scopes`, ale wszystkie musza nalezec do tej samej dzialki glownej

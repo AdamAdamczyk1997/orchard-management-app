@@ -15,11 +15,12 @@ export default async function ProfileSettingsPage() {
     <Card className="grid gap-5">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Account settings
+          Ustawienia konta
         </p>
-        <CardTitle>Profile</CardTitle>
+        <CardTitle>Profil</CardTitle>
         <CardDescription>
-          This page updates user-level information only. Orchard working context and membership stay separate.
+          Tutaj edytujesz dane konta uzytkownika. Kontekst pracy w sadzie i
+          czlonkostwa pozostaja oddzielone od ustawien profilu.
         </CardDescription>
       </div>
       <ProfileForm profile={profile} />

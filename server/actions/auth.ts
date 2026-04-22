@@ -42,13 +42,13 @@ export async function signUp(
   });
 
   if (error) {
-    return createErrorResult("AUTH_SIGN_UP_FAILED", error.message);
+    return createErrorResult("AUTH_SIGN_UP_FAILED", "Nie udalo sie utworzyc konta.");
   }
 
   if (!data.session) {
     return createSuccessResult(
       null,
-      "Account created. Confirm your email to continue.",
+      "Konto zostalo utworzone. Potwierdz adres email, aby kontynuowac.",
     );
   }
 
@@ -74,7 +74,7 @@ export async function signIn(
   if (error) {
     return createErrorResult(
       "UNAUTHORIZED",
-      "Invalid email or password.",
+      "Nieprawidlowy email lub haslo.",
     );
   }
 
@@ -100,12 +100,15 @@ export async function resetPassword(
   );
 
   if (error) {
-    return createErrorResult("AUTH_RESET_PASSWORD_FAILED", error.message);
+    return createErrorResult(
+      "AUTH_RESET_PASSWORD_FAILED",
+      "Nie udalo sie wyslac linku resetujacego.",
+    );
   }
 
   return createSuccessResult(
     null,
-    "Password reset link sent. Check your inbox.",
+    "Link do resetu hasla zostal wyslany. Sprawdz skrzynke mailowa.",
   );
 }
 

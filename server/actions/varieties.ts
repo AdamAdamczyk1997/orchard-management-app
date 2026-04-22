@@ -27,14 +27,14 @@ function mapVarietyMutationError<T>(error: PostgrestError): ActionResult<T> {
   ) {
     return createErrorResult(
       "DUPLICATE_VARIETY",
-      "This variety already exists for the same species in the active orchard.",
+      "Taka odmiana dla tego gatunku jest juz zapisana w aktywnym sadzie.",
       {
-        name: "Choose a different variety name.",
+        name: "Wybierz inna nazwe odmiany.",
       },
     );
   }
 
-  return createErrorResult("VARIETY_MUTATION_FAILED", error.message);
+  return createErrorResult("VARIETY_MUTATION_FAILED", "Nie udalo sie zapisac odmiany.");
 }
 
 export async function createVariety(
@@ -51,7 +51,7 @@ export async function createVariety(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby dodac odmiane.");
   }
 
   const supabase = await createSupabaseServerClient();
@@ -95,7 +95,7 @@ export async function updateVariety(
   const orchard = context.orchard;
 
   if (!orchard) {
-    return createErrorResult("NO_ACTIVE_ORCHARD", "Active orchard is required.");
+    return createErrorResult("NO_ACTIVE_ORCHARD", "Wybierz sad, aby zapisac odmiane.");
   }
 
   const existingVariety = await readVarietyByIdForOrchard(
@@ -104,7 +104,7 @@ export async function updateVariety(
   );
 
   if (!existingVariety) {
-    return createErrorResult("NOT_FOUND", "Variety not found.");
+    return createErrorResult("NOT_FOUND", "Nie znaleziono wybranej odmiany.");
   }
 
   const supabase = await createSupabaseServerClient();
