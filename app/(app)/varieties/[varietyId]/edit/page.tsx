@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { VarietyForm } from "@/features/varieties/variety-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readVarietyByIdForOrchard } from "@/lib/orchard-data/varieties";
@@ -15,17 +15,17 @@ export default async function EditVarietyPage({
   params,
 }: EditVarietyPageProps) {
   const context = await requireActiveOrchard("/varieties");
-  const orchard = context.orchard;
-
-  if (!orchard) {
-    throw new Error("Active orchard is required for variety editing.");
-  }
-
   const { varietyId } = await params;
-  const variety = await readVarietyByIdForOrchard(orchard.id, varietyId);
+  const variety = await readVarietyByIdForOrchard(context.orchard.id, varietyId);
 
   if (!variety) {
-    redirect("/varieties");
+    return (
+      <RecordNotFoundCard
+        backHref="/varieties"
+        description="Nie da sie edytowac tej odmiany, bo nie istnieje w aktywnym sadzie albo zostala juz usunieta."
+        title="Nie znaleziono odmiany do edycji"
+      />
+    );
   }
 
   return (

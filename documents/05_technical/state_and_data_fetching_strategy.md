@@ -20,6 +20,7 @@ Preferowane dla:
 - list dzialek, drzew, odmian, aktywnosci i zbiorow
 - widokow szczegolow
 - raportow sezonowych
+- osadzonego na `/activities` panelu `summary + coverage`
 
 ### Client components
 
@@ -70,6 +71,10 @@ Warto przechowywac w URL:
 - typ aktywnosci
 - wyszukiwana fraze
 - gatunek lub odmiane
+- filtry `summary_*` dla sezonowego podsumowania aktywnosci
+
+Na `/activities` lista wpisow i sezonowe podsumowanie powinny utrzymywac
+niezalezne zestawy parametrow URL, tak aby zmiana jednego panelu nie gubila stanu drugiego.
 
 To pomaga zachowac:
 

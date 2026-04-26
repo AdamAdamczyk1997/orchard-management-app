@@ -23,7 +23,7 @@ W aktualnym vertical slice zostaly wdrozone lub domkniete projektowo przede wszy
 - `register`
 - `reset-password` jako request-reset flow
 - `create orchard / onboarding`
-- `dashboard` jako minimalny protected shell
+- `dashboard` jako pierwszy protected shell, pozniej rozbudowany w Phase 5A
 - `profile settings`
 - `orchard settings` jako owner-only screen
 - `members` jako owner-only screen
@@ -54,6 +54,87 @@ Swiadomie odlozone:
 - dedykowane detail pages dla `plots`
 - dedykowane detail pages dla `varieties`
 - dedykowane detail pages dla `trees`
+
+### Aktualizacja Phase 3
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `activities`:
+  - lista
+  - create
+  - edit
+  - detail
+  - filtry listy
+  - status / delete z detail view
+  - sezonowe `summary + coverage` osadzone bezposrednio na `/activities`
+
+Swiadomie rozdzielone od tego slice:
+
+- `reports/season-summary` pozostaje ekranem raportowania zbiorow
+- detail pages dla `plots` i `trees` nadal sa odlozone, wiec szczegoly aktywnosci pokazuja je tylko jako metadata text
+
+### Aktualizacja Phase 4A
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `harvests`:
+  - lista
+  - create
+  - edit
+  - detail
+  - filtry po sezonie, dacie, dzialce i odmianie
+  - delete jako korekta pomylki
+  - optional link do aktywnosci typu `harvest`
+  - harvestowe `Season Summary` i timeline na `/reports/season-summary`
+
+### Aktualizacja Phase 5A
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `dashboard`:
+  - realny snapshot aktywnego sadu zamiast placeholdera
+  - liczniki aktywnych dzialek i aktywnych drzew
+  - ostatnie aktywnosci
+  - ostatnie zbiory
+  - szybkie akcje do tworzenia rekordow
+  - wejscie do harvestowego `Season Summary`
+  - route-level loading skeleton
+  - onboardingowy empty state oraz partial empty state dla feedow
+
+Swiadomie odlozone do kolejnego kroku:
+
+- `upcoming_activities` i planningowy blok prac na dashboardzie
+- globalny audit empty/loading/error states poza dashboardem
+
+### Aktualizacja Phase 5B1
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `plots`, `varieties`, `trees`, `activities` i `harvests`:
+  - loading skeleton dla strony listy
+  - globalny empty state, gdy modul nie ma jeszcze rekordow
+  - osobny empty state dla `brak wynikow po filtrowaniu`
+  - CTA do utworzenia rekordu albo do czyszczenia filtrow
+
+Swiadomie odlozone do kolejnego kroku:
+
+- error states i permission-denied polish poza juz istniejącymi owner-only screenami
+- reczny seeded QA pass dla calosci MVP
+
+### Aktualizacja Phase 5B2a
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- krytyczne detail/edit/settings routes:
+  - zamiast cichego redirectu pokazuja czytelny `record not found` z CTA powrotu
+- `activities/new`, `trees/new` i `trees/[treeId]/edit`:
+  - korzystaja ze wspolnego widoku prerequisite, gdy przed zapisem brakuje dzialki albo aktywnej dzialki
+- owner-only settings zachowuja `AccessDenied`, ale missing-data states maja juz lagodny recovery UI zamiast surowego bledu
+
+Swiadomie odlozone do kolejnego kroku:
+
+- seeded QA pass dla calosci MVP
+- reszta permission/error polish poza ekranami objetymi tym slicem
 
 ### 1. Logowanie / rejestracja / reset hasla
 
@@ -101,9 +182,9 @@ Najwazniejsze elementy:
   - dodaj zbior
   - dla `owner`: przejscie do `Orchard settings` i `Orchard members`
 
-Uwaga Phase 1:
+Uwaga Phase 5A:
 
-- w pierwszym slice dashboard jest jeszcze swiadomie uproszczony i pelni role protected shell / landing page po onboardingu
+- dashboard nie jest juz placeholderem, ale nadal nie pokazuje osobnego bloku planowanych prac
 
 ### 3a. Profile settings
 
@@ -273,6 +354,7 @@ pokazac historie zdarzen i prac w czasie.
 Najwazniejsze elementy:
 
 - lista aktywnosci w kolejnosci od najnowszych
+- link z tytulu i glownego opisu wpisu do `/activities/[activityId]`
 - filtry:
   - data
   - dzialka
@@ -281,6 +363,62 @@ Najwazniejsze elementy:
   - status
   - wykonawca
 - szybkie dodanie wpisu
+
+### 13a. Szczegoly aktywnosci
+
+Cel:
+pokazac jeden wpis operacyjny razem z zapisanym zakresem wykonania i materialami.
+
+Najwazniejsze elementy:
+
+- naglowek z `title`, `status`, `activity_type`, opcjonalnym `activity_subtype` i data
+- metadata:
+  - dzialka
+  - drzewo opcjonalnie
+  - wykonawca
+  - `season_year`
+  - `season_phase`
+  - czas pracy
+  - koszt
+  - znaczniki utworzenia i aktualizacji
+- sekcje:
+  - `description`
+  - `weather_notes`
+  - `result_notes`
+  - lista `activity_scopes`
+  - lista `activity_materials`
+- akcje:
+  - `Powrot`
+  - `Edytuj`
+  - zmiana statusu bez opuszczania detail view
+  - `Usun aktywnosc`
+
+### 13b. Podsumowanie sezonowych prac
+
+Cel:
+pokazac na `/activities`, co zostalo faktycznie wykonane w sezonie dla `pruning`, `mowing` i `spraying`.
+
+Najwazniejsze elementy:
+
+- drugi, niezalezny od listy panel filtrow z query params `summary_*`
+- domyslnie:
+  - `summary_season_year = biezacy rok kalendarzowy`
+  - `summary_activity_type = pruning`
+- filtry:
+  - `summary_season_year`
+  - `summary_activity_type`
+  - `summary_activity_subtype` tylko dla `pruning`
+  - `summary_plot_id`
+  - `summary_performed_by_profile_id`
+- metryki:
+  - `total_done_count`
+  - liczba dzialek z wykonaniem
+  - rozklad po dzialkach z `last_activity_date`
+- coverage:
+  - aktywuje sie dopiero po wyborze `summary_plot_id`
+  - pokazuje tylko wpisy `done`
+  - opiera sie wylacznie na zapisanych `activity_scopes`
+  - grupuje wynik per `activity_id` i linkuje do `/activities/[activityId]`
 
 ### 14. Formularz aktywnosci
 
@@ -328,11 +466,35 @@ Najwazniejsze elementy:
 - dzialka opcjonalnie
 - odmiana opcjonalnie
 - zakres lokalizacji opcjonalnie
+- pojedyncze drzewo opcjonalnie
+- powiazana aktywnosc `harvest` opcjonalnie
 - ilosc
 - jednostka
 - notatki
 
-### 17. Season summary
+### 16a. Szczegoly wpisu zbioru
+
+Cel:
+pokazac jeden wpis `harvest_records` razem z zakresem, iloscia zrodlowa i wartoscia znormalizowana.
+
+Najwazniejsze elementy:
+
+- naglowek z data zbioru, `scope_level` i iloscia
+- metadata:
+  - dzialka
+  - odmiana
+  - drzewo opcjonalnie
+  - sekcja / rzad / pozycje dla `location_range`
+  - `quantity_kg`
+  - autor wpisu
+  - znaczniki utworzenia i aktualizacji
+- opcjonalny link do powiazanej aktywnosci typu `harvest`
+- akcje:
+  - `Powrot`
+  - `Edytuj`
+  - `Usun wpis zbioru`
+
+### 17. Podsumowanie sezonu zbiorow
 
 Cel:
 pokazac podsumowanie zbiorow w sezonie.
@@ -340,11 +502,24 @@ pokazac podsumowanie zbiorow w sezonie.
 Najwazniejsze elementy:
 
 - wybor `season_year`
+- filtr po dzialce opcjonalny
+- filtr po odmianie opcjonalny
 - suma globalna
+- liczba wpisow
 - suma per odmiana
 - suma per dzialka
 - historia w czasie
 - link do listy wpisow zbioru
+
+Zasady agregacji:
+
+- suma globalna i timeline licza wszystkie rekordy po aktywnych filtrach
+- zestawienie per odmiana pokazuje tylko rekordy z przypisana odmiana
+- zestawienie per dzialka pokazuje tylko rekordy z przypisana dzialka
+
+Uwaga implementacyjna:
+
+- ten ekran pozostaje harvestowy; sezonowe raportowanie `activities` jest osadzone na `/activities`, a nie na `/reports/season-summary`
 
 ### 18. Orchard members
 

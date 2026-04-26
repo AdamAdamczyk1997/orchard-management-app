@@ -1,5 +1,6 @@
 import type {
   ActivityPruningSubtype,
+  ActivityScopeSummary,
   ActivityScopeLevel,
   ActivityStatus,
   ActivityType,
@@ -98,6 +99,31 @@ export function getActivityPruningSubtypeLabel(
   subtype: ActivityPruningSubtype,
 ) {
   return activityPruningSubtypeLabels[subtype];
+}
+
+export function formatActivityScopeLabel(scope: ActivityScopeSummary) {
+  switch (scope.scope_level) {
+    case "plot":
+      return "Cala dzialka";
+    case "section":
+      return scope.section_name ? `Sekcja ${scope.section_name}` : "Sekcja";
+    case "row":
+      return scope.row_number ? `Rzad ${scope.row_number}` : "Rzad";
+    case "location_range":
+      if (
+        typeof scope.row_number === "number" &&
+        typeof scope.from_position === "number" &&
+        typeof scope.to_position === "number"
+      ) {
+        return `Rzad ${scope.row_number}, pozycje ${scope.from_position}-${scope.to_position}`;
+      }
+
+      return getActivityScopeLevelLabel(scope.scope_level);
+    case "tree":
+      return scope.tree_display_name ?? "Jedno drzewo";
+    default:
+      return getActivityScopeLevelLabel(scope.scope_level);
+  }
 }
 
 export function activityTypeRequiresScope(activityType: ActivityType) {

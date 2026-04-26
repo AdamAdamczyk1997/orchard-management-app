@@ -26,9 +26,14 @@ To sa dokumenty, na podstawie ktorych przygotowujemy migracje SQL, RLS, API, for
 - Robocza propozycja plikow baseline znajduje sie w `supabase/migrations/`,
   a opis pakietu w `05_technical/schema_migration_plan.md`.
 
-- Pakiet `v1_security` dla baseline jest zapisany w:
+- Pakiet `v1_security` dla baseline oraz jego follow-up hardening jest zapisany w:
   - `supabase/migrations/013_create_v1_security_helpers.sql`
   - `supabase/migrations/014_enable_rls_and_v1_policies.sql`
+  - `supabase/migrations/017_harden_function_search_paths.sql`
+  - `supabase/migrations/019_consolidate_orchard_membership_insert_policy.sql`
+  - `supabase/migrations/020_wrap_auth_uid_in_orchard_membership_select_policy.sql`
+  - `supabase/migrations/021_wrap_auth_uid_in_orchards_update_policy.sql`
+  - `supabase/migrations/022_wrap_auth_uid_in_orchards_insert_policy.sql`
 
 - Referencyjny seed lokalny dla baseline i testow znajduje sie w:
   - `supabase/seeds/001_baseline_reference_seed.sql`
@@ -57,6 +62,7 @@ To sa dokumenty, na podstawie ktorych przygotowujemy migracje SQL, RLS, API, for
 Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i implementacje:
 
 - `00_overview_and_checklists/codex_working_prompt.md`
+- `00_overview_and_checklists/manual_testing_quickstart.md`
 - `00_overview_and_checklists/session_handoff.md`
 - `00_overview_and_checklists/startup_materials_checklist.md`
 - `01_implementation_materials/README.md`

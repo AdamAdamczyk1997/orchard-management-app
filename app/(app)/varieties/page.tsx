@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { VarietyList } from "@/features/varieties/variety-list";
+import { hasActiveVarietyListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listVarietiesForOrchard } from "@/lib/orchard-data/varieties";
 import {
@@ -19,12 +22,27 @@ export default async function VarietiesPage({
   searchParams,
 }: VarietiesPageProps) {
   const context = await requireActiveOrchard("/varieties");
-  const orchard = context.orchard;
 
-  if (!orchard) {
-    throw new Error("Active orchard is required for varieties.");
-  }
+  return (
+    <Suspense fallback={<ListPageLoading filterFieldCount={1} />}>
+      <VarietiesPageContent
+        orchardId={context.orchard.id}
+        orchardName={context.orchard.name}
+        searchParams={searchParams}
+      />
+    </Suspense>
+  );
+}
 
+async function VarietiesPageContent({
+  orchardId,
+  orchardName,
+  searchParams,
+}: {
+  orchardId: string;
+  orchardName: string;
+  searchParams: Promise<NextSearchParams>;
+}) {
   const resolvedSearchParams = await searchParams;
   const parsedFilters = varietyListFiltersSchema.safeParse({
     q: getSingleSearchParam(resolvedSearchParams.q),
@@ -32,7 +50,8 @@ export default async function VarietiesPage({
   const filters: VarietyListFilters = parsedFilters.success
     ? parsedFilters.data
     : {};
-  const varieties = await listVarietiesForOrchard(orchard.id, filters);
+  const varieties = await listVarietiesForOrchard(orchardId, filters);
+  const hasActiveFilters = hasActiveVarietyListFilters(filters);
 
   return (
     <div className="grid gap-6">
@@ -42,7 +61,7 @@ export default async function VarietiesPage({
             Odmiany
           </p>
           <h2 className="text-2xl font-semibold text-[#1f2a1f]">
-            Biblioteka odmian w sadzie {orchard.name}
+            Biblioteka odmian w sadzie {orchardName}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-[#5b6155]">
             Trzymaj wiedze o odmianach blisko drzew, ktore beda z niej korzystac
@@ -82,7 +101,12 @@ export default async function VarietiesPage({
         </form>
       </Card>
 
-      <VarietyList varieties={varieties} />
+      <VarietyList
+        clearHref="/varieties"
+        createHref="/varieties/new"
+        hasActiveFilters={hasActiveFilters}
+        varieties={varieties}
+      />
     </div>
   );
 }

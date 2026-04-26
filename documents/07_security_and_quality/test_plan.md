@@ -20,6 +20,16 @@ Aktualnie wdrozone:
 - `integration tests` dla `plots`, `varieties` i `trees`
 - `integration tests` dla lifecycle `plot -> variety -> tree` w Phase 2
 - `security / RLS tests` dla `plots`, `varieties` i `trees`
+- `unit tests` dla parsera filtrow `summary_*` w `activities`
+- `unit tests` dla helperow wykrywania aktywnych filtrow list
+- `integration tests` dla detail read model `activities`
+- `integration tests` dla sezonowego `summary + coverage` w `activities`
+- `unit tests` dla walidacji i normalizacji `harvest_records`
+- `unit tests` dla agregacji sezonowego summary i timeline dla harvests
+- `integration tests` dla harvest CRUD, read modeli i sezonowego summary
+- `integration tests` dla dashboard summary z countami, limitami feedow i izolacja orchard
+- `security / RLS tests` dla `harvest_records`
+- `unit tests` dla seeded QA readiness evaluator i referencyjnego baseline workflow
 
 Lokalizacja testow:
 
@@ -31,6 +41,8 @@ Uruchamianie lokalne:
 
 ```bash
 supabase status
+pnpm seed:baseline-users
+pnpm qa:baseline-status
 pnpm test
 ```
 
@@ -61,7 +73,10 @@ Co testujemy:
 - logike agregacji sezonowych zbiorow
 - logike walidacji `activity_scopes`
 - logike raportowania wykonanych zakresow prac sezonowych
+- parser filtrow `summary_*` dla sezonowego panelu `activities`
+- helpery odrozniajace `global empty state` od `filtered empty state`
 - logike wyboru i zmiany `active_orchard`
+- logike oceny, czy baseline seed jest gotowy do manual QA
 
 ### Testy integracyjne
 
@@ -95,11 +110,21 @@ Na dzis realnie pokryte automatycznie:
 - konflikt aktywnej lokalizacji drzewa
 - automatyczne `is_active = false` dla drzewa `removed`
 - create / edit / filter / status / delete `activities`
+- detail read model `activities`
 - transakcyjny zapis `activities + activity_scopes + activity_materials`
 - walidacja `pruning -> activity_subtype`
 - walidacja `activity_scopes` i `materials` z JSON payloadow
+- sezonowe `summary` dla `activities` liczone tylko z rekordow `done`
+- sezonowe `coverage` dla `activities` oparte tylko na zapisanych `activity_scopes`
+- create / edit / filter / delete `harvest_records`
+- detail read model `harvest_records`
+- triggerowa normalizacja `quantity_kg` i `season_year` dla harvests
+- sezonowe `summary` i timeline dla `harvest_records`
+- dashboard summary dla aktywnego orchard
 - RLS dla `activities`, `activity_scopes` i `activity_materials`
+- RLS dla `harvest_records`
 - write permissions `worker` dla aktywnosci w swoim orchard
+- write permissions `worker` dla wpisow zbioru w swoim orchard
 - RLS dla `plots`, `varieties` i `trees`
 - write permissions `worker` dla danych operacyjnych
 - brak delete permissions dla `worker` na `plots`
@@ -142,8 +167,16 @@ Co testujemy:
 - materialy aktywnosci zapisuja sie i odczytuja razem z wpisem
 - zakresy aktywnosci zapisuja sie i odczytuja razem z wpisem
 - nie da sie zapisac `activity_scopes.tree_id` dla drzewa z innej dzialki niz `activities.plot_id`
+- detail aktywnosci pokazuje uporzadkowane `activity_scopes` i `activity_materials`
+- sezonowe `summary` dla aktywnosci nie liczy rekordow `planned`, `skipped` ani `cancelled`
+- sezonowe `coverage` dla aktywnosci nie inferuje zakresow z samych danych drzew lub dzialek
 - rekord zbioru poprawnie liczy `quantity_kg` dla `kg` i `t`
 - raport sezonowy poprawnie sumuje rekordy per odmiana i per dzialka
+- timeline harvestow poprawnie grupuje rekordy po `harvest_date`
+- dashboard liczy aktywne dzialki i aktywne drzewa zgodnie z kontraktem
+- dashboardowe feedy aktywnosci i zbiorow sa orchard-scoped, ograniczone do 5 wpisow i poprawnie posortowane
+- shared `record not found` cards pokazuja opis problemu oraz CTA powrotu do bezpiecznej listy
+- shared `prerequisite` cards pokazuja dalszy krok, gdy create/edit flow jest zablokowany przez brak dzialki
 
 ## 4. Rekomendowane narzedzia
 
@@ -184,6 +217,25 @@ Jesli zespol wybierze inny zestaw narzedzi, logika planu testow pozostaje taka s
 - zmiana roli membership jest testowana dopiero po aktywacji tego flow w UI
 - `worker` nie moze zarzadzac membership
 
+### Listy operacyjne
+
+- puste `plots` pokazuja CTA do utworzenia pierwszej dzialki
+- przefiltrowane `plots` pokazuja CTA do czyszczenia filtrow
+- analogiczny wzorzec dotyczy `varieties`, `trees`, `activities` i `harvests`
+
+### Detail / edit route states
+
+- brakujacy rekord na krytycznych trasach detail/edit nie konczy sie cichym redirectem
+- user dostaje recovery card z jednoznacznym CTA do listy modulu
+- blocked create/edit flows z powodu braku dzialki pokazuja wspolny prerequisite state
+
+### Dashboard
+
+- dashboard pokazuje aktywne dzialki i aktywne drzewa zgodnie z kontraktem
+- dashboard pokazuje ostatnie aktywnosci z linkami do detail view
+- dashboard pokazuje ostatnie zbiory z linkami do detail view
+- pusty sad pokazuje onboardingowy empty state zamiast martwych list
+
 ### Dzialki
 
 - utworzenie dzialki
@@ -216,15 +268,22 @@ Jesli zespol wybierze inny zestaw narzedzi, logika planu testow pozostaje taka s
 - edycja statusu aktywnosci
 - dodanie wielu materialow
 - filtrowanie po typie i dacie
+- wejscie z listy do detail view aktywnosci
+- sezonowe `summary + coverage` na `/activities`
 
 ### Zbiory
 
 - utworzenie rekordu zbioru dla odmiany
 - utworzenie rekordu zbioru dla dzialki i zakresu lokalizacji
+- utworzenie rekordu zbioru dla pojedynczego drzewa
+- filtrowanie listy zbiorow po sezonie, dacie, dzialce i odmianie
+- wejscie z listy do detail view wpisu zbioru
+- edycja i usuniecie wpisu zbioru jako korekta pomylki
 - walidacja `from_position <= to_position`
 - poprawne przeliczenie `t -> kg`
 - poprawne sumowanie po `season_year`
 - poprawne pomijanie rekordow bez `variety_id` w raporcie per odmiana
+- raport `/reports/season-summary` linkuje z powrotem do filtrowanej listy `harvests`
 
 ### Batch create - etap 0.2
 
@@ -252,6 +311,12 @@ Bazowy seed referencyjny dla lokalnego developmentu i testow znajduje sie w:
 - `supabase/seeds/001_baseline_reference_seed.sql`
 
 Seed jest przeznaczony do uruchamiania w lokalnym, uprzywilejowanym workflow bazy (`supabase db reset`, `psql` jako owner bazy lub rownowazny kontekst administracyjny), a nie przez zwyklego `authenticated` usera.
+
+Do przygotowania wymaganych kont `auth.users` przed odpaleniem seedu sluzy lokalna komenda:
+
+```bash
+pnpm seed:baseline-users
+```
 
 Przed uruchomieniem seedu trzeba miec przygotowane konta `auth.users` dla:
 

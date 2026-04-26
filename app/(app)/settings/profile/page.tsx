@@ -1,4 +1,5 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { ProfileForm } from "@/features/auth/profile-form";
 import { readCurrentProfile } from "@/lib/auth/get-current-profile";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
@@ -8,7 +9,14 @@ export default async function ProfileSettingsPage() {
   const profile = await readCurrentProfile();
 
   if (!profile) {
-    throw new Error("Profile is required to render the profile settings page.");
+    return (
+      <RecordNotFoundCard
+        backHref="/dashboard"
+        backLabel="Wroc do panelu"
+        description="Nie udalo sie odczytac profilu konta. Sprobuj ponownie albo wroc do panelu glownego."
+        title="Brak danych profilu"
+      />
+    );
   }
 
   return (

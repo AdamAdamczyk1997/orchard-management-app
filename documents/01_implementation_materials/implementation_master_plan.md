@@ -405,7 +405,7 @@ Activity form implementation, summaries, and test cases can progress in parallel
 #### Backend / server actions
 
 - [x] Implement `listActivities`, `getActivityDetails`, `createActivity`, `updateActivity`, `changeActivityStatus`, and `deleteActivity`.
-- [ ] Implement `getSeasonalActivitySummary` and `getSeasonalActivityCoverage`.
+- [x] Implement `getSeasonalActivitySummary` and `getSeasonalActivityCoverage`.
 - [x] Save `activities`, `activity_scopes`, and `activity_materials` transactionally as one logical operation.
 - [x] Ensure `performed_by_profile_id` resolves only to active membership within the same orchard.
 
@@ -416,7 +416,7 @@ Activity form implementation, summaries, and test cases can progress in parallel
 - [x] Build UI for `winter_pruning` and `summer_pruning` as explicit `activity_subtype` choices.
 - [x] Build UI for `mowing` on a whole plot or selected rows.
 - [x] Build UI for `spraying` with materials, quantities, units, weather notes, and result notes.
-- [ ] Build details views and progress/history views for seasonal work.
+- [x] Build details views and progress/history views for seasonal work.
 
 #### Authorization / RLS
 
@@ -510,18 +510,19 @@ Write flows, summary queries, and season summary UI can run in parallel after `H
 
 #### Backend / server actions
 
-- [ ] Implement `listHarvestRecords`, `getHarvestRecordDetails`, `createHarvestRecord`, `updateHarvestRecord`, and `deleteHarvestRecord`.
-- [ ] Implement `getHarvestSeasonSummary` as the read model behind the `Season Summary` screen, plus `getHarvestTimeline`.
+- [x] Implement `listHarvestRecords`, `getHarvestRecordDetails`, `createHarvestRecord`, `updateHarvestRecord`, and `deleteHarvestRecord`.
+- [x] Implement `getHarvestSeasonSummary` as the read model behind the `Season Summary` screen, plus `getHarvestTimeline`.
 - [x] Support optional linkage from `harvest_records.activity_id` to `activities`.
-- [ ] Return data aligned with `HarvestRecordFormInput`, `HarvestRecordSummary`, and `HarvestSeasonSummary`.
+- [x] Return data aligned with `HarvestRecordFormInput` and `HarvestRecordSummary`.
+- [x] Return data aligned with `HarvestSeasonSummary`.
 
 #### Frontend / UI
 
-- [ ] Build the harvest list with filters by season, plot, variety, and date.
-- [ ] Build the harvest form for orchard, plot, variety, location-range, and tree scope.
-- [ ] Build harvest details and edit flows.
-- [ ] Build the `Season Summary` screen for total harvest, by-variety totals, by-plot totals, and time history.
-- [ ] Build timeline and aggregation views that remain clear on mobile.
+- [x] Build the harvest list with filters by season, plot, variety, and date.
+- [x] Build the harvest form for orchard, plot, variety, location-range, and tree scope.
+- [x] Build harvest details and edit flows.
+- [x] Build the `Season Summary` screen for total harvest, by-variety totals, by-plot totals, and time history.
+- [x] Build timeline and aggregation views that remain clear on mobile.
 
 #### Authorization / RLS
 
@@ -535,20 +536,24 @@ Write flows, summary queries, and season summary UI can run in parallel after `H
 - [x] Enforce `season_year` derivation from `harvest_date`.
 - [x] Enforce correct requirements for `scope_level = 'location_range'`.
 - [x] Enforce plot/tree/variety/activity orchard consistency.
-- [ ] Map `HARVEST_SCOPE_INVALID`, `HARVEST_UNIT_INVALID`, and related field errors.
+- [x] Map `HARVEST_SCOPE_INVALID`, `HARVEST_UNIT_INVALID`, and related field errors.
 
 #### Testing / seed data
 
-- [ ] Add unit tests for `kg` / `t` normalization and summary aggregation logic.
-- [ ] Add integration tests for harvest CRUD and season summary queries.
+- [x] Add unit tests for `kg` / `t` normalization.
+- [x] Add unit tests for summary aggregation logic.
+- [x] Add integration tests for harvest CRUD and read queries.
+- [x] Add integration tests for season summary queries.
 - [ ] Add E2E coverage for adding harvest records and reviewing season summary results.
+- [x] Add security / RLS coverage for harvest reads and writes.
 - [x] Extend seed data with harvest records across plots, varieties, and units.
 
 #### Documentation sync
 
-- [ ] Keep harvest behavior aligned with [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md) and [business_rules.md](../03_domain_and_business_rules/business_rules.md).
-- [ ] Keep reporting UI aligned with [screens_and_views.md](../04_ux_and_screen_design/screens_and_views.md).
-- [ ] Keep data contracts aligned with [data_contracts.md](../06_backend_and_contracts/data_contracts.md).
+- [x] Keep harvest behavior aligned with [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md) and [business_rules.md](../03_domain_and_business_rules/business_rules.md).
+- [x] Keep CRUD UI aligned with [screens_and_views.md](../04_ux_and_screen_design/screens_and_views.md).
+- [x] Keep `Season Summary` UI aligned with [screens_and_views.md](../04_ux_and_screen_design/screens_and_views.md).
+- [x] Keep data contracts aligned with [data_contracts.md](../06_backend_and_contracts/data_contracts.md).
 
 **Deliverables**
 
@@ -584,7 +589,7 @@ Turn the completed MVP modules into a stable, secure, documented release candida
 **Scope**
 
 - cross-module navigation
-- dashboard and recent/upcoming summaries
+- dashboard and recent summaries
 - empty/loading/error states
 - observability
 - security review
@@ -618,13 +623,18 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 #### Backend / server actions
 
-- [ ] Implement or finalize dashboard-level reads such as `getDashboardSummary`, `getRecentActivities`, and `getUpcomingActivities`.
+- [x] Implement dashboard-level read `getDashboardSummary` with `active_plots_count`, `active_trees_count`, `recent_activities`, and `recent_harvests`.
+- [ ] Add `upcoming_activities` or a separate planning read only after the dashboard snapshot and empty states are stable.
 - [ ] Review server-action responses for consistent `ActionResult<T>` behavior.
 - [x] Confirm `exportAccountData` stays deferred to Phase 6 and is not accidentally exposed in MVP.
 
 #### Frontend / UI
 
-- [ ] Integrate final navigation, dashboard entry points, and route guards.
+- [x] Replace the dashboard placeholder with a real operational snapshot, quick actions, and links to harvest reporting.
+- [x] Add loading skeletons plus `global empty state` / `filtered empty state` handling for the core list views: `plots`, `varieties`, `trees`, `activities`, and `harvests`.
+- [x] Replace silent `record not found` redirects on critical detail/edit/settings routes with explicit recovery cards.
+- [x] Reuse shared prerequisite cards for create/edit flows blocked by missing plot or active plot prerequisites.
+- [ ] Integrate the remaining final navigation polish and route-guard edge cases across all MVP views.
 - [ ] Audit empty, loading, error, and permission-denied states across all MVP views.
 - [ ] Complete responsive QA for the key mobile field flows.
 - [ ] Polish the orchard switcher, filter UX, and success/error feedback patterns.
@@ -634,17 +644,22 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 - [x] Run a full RLS review across `profiles`, `orchards`, `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials`, and `harvest_records`.
 - [x] Confirm `worker` cannot manage memberships or export account data.
 - [x] Confirm `super_admin`, `owner`, and `worker` behavior matches the current access matrix.
+- [x] Clean up current Supabase DB lint findings for mutable `search_path`, duplicate permissive membership policies, and direct `auth.uid()` init-plan warnings in shipped MVP policies.
 
 #### Validation / error handling
 
 - [ ] Verify the error catalog covers real MVP flows and returned codes.
-- [ ] Confirm UI messaging is consistent for form validation, permission issues, and missing active orchard context.
+- [x] Confirm UI messaging is consistent for the shipped `record not found` and prerequisite-blocked route states on critical MVP flows.
+- [ ] Confirm UI messaging is consistent for form validation, remaining permission issues, and missing active orchard context across every MVP view.
 - [ ] Audit naming consistency across DTOs, database fields, and screen copy.
 
 #### Testing / seed data
 
 - [ ] Complete regression coverage for the critical end-to-end flows.
 - [x] Finalize the local/demo seed dataset for onboarding, orchard structure, activities, and harvests.
+- [x] Add a local bootstrap command for seeded `auth.users` prerequisites used by manual QA.
+- [x] Add a local readiness-check command for the full baseline QA dataset after the SQL seed is applied.
+- [x] Add unit coverage for the shared recovery/prerequisite cards used by route-guarded MVP pages.
 - [ ] Run a focused security and isolation test pass for cross-orchard access.
 - [x] Confirm the minimal CI gate for merge and release readiness.
 
@@ -656,10 +671,12 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 **Deliverables**
 
-- dashboard reads and final route integration
+- dashboard reads and dashboard entry integration
 - complete MVP error/empty/loading states
 - reviewed RLS policies across all MVP tables
 - final seed/demo dataset
+- documented local baseline-user bootstrap for seeded QA
+- explicit recovery cards for missing-record and missing-prerequisite route states
 - release checklist and synchronized technical documentation
 
 **Risks / open questions**
@@ -841,6 +858,8 @@ Rationale:
 - Migrations should be small, ordered, and reversible when practical.
 - Seed data must cover onboarding, ownership isolation, activities, and harvest summaries.
 - Local development should be able to reset schema and seed without manual database patching.
+- Seeded QA should have a documented bootstrap for required `auth.users`; current local command is `pnpm seed:baseline-users`.
+- Seeded QA should have a repeatable readiness check for the reference dataset; current local command is `pnpm qa:baseline-status`.
 
 ### Testing strategy
 
@@ -888,8 +907,8 @@ Rationale:
 
 ### Harvest and season summary ready
 
-- [ ] Harvest quantities normalize correctly from `kg` and `t`.
-- [ ] Season summaries aggregate correctly by variety and plot.
+- [x] Harvest quantities normalize correctly from `kg` and `t`.
+- [x] Season summaries aggregate correctly by variety and plot.
 - [ ] Harvest write/read flows are covered by integration and E2E tests.
 
 ### MVP release ready

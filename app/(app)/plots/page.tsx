@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
+import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { Select } from "@/components/ui/select";
 import { PlotList } from "@/features/plots/plot-list";
+import { hasActivePlotListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listPlotsForOrchard } from "@/lib/orchard-data/plots";
 import {
@@ -17,18 +20,34 @@ type PlotsPageProps = {
 
 export default async function PlotsPage({ searchParams }: PlotsPageProps) {
   const context = await requireActiveOrchard("/plots");
-  const orchard = context.orchard;
 
-  if (!orchard) {
-    throw new Error("Active orchard is required for plots.");
-  }
+  return (
+    <Suspense fallback={<ListPageLoading filterFieldCount={1} />}>
+      <PlotsPageContent
+        orchardId={context.orchard.id}
+        orchardName={context.orchard.name}
+        searchParams={searchParams}
+      />
+    </Suspense>
+  );
+}
 
+async function PlotsPageContent({
+  orchardId,
+  orchardName,
+  searchParams,
+}: {
+  orchardId: string;
+  orchardName: string;
+  searchParams: Promise<NextSearchParams>;
+}) {
   const resolvedSearchParams = await searchParams;
   const parsedFilters = plotListFiltersSchema.safeParse({
     status: getSingleSearchParam(resolvedSearchParams.status),
   });
   const filters = parsedFilters.success ? parsedFilters.data : {};
-  const plots = await listPlotsForOrchard(orchard.id, filters);
+  const plots = await listPlotsForOrchard(orchardId, filters);
+  const hasActiveFilters = hasActivePlotListFilters(filters);
   const currentSearchParams = new URLSearchParams();
 
   if (filters.status) {
@@ -45,7 +64,7 @@ export default async function PlotsPage({ searchParams }: PlotsPageProps) {
             Dzialki
           </p>
           <h2 className="text-2xl font-semibold text-[#1f2a1f]">
-            Dzialki w sadzie {orchard.name}
+            Dzialki w sadzie {orchardName}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-[#5b6155]">
             Dzialki sa podstawowymi kontenerami fizycznymi w aktywnym sadzie. To
@@ -88,7 +107,13 @@ export default async function PlotsPage({ searchParams }: PlotsPageProps) {
         </form>
       </Card>
 
-      <PlotList plots={plots} redirectTo={redirectTo} />
+      <PlotList
+        clearHref="/plots"
+        createHref="/plots/new"
+        hasActiveFilters={hasActiveFilters}
+        plots={plots}
+        redirectTo={redirectTo}
+      />
     </div>
   );
 }

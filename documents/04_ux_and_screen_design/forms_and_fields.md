@@ -171,6 +171,16 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | `unit` | nie | brak | np. `l`, `kg`, `ml` |
 | `notes` | nie | brak | dodatkowy komentarz |
 
+### Filtry podsumowania sezonowego aktywnosci na `/activities`
+
+| Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
+|---|---:|---|---|
+| `summary_season_year` | tak | biezacy rok kalendarzowy | liczba calkowita z sensownego zakresu |
+| `summary_activity_type` | tak | `pruning` | tylko `pruning`, `mowing`, `spraying` |
+| `summary_activity_subtype` | warunkowo | brak | obslugiwane tylko dla `summary_activity_type = pruning` |
+| `summary_plot_id` | nie | brak | po wyborze wlacza panel coverage |
+| `summary_performed_by_profile_id` | nie | brak | wykonawca z aktywnego `orchard` |
+
 ## 8. Formularz zbioru
 
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |

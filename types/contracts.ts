@@ -38,6 +38,14 @@ export type ActivityScopeLevel =
   | "location_range"
   | "tree";
 export type ActivityPruningSubtype = "winter_pruning" | "summer_pruning";
+export type SeasonalActivityType = "pruning" | "mowing" | "spraying";
+export type HarvestScopeLevel =
+  | "orchard"
+  | "plot"
+  | "variety"
+  | "location_range"
+  | "tree";
+export type HarvestQuantityUnit = "kg" | "t";
 
 export type ProfileSummary = {
   id: string;
@@ -302,6 +310,24 @@ export type TreeOption = {
   is_active: boolean;
 };
 
+export type DashboardSummary = {
+  active_plots_count: number;
+  active_trees_count: number;
+  recent_activities: Array<{
+    id: string;
+    title: string;
+    activity_date: string;
+    status: ActivityStatus;
+    plot_name: string;
+  }>;
+  recent_harvests: Array<{
+    id: string;
+    harvest_date: string;
+    quantity_kg: number;
+    plot_name: string;
+  }>;
+};
+
 export type ActivityScopeInput = {
   scope_order?: number;
   scope_level: ActivityScopeLevel;
@@ -396,6 +422,42 @@ export type ActivityListFilters = {
   performed_by_profile_id?: string;
 };
 
+export type SeasonalActivitySummaryFilters = {
+  season_year: number;
+  plot_id?: string;
+  activity_type: SeasonalActivityType;
+  activity_subtype?: ActivityPruningSubtype;
+  performed_by_profile_id?: string;
+};
+
+export type SeasonalActivityCoverageFilters = SeasonalActivitySummaryFilters & {
+  plot_id: string;
+};
+
+export type SeasonalActivitySummary = {
+  season_year: number;
+  activity_type: SeasonalActivityType;
+  activity_subtype?: ActivityPruningSubtype | null;
+  total_done_count: number;
+  affected_plots: Array<{
+    plot_id: string;
+    plot_name: string;
+    total_done_count: number;
+    last_activity_date: string | null;
+  }>;
+};
+
+export type SeasonalActivityCoverage = Array<{
+  activity_id: string;
+  activity_date: string;
+  status: ActivityStatus;
+  plot_id: string;
+  plot_name: string;
+  activity_type: SeasonalActivityType;
+  activity_subtype?: ActivityPruningSubtype | null;
+  scope: ActivityScopeSummary;
+}>;
+
 export type ActivityDetails = ActivitySummary & {
   work_duration_minutes?: number | null;
   cost_amount?: number | null;
@@ -406,3 +468,101 @@ export type ActivityDetails = ActivitySummary & {
   scopes: ActivityScopeSummary[];
   materials: ActivityMaterialSummary[];
 };
+
+export type HarvestRecordFormInput = {
+  plot_id?: string | null;
+  variety_id?: string | null;
+  tree_id?: string | null;
+  activity_id?: string | null;
+  scope_level: HarvestScopeLevel;
+  harvest_date: string;
+  season_year?: number;
+  section_name?: string;
+  row_number?: number;
+  from_position?: number;
+  to_position?: number;
+  quantity_value: number;
+  quantity_unit: HarvestQuantityUnit;
+  notes?: string;
+};
+
+export type HarvestRecordSummary = {
+  id: string;
+  orchard_id: string;
+  plot_id?: string | null;
+  variety_id?: string | null;
+  tree_id?: string | null;
+  activity_id?: string | null;
+  scope_level: HarvestScopeLevel;
+  harvest_date: string;
+  season_year: number;
+  section_name?: string | null;
+  row_number?: number | null;
+  from_position?: number | null;
+  to_position?: number | null;
+  quantity_value: number;
+  quantity_unit: HarvestQuantityUnit;
+  quantity_kg: number;
+  notes?: string | null;
+  plot_name?: string | null;
+  variety_name?: string | null;
+  variety_species?: string | null;
+  tree_display_name?: string | null;
+  activity_title?: string | null;
+  created_by_display?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type HarvestRecordDetails = HarvestRecordSummary & {
+  created_by_profile_id: string;
+};
+
+export type HarvestRecordListFilters = {
+  season_year: number;
+  date_from?: string;
+  date_to?: string;
+  plot_id?: string;
+  variety_id?: string;
+};
+
+export type HarvestActivityOption = {
+  id: string;
+  plot_id: string;
+  tree_id?: string | null;
+  label: string;
+};
+
+export type HarvestSeasonSummaryFilters = {
+  season_year: number;
+  plot_id?: string;
+  variety_id?: string;
+};
+
+export type HarvestSeasonSummary = {
+  season_year: number;
+  total_quantity_kg: number;
+  record_count: number;
+  by_variety: Array<{
+    variety_id: string;
+    variety_name: string | null;
+    total_quantity_kg: number;
+    record_count: number;
+  }>;
+  by_plot: Array<{
+    plot_id: string;
+    plot_name: string | null;
+    total_quantity_kg: number;
+    record_count: number;
+  }>;
+};
+
+export type HarvestTimelineFilters = HarvestSeasonSummaryFilters;
+
+export type HarvestTimelineEntry = {
+  harvest_date: string;
+  total_quantity_kg: number;
+  record_count: number;
+};
+
+export type HarvestTimeline = HarvestTimelineEntry[];

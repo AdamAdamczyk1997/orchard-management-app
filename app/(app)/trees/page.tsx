@@ -1,8 +1,11 @@
+import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { TreeList } from "@/features/trees/tree-list";
+import { hasActiveTreeListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
 import { listTreesForOrchard } from "@/lib/orchard-data/trees";
@@ -20,15 +23,30 @@ type TreesPageProps = {
 
 export default async function TreesPage({ searchParams }: TreesPageProps) {
   const context = await requireActiveOrchard("/trees");
-  const orchard = context.orchard;
 
-  if (!orchard) {
-    throw new Error("Active orchard is required for trees.");
-  }
+  return (
+    <Suspense fallback={<ListPageLoading filterFieldCount={6} />}>
+      <TreesPageContent
+        orchardId={context.orchard.id}
+        orchardName={context.orchard.name}
+        searchParams={searchParams}
+      />
+    </Suspense>
+  );
+}
 
+async function TreesPageContent({
+  orchardId,
+  orchardName,
+  searchParams,
+}: {
+  orchardId: string;
+  orchardName: string;
+  searchParams: Promise<NextSearchParams>;
+}) {
   const [plotOptions, varietyOptions, resolvedSearchParams] = await Promise.all([
-    listPlotOptionsForOrchard(orchard.id),
-    listVarietyOptionsForOrchard(orchard.id),
+    listPlotOptionsForOrchard(orchardId),
+    listVarietyOptionsForOrchard(orchardId),
     searchParams,
   ]);
 
@@ -47,7 +65,8 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
         is_active: "true" as const,
       };
 
-  const trees = await listTreesForOrchard(orchard.id, filters);
+  const trees = await listTreesForOrchard(orchardId, filters);
+  const hasActiveFilters = hasActiveTreeListFilters(filters);
 
   return (
     <div className="grid gap-6">
@@ -57,7 +76,7 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
             Drzewa
           </p>
           <h2 className="text-2xl font-semibold text-[#1f2a1f]">
-            Struktura drzew w sadzie {orchard.name}
+            Struktura drzew w sadzie {orchardName}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-[#5b6155]">
             Drzewa lacza dzialki, odmiany i lokalizacje terenowe. Ta struktura bedzie
@@ -150,7 +169,12 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
         </form>
       </Card>
 
-      <TreeList trees={trees} />
+      <TreeList
+        clearHref="/trees"
+        createHref="/trees/new"
+        hasActiveFilters={hasActiveFilters}
+        trees={trees}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   ACTIVITY_PRUNING_SUBTYPES,
+  ACTIVITY_SCOPE_REQUIRED_TYPES,
   ACTIVITY_SCOPE_LEVELS,
   ACTIVITY_STATUSES,
   ACTIVITY_TYPES,
@@ -46,6 +47,7 @@ const activityTypeSchema = z.enum(ACTIVITY_TYPES);
 const activityStatusSchema = z.enum(ACTIVITY_STATUSES);
 const activityScopeLevelSchema = z.enum(ACTIVITY_SCOPE_LEVELS);
 const activityPruningSubtypeSchema = z.enum(ACTIVITY_PRUNING_SUBTYPES);
+const summaryActivityTypeSchema = z.enum(ACTIVITY_SCOPE_REQUIRED_TYPES);
 
 export const activityScopeSchema = z
   .object({
@@ -338,6 +340,73 @@ export const activityListFiltersSchema = z
       });
     }
   });
+
+const summarySeasonYearSchema = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (trimmed === "") {
+      return undefined;
+    }
+
+    const parsed = Number(trimmed);
+
+    return Number.isInteger(parsed) ? parsed : value;
+  }
+
+  return value;
+}, z.number().int("Rok sezonu musi byc liczba calkowita.").min(2000).max(9999).optional());
+
+function parseOptionalField<T>(schema: z.ZodType<T>, value: unknown) {
+  const parsed = schema.safeParse(value);
+
+  return parsed.success ? parsed.data : undefined;
+}
+
+type ActivitySummarySearchInput = {
+  summary_season_year?: unknown;
+  summary_plot_id?: unknown;
+  summary_activity_type?: unknown;
+  summary_activity_subtype?: unknown;
+  summary_performed_by_profile_id?: unknown;
+};
+
+export function resolveActivitySummaryFilters(
+  input: ActivitySummarySearchInput,
+  currentYear = new Date().getFullYear(),
+) {
+  const seasonYear =
+    parseOptionalField(summarySeasonYearSchema, input.summary_season_year) ??
+    currentYear;
+  const activityType =
+    parseOptionalField(summaryActivityTypeSchema, input.summary_activity_type) ??
+    "pruning";
+  const plotId = parseOptionalField(
+    optionalUuidString("Wybierz poprawna dzialke."),
+    input.summary_plot_id,
+  );
+  const performedByProfileId = parseOptionalField(
+    optionalUuidString("Wybierz poprawnego wykonawce."),
+    input.summary_performed_by_profile_id,
+  );
+  const activitySubtype =
+    activityType === "pruning"
+      ? parseOptionalField(
+          activityPruningSubtypeSchema.optional(),
+          typeof input.summary_activity_subtype === "string"
+            ? input.summary_activity_subtype.trim() || undefined
+            : input.summary_activity_subtype,
+        )
+      : undefined;
+
+  return {
+    season_year: seasonYear,
+    plot_id: plotId,
+    activity_type: activityType,
+    activity_subtype: activitySubtype,
+    performed_by_profile_id: performedByProfileId,
+  };
+}
 
 export function normalizeActivityPayload(
   input: z.infer<typeof activityFormSchema>,

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { ActivityForm } from "@/features/activities/activity-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
@@ -18,22 +18,22 @@ type EditActivityPageProps = {
 
 export default async function EditActivityPage({ params }: EditActivityPageProps) {
   const context = await requireActiveOrchard("/activities");
-  const orchard = context.orchard;
-
-  if (!orchard) {
-    throw new Error("Active orchard is required for activity editing.");
-  }
-
   const { activityId } = await params;
   const [plotOptions, treeOptions, memberOptions, activity] = await Promise.all([
-    listPlotOptionsForOrchard(orchard.id),
-    listTreeOptionsForOrchard(orchard.id),
-    listActiveMemberOptionsForOrchard(orchard.id),
-    readActivityByIdForOrchard(orchard.id, activityId),
+    listPlotOptionsForOrchard(context.orchard.id),
+    listTreeOptionsForOrchard(context.orchard.id),
+    listActiveMemberOptionsForOrchard(context.orchard.id),
+    readActivityByIdForOrchard(context.orchard.id, activityId),
   ]);
 
   if (!activity) {
-    redirect("/activities");
+    return (
+      <RecordNotFoundCard
+        backHref="/activities"
+        description="Nie da sie edytowac tego wpisu, bo nie istnieje w aktywnym sadzie albo zostal juz usuniety."
+        title="Nie znaleziono aktywnosci do edycji"
+      />
+    );
   }
 
   return (

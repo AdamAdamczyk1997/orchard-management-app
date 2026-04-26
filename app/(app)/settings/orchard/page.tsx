@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { AccessDeniedCard } from "@/components/ui/access-denied-card";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { getOrchardStatusLabel } from "@/lib/domain/labels";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readOrchardDetailsForOrchard } from "@/lib/orchard-data/orchards";
@@ -9,22 +9,23 @@ import { OrchardForm } from "@/features/orchards/orchard-form";
 
 export default async function OrchardSettingsPage() {
   const context = await requireActiveOrchard("/settings/orchard");
-  const orchard = context.orchard;
-
-  if (!orchard || !context.membership) {
-    throw new Error("Active orchard is required for orchard settings.");
-  }
-
   if (context.membership.role !== "owner") {
     return (
       <AccessDeniedCard description="Tylko wlasciciel sadu moze edytowac nazwe, kod i opis aktywnego sadu." />
     );
   }
 
-  const orchardDetails = await readOrchardDetailsForOrchard(orchard.id);
+  const orchardDetails = await readOrchardDetailsForOrchard(context.orchard.id);
 
   if (!orchardDetails) {
-    redirect("/dashboard");
+    return (
+      <RecordNotFoundCard
+        backHref="/dashboard"
+        backLabel="Wroc do panelu"
+        description="Nie udalo sie odczytac ustawien aktywnego sadu. Odswiez widok albo wroc do panelu glownego."
+        title="Brak danych aktywnego sadu"
+      />
+    );
   }
 
   const orchardFormAction = async (_state: { success: boolean }, formData: FormData) => {

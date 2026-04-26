@@ -269,6 +269,7 @@ export async function createActivity(
   }
 
   revalidatePath("/activities");
+  revalidatePath(`/activities/${mutationResult.activity_id}`);
   revalidatePath("/dashboard");
   redirect("/activities");
 }
@@ -331,6 +332,7 @@ export async function updateActivity(
   }
 
   revalidatePath("/activities");
+  revalidatePath(`/activities/${existingActivity.id}`);
   revalidatePath(`/activities/${existingActivity.id}/edit`);
   revalidatePath("/dashboard");
   redirect("/activities");
@@ -360,6 +362,7 @@ export async function changeActivityStatus(formData: FormData) {
     .eq("orchard_id", orchard.id);
 
   revalidatePath("/activities");
+  revalidatePath(`/activities/${parsed.data.activity_id}`);
   revalidatePath(`/activities/${parsed.data.activity_id}/edit`);
   revalidatePath("/dashboard");
   redirect(buildActivityRedirectTarget(parsed.data.redirect_to));
@@ -387,6 +390,7 @@ export async function deleteActivity(formData: FormData) {
     .eq("orchard_id", orchard.id);
 
   revalidatePath("/activities");
+  revalidatePath(`/activities/${parsed.data.activity_id}`);
   revalidatePath("/dashboard");
   redirect(buildActivityRedirectTarget(parsed.data.redirect_to));
 }

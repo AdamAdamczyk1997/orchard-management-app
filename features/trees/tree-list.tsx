@@ -1,21 +1,38 @@
 import Link from "next/link";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { getPlotStatusLabel, getTreeConditionLabel } from "@/lib/domain/labels";
 import type { TreeSummary } from "@/types/contracts";
 
 type TreeListProps = {
   trees: TreeSummary[];
+  hasActiveFilters: boolean;
+  clearHref: string;
+  createHref: string;
 };
 
-export function TreeList({ trees }: TreeListProps) {
+export function TreeList({
+  trees,
+  hasActiveFilters,
+  clearHref,
+  createHref,
+}: TreeListProps) {
   if (trees.length === 0) {
-    return (
-      <Card className="grid gap-3">
-        <CardTitle>Brak drzew</CardTitle>
-        <CardDescription>
-          Dodaj pierwsze drzewo albo zmien filtry, aby zobaczyc rekordy struktury sadu.
-        </CardDescription>
-      </Card>
+    return hasActiveFilters ? (
+      <EmptyStateCard
+        actions={[
+          { href: clearHref, label: "Wyczysc filtry", variant: "secondary" },
+          { href: createHref, label: "Utworz drzewo", variant: "ghost" },
+        ]}
+        description="Zmodyfikuj filtry albo przywroc domyslne ustawienia, aby zobaczyc pozostale drzewa w strukturze sadu."
+        title="Brak drzew dla wybranych filtrow"
+      />
+    ) : (
+      <EmptyStateCard
+        actions={[{ href: createHref, label: "Utworz drzewo" }]}
+        description="Dodaj pierwsze drzewo, aby powiazac dzialki, odmiany i lokalizacje terenowe."
+        title="Brak drzew"
+      />
     );
   }
 

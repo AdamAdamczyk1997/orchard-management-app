@@ -494,6 +494,72 @@ export async function updateActivityAsUser(
   };
 }
 
+export async function createHarvestRecordAsUser(
+  client: SupabaseClient<any>,
+  input: Record<string, unknown>,
+) {
+  const { data, error } = await client
+    .from("harvest_records")
+    .insert(input)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    id: string;
+    orchard_id: string;
+    plot_id: string | null;
+    variety_id: string | null;
+    tree_id: string | null;
+    activity_id: string | null;
+    scope_level: "orchard" | "plot" | "variety" | "location_range" | "tree";
+    harvest_date: string;
+    season_year: number;
+    quantity_value: number;
+    quantity_unit: "kg" | "t";
+    quantity_kg: number;
+  };
+}
+
+export async function updateHarvestRecordAsUser(
+  client: SupabaseClient<any>,
+  input: {
+    harvestRecordId: string;
+    orchardId: string;
+    patch: Record<string, unknown>;
+  },
+) {
+  const { data, error } = await client
+    .from("harvest_records")
+    .update(input.patch)
+    .eq("id", input.harvestRecordId)
+    .eq("orchard_id", input.orchardId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as {
+    id: string;
+    orchard_id: string;
+    plot_id: string | null;
+    variety_id: string | null;
+    tree_id: string | null;
+    activity_id: string | null;
+    scope_level: "orchard" | "plot" | "variety" | "location_range" | "tree";
+    harvest_date: string;
+    season_year: number;
+    quantity_value: number;
+    quantity_unit: "kg" | "t";
+    quantity_kg: number;
+  };
+}
+
 export async function cleanupTestUsers(userIds: string[]) {
   if (userIds.length === 0) {
     return;

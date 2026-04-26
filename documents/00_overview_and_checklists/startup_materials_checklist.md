@@ -28,6 +28,10 @@ dokumenty z `documents/archive/` zachowujemy jako kontekst historyczny, ale nie 
   Lokalizacja: [`documents/00_overview_and_checklists/session_handoff.md`](./session_handoff.md)
   Krotki plik przekazania stanu projektu do nowego chatu lub nowej sesji, z czescia stabilna i polami `UZUPELNIJ SAM`.
 
+- [x] `manual_testing_quickstart.md`
+  Lokalizacja: [`documents/00_overview_and_checklists/manual_testing_quickstart.md`](./manual_testing_quickstart.md)
+  Praktyczna instrukcja dla testera i developera: kiedy robic szybki smoke test, kiedy seeded QA pass, jak przygotowac lokalne konta seedowe i jak korzystac z referencyjnych danych `supabase/seeds/001_baseline_reference_seed.sql`.
+
 - [x] `mvp_scope_and_priorities.md`
   Lokalizacja: [`documents/02_product_documents/mvp_scope_and_priorities.md`](../02_product_documents/mvp_scope_and_priorities.md)
   Co ma wejsc do wersji 0.1, co do 0.2, a co zostaje poza MVP.

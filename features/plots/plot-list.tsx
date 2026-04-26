@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { getPlotStatusLabel } from "@/lib/domain/labels";
 import type { PlotSummary } from "@/types/contracts";
 import { archivePlot, restorePlot } from "@/server/actions/plots";
@@ -8,17 +9,34 @@ import { archivePlot, restorePlot } from "@/server/actions/plots";
 type PlotListProps = {
   plots: PlotSummary[];
   redirectTo: string;
+  hasActiveFilters: boolean;
+  clearHref: string;
+  createHref: string;
 };
 
-export function PlotList({ plots, redirectTo }: PlotListProps) {
+export function PlotList({
+  plots,
+  redirectTo,
+  hasActiveFilters,
+  clearHref,
+  createHref,
+}: PlotListProps) {
   if (plots.length === 0) {
-    return (
-      <Card className="grid gap-3">
-        <CardTitle>Brak dzialek</CardTitle>
-        <CardDescription>
-          Dodaj pierwsza dzialke, aby zaczac budowac strukture aktywnego sadu.
-        </CardDescription>
-      </Card>
+    return hasActiveFilters ? (
+      <EmptyStateCard
+        actions={[
+          { href: clearHref, label: "Wyczysc filtry", variant: "secondary" },
+          { href: createHref, label: "Utworz dzialke", variant: "ghost" },
+        ]}
+        description="Zmien status albo wyczysc filtry, aby zobaczyc pozostale dzialki w aktywnym sadzie."
+        title="Brak wynikow dla wybranych filtrow"
+      />
+    ) : (
+      <EmptyStateCard
+        actions={[{ href: createHref, label: "Utworz dzialke" }]}
+        description="Dodaj pierwsza dzialke, aby zaczac budowac strukture aktywnego sadu."
+        title="Brak dzialek"
+      />
     );
   }
 

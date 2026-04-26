@@ -108,7 +108,19 @@ Uwagi etapowe:
   - `/trees`
   - `/trees/new`
   - `/trees/[treeId]/edit`
+- w Phase 3 aktywne sa dodatkowo:
+  - `/activities`
+  - `/activities/new`
+  - `/activities/[activityId]`
+  - `/activities/[activityId]/edit`
+- w Phase 4 aktywne sa dodatkowo:
+  - `/harvests`
+  - `/harvests/new`
+  - `/harvests/[harvestRecordId]`
+  - `/harvests/[harvestRecordId]/edit`
+  - `/reports/season-summary`
 - detail pages `/plots/[plotId]`, `/varieties/[varietyId]`, `/trees/[treeId]` pozostaja swiadomie odlozone do kolejnych slice'ow,
+- sezonowe raportowanie prac jest osadzone na `/activities`, a `/reports/season-summary` pozostaje harvestowe,
 - `GET /auth/sync-active-orchard` sluzy do bezpiecznej synchronizacji cookie `ol_active_orchard`,
 - widoki `trees/batch/new`, `trees/bulk-deactivate`, `varieties/[varietyId]/locations` i `settings/export` pozostaja zakresem `0.2`, nawet jesli miejsce w strukturze jest juz przewidziane.
 
@@ -195,13 +207,16 @@ Uwagi etapowe:
 - formularz aktywnosci
 - materialy aktywnosci
 - lista i filtry dziennika
-- raporty sezonowych prac
+- detail view wpisu
+- sezonowe summary i coverage osadzone na `/activities`
 
 ### `features/harvests`
 
 - formularz zbioru
 - lista zbiorow
+- szczegoly wpisu zbioru
 - podsumowanie sezonu
+- timeline harvest reporting
 
 ## 6. Walidacja
 

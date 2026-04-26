@@ -141,8 +141,8 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 | `updateActivity` | edycja wpisu | `activity_id` + dane formularza + zakresy + materialy | zaktualizowany rekord | 0.1 |
 | `changeActivityStatus` | zmiana statusu | `activity_id`, `status` | zaktualizowany rekord | 0.1 |
 | `deleteActivity` | usuniecie wpisu | `activity_id` | wynik operacji lub blad biznesowy | 0.1 |
-| `getSeasonalActivitySummary` | podsumowanie prac sezonowych | `season_year`, filtry po typie / dzialce / wykonawcy | liczba wykonan, ostatnie daty, zakresy | 0.1 |
-| `getSeasonalActivityCoverage` | raport zakresow wykonania | `plot_id`, `activity_type`, `activity_subtype` opcjonalnie, zakres dat | lista wykonanych scope | 0.1 |
+| `getSeasonalActivitySummary` | podsumowanie prac sezonowych na `/activities` | `season_year`, `activity_type`, `activity_subtype` opcjonalnie dla `pruning`, `plot_id` opcjonalnie, `performed_by_profile_id` opcjonalnie | `total_done_count` i `affected_plots` z ostatnia data pracy | 0.1 |
+| `getSeasonalActivityCoverage` | raport zakresow wykonania na `/activities` | `season_year`, `plot_id`, `activity_type`, `activity_subtype` opcjonalnie dla `pruning`, `performed_by_profile_id` opcjonalnie | lista zapisanych scope dla wpisow `done` | 0.1 |
 
 ### Zalecana walidacja dla aktywnosci
 
@@ -159,21 +159,26 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - dla `scope_level = 'tree'` `tree_id` w `activity_scopes` musi nalezec do tej samej dzialki co `plot_id`
 - dla `scope_level = 'location_range'` wymagane sa `row_number`, `from_position`, `to_position`
 - jedna aktywnosc moze miec wiele `activity_scopes`, ale wszystkie musza nalezec do tej samej dzialki glownej
+- `getSeasonalActivitySummary` liczy tylko rekordy `status = 'done'`
+- `getSeasonalActivityCoverage` korzysta wylacznie z zapisanych `activity_scopes`, bez inferencji z drzew lub dzialek
 
 ## 7. Operacje dla zbiorow i dashboardu
 
 | Operacja | Cel | Wejscie | Wynik | Priorytet |
 |---|---|---|---|---|
-| `getDashboardSummary` | dane do dashboardu | brak lub zakres czasu | podsumowanie liczb i ostatnich aktywnosci | 0.1 |
-| `getRecentActivities` | szybki feed ostatnich wpisow | limit, filtry opcjonalne | lista aktywnosci | 0.1 |
-| `getUpcomingActivities` | planowane prace | limit, filtry opcjonalne | aktywnosci `planned` | 0.1 |
+| `getDashboardSummary` | dane do dashboardu | brak | liczniki aktywnych dzialek i drzew oraz feed `recent_activities` i `recent_harvests` | 0.1 |
 | `listHarvestRecords` | lista wpisow zbioru | filtry po sezonie, odmianie, dzialce, dacie | lista rekordow `harvest_records` | 0.1 |
 | `getHarvestRecordDetails` | szczegoly wpisu zbioru | `harvest_record_id` | rekord zbioru + powiazania | 0.1 |
 | `createHarvestRecord` | zapis ilosci zebranego plonu | dane formularza zbioru | nowy rekord `harvest_records` | 0.1 |
 | `updateHarvestRecord` | korekta wpisu zbioru | `harvest_record_id` + dane formularza | zaktualizowany rekord | 0.1 |
 | `deleteHarvestRecord` | usuniecie blednego wpisu | `harvest_record_id` | wynik operacji lub blad biznesowy | 0.1 |
-| `getHarvestSeasonSummary` | podsumowanie sezonu | `season_year`, filtry opcjonalne | suma zbiorow per odmiana, per dzialka i globalnie | 0.1 |
-| `getHarvestTimeline` | historia zbiorow w czasie | zakres dat, filtry opcjonalne | lista / seria rekordow zbioru | 0.1 |
+| `getHarvestSeasonSummary` | podsumowanie sezonu | `season_year`, `plot_id` opcjonalnie, `variety_id` opcjonalnie | suma zbiorow per odmiana, per dzialka i globalnie | 0.1 |
+| `getHarvestTimeline` | historia zbiorow w czasie | `season_year`, `plot_id` opcjonalnie, `variety_id` opcjonalnie | lista dni z suma `quantity_kg` i liczba wpisow | 0.1 |
+
+Uwaga Phase 5A:
+
+- dashboardowy blok `upcoming_activities` zostaje odlozony do kolejnego sub-slice
+- w obecnym MVP nie ma osobnej operacji `getRecentActivities`; feed aktywnosci jest czescia `getDashboardSummary`
 
 ### Zalecana walidacja dla zbiorow
 
@@ -184,6 +189,13 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - `plot_id`, `variety_id`, `tree_id` i `activity_id`, jesli ustawione, musza nalezec do tego samego `orchard`
 - dla `scope_level = 'location_range'` wymagane sa `plot_id`, `row_number`, `from_position`, `to_position`
 - dla `tree_id` system powinien pilnowac spojnosci `plot_id` i `variety_id`
+- `getHarvestSeasonSummary` liczy sume globalna ze wszystkich matching rekordow
+- breakdown `per odmiana` pokazuje tylko rekordy z przypisana `variety_id`
+- breakdown `per dzialka` pokazuje tylko rekordy z przypisana `plot_id`
+- `getHarvestTimeline` grupuje rekordy po `harvest_date` w porzadku chronologicznym
+- `getDashboardSummary` liczy `active_plots_count` tylko z `plots.status = 'active'`
+- `getDashboardSummary` liczy `active_trees_count` tylko z `trees.is_active = true`
+- `getDashboardSummary` ogranicza oba feedy do 5 ostatnich rekordow po dacie malejaco, potem po `created_at`
 
 ## 8. Operacje etapu 0.2 - batch create i raport lokalizacji
 

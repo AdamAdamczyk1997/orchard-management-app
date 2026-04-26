@@ -1,16 +1,22 @@
+import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { ActivityList } from "@/features/activities/activity-list";
+import { ActivitySeasonSummary } from "@/features/activities/activity-season-summary";
 import {
   ACTIVITY_STATUSES,
   ACTIVITY_TYPES,
   getActivityStatusLabel,
   getActivityTypeLabel,
 } from "@/lib/domain/activities";
+import { hasActiveActivityListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
+  getSeasonalActivityCoverageForOrchard,
+  getSeasonalActivitySummaryForOrchard,
   listActivitiesForOrchard,
   listActiveMemberOptionsForOrchard,
   listTreeOptionsForOrchard,
@@ -21,25 +27,58 @@ import {
   getSingleSearchParam,
   type NextSearchParams,
 } from "@/lib/utils/search-params";
-import { activityListFiltersSchema } from "@/lib/validation/activities";
+import {
+  activityListFiltersSchema,
+  resolveActivitySummaryFilters,
+} from "@/lib/validation/activities";
 import type { ActivityListFilters } from "@/types/contracts";
 
 type ActivitiesPageProps = {
   searchParams: Promise<NextSearchParams>;
 };
 
+function HiddenInputs({
+  entries,
+}: {
+  entries: Array<{ name: string; value: string }>;
+}) {
+  return entries.map((entry) => (
+    <input
+      key={`${entry.name}:${entry.value}`}
+      name={entry.name}
+      type="hidden"
+      value={entry.value}
+    />
+  ));
+}
+
 export default async function ActivitiesPage({ searchParams }: ActivitiesPageProps) {
   const context = await requireActiveOrchard("/activities");
-  const orchard = context.orchard;
 
-  if (!orchard) {
-    throw new Error("Active orchard is required for activities.");
-  }
+  return (
+    <Suspense fallback={<ListPageLoading filterFieldCount={7} />}>
+      <ActivitiesPageContent
+        orchardId={context.orchard.id}
+        orchardName={context.orchard.name}
+        searchParams={searchParams}
+      />
+    </Suspense>
+  );
+}
 
+async function ActivitiesPageContent({
+  orchardId,
+  orchardName,
+  searchParams,
+}: {
+  orchardId: string;
+  orchardName: string;
+  searchParams: Promise<NextSearchParams>;
+}) {
   const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] = await Promise.all([
-    listPlotOptionsForOrchard(orchard.id),
-    listTreeOptionsForOrchard(orchard.id),
-    listActiveMemberOptionsForOrchard(orchard.id),
+    listPlotOptionsForOrchard(orchardId),
+    listTreeOptionsForOrchard(orchardId),
+    listActiveMemberOptionsForOrchard(orchardId),
     searchParams,
   ]);
 
@@ -61,42 +100,122 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
         activity_type: "all",
         status: "all",
       };
+  const currentYear = new Date().getFullYear();
+  const summaryFilters = resolveActivitySummaryFilters(
+    {
+      summary_season_year: getSingleSearchParam(
+        resolvedSearchParams.summary_season_year,
+      ),
+      summary_plot_id: getSingleSearchParam(resolvedSearchParams.summary_plot_id),
+      summary_activity_type: getSingleSearchParam(
+        resolvedSearchParams.summary_activity_type,
+      ),
+      summary_activity_subtype: getSingleSearchParam(
+        resolvedSearchParams.summary_activity_subtype,
+      ),
+      summary_performed_by_profile_id: getSingleSearchParam(
+        resolvedSearchParams.summary_performed_by_profile_id,
+      ),
+    },
+    currentYear,
+  );
 
-  const activities = await listActivitiesForOrchard(orchard.id, filters);
-  const currentSearchParams = new URLSearchParams();
+  const [activities, seasonalSummary, seasonalCoverage] = await Promise.all([
+    listActivitiesForOrchard(orchardId, filters),
+    getSeasonalActivitySummaryForOrchard(orchardId, summaryFilters),
+    summaryFilters.plot_id
+      ? getSeasonalActivityCoverageForOrchard(orchardId, {
+          ...summaryFilters,
+          plot_id: summaryFilters.plot_id,
+        })
+      : Promise.resolve([]),
+  ]);
+  const hasActiveFilters = hasActiveActivityListFilters(filters);
+  const listSearchParams = new URLSearchParams();
 
   if (filters.date_from) {
-    currentSearchParams.set("date_from", filters.date_from);
+    listSearchParams.set("date_from", filters.date_from);
   }
 
   if (filters.date_to) {
-    currentSearchParams.set("date_to", filters.date_to);
+    listSearchParams.set("date_to", filters.date_to);
   }
 
   if (filters.plot_id) {
-    currentSearchParams.set("plot_id", filters.plot_id);
+    listSearchParams.set("plot_id", filters.plot_id);
   }
 
   if (filters.tree_id) {
-    currentSearchParams.set("tree_id", filters.tree_id);
+    listSearchParams.set("tree_id", filters.tree_id);
   }
 
   if (filters.activity_type) {
-    currentSearchParams.set("activity_type", filters.activity_type);
+    listSearchParams.set("activity_type", filters.activity_type);
   }
 
   if (filters.status) {
-    currentSearchParams.set("status", filters.status);
+    listSearchParams.set("status", filters.status);
   }
 
   if (filters.performed_by_profile_id) {
-    currentSearchParams.set(
+    listSearchParams.set(
       "performed_by_profile_id",
       filters.performed_by_profile_id,
     );
   }
 
-  const redirectTo = buildPathWithSearchParams("/activities", currentSearchParams);
+  const summarySearchParams = new URLSearchParams();
+
+  if (summaryFilters.season_year !== currentYear) {
+    summarySearchParams.set(
+      "summary_season_year",
+      String(summaryFilters.season_year),
+    );
+  }
+
+  if (summaryFilters.plot_id) {
+    summarySearchParams.set("summary_plot_id", summaryFilters.plot_id);
+  }
+
+  if (summaryFilters.activity_type !== "pruning") {
+    summarySearchParams.set("summary_activity_type", summaryFilters.activity_type);
+  }
+
+  if (summaryFilters.activity_subtype) {
+    summarySearchParams.set(
+      "summary_activity_subtype",
+      summaryFilters.activity_subtype,
+    );
+  }
+
+  if (summaryFilters.performed_by_profile_id) {
+    summarySearchParams.set(
+      "summary_performed_by_profile_id",
+      summaryFilters.performed_by_profile_id,
+    );
+  }
+
+  const combinedSearchParams = new URLSearchParams(listSearchParams);
+
+  for (const [name, value] of summarySearchParams.entries()) {
+    combinedSearchParams.set(name, value);
+  }
+
+  const redirectTo = buildPathWithSearchParams("/activities", combinedSearchParams);
+  const clearListHref = buildPathWithSearchParams("/activities", summarySearchParams);
+  const clearSummaryHref = buildPathWithSearchParams("/activities", listSearchParams);
+  const preservedSummaryEntries = [...summarySearchParams.entries()].map(
+    ([name, value]) => ({
+      name,
+      value,
+    }),
+  );
+  const preservedListEntries = [...listSearchParams.entries()].map(
+    ([name, value]) => ({
+      name,
+      value,
+    }),
+  );
 
   return (
     <div className="grid gap-6">
@@ -106,7 +225,7 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
             Dziennik prac
           </p>
           <h2 className="text-2xl font-semibold text-[#1f2a1f]">
-            Aktywnosci w sadzie {orchard.name}
+            Aktywnosci w sadzie {orchardName}
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-[#5b6155]">
             Zapisuj prace sezonowe, zakres wykonania i uzyte materialy w jednym
@@ -115,6 +234,16 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
         </div>
         <LinkButton href="/activities/new">Nowa aktywnosc</LinkButton>
       </div>
+
+      <ActivitySeasonSummary
+        coverage={seasonalCoverage}
+        filters={summaryFilters}
+        memberOptions={memberOptions}
+        plotOptions={plotOptions}
+        preservedListParams={preservedListEntries}
+        resetHref={clearSummaryHref}
+        summary={seasonalSummary}
+      />
 
       <Card className="grid gap-4">
         <div className="grid gap-1">
@@ -125,6 +254,7 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
           </CardDescription>
         </div>
         <form className="grid gap-4 lg:grid-cols-3" method="get">
+          <HiddenInputs entries={preservedSummaryEntries} />
           <label className="grid gap-2">
             <span className="text-sm font-medium text-[#304335]">Od daty</span>
             <Input
@@ -211,14 +341,20 @@ export default async function ActivitiesPage({ searchParams }: ActivitiesPagePro
             >
               Zastosuj
             </button>
-            <LinkButton href="/activities" variant="ghost">
+            <LinkButton href={clearListHref} variant="ghost">
               Wyczyść
             </LinkButton>
           </div>
         </form>
       </Card>
 
-      <ActivityList activities={activities} redirectTo={redirectTo} />
+      <ActivityList
+        activities={activities}
+        clearHref={clearListHref}
+        createHref="/activities/new"
+        hasActiveFilters={hasActiveFilters}
+        redirectTo={redirectTo}
+      />
     </div>
   );
 }

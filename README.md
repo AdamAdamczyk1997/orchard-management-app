@@ -21,6 +21,18 @@ supabase start
 supabase db reset
 ```
 
+Jesli chcesz szybko przygotowac lokalne konta referencyjne pod seed:
+
+```bash
+pnpm seed:baseline-users
+```
+
+Po uruchomieniu referencyjnego SQL seedu mozesz sprawdzic gotowosc baseline do manual QA:
+
+```bash
+pnpm qa:baseline-status
+```
+
 3. Uruchom aplikacje:
 
 ```bash

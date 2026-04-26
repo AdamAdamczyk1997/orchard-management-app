@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
+import {
+  getSeasonalActivityCoverageForOrchard,
+  getSeasonalActivitySummaryForOrchard,
+  readActivityByIdForOrchard,
+} from "@/lib/orchard-data/activities";
 import { createAdminClient } from "../helpers/supabase";
 import {
   addWorkerMembership,
@@ -124,6 +129,152 @@ describe("activity management flow", () => {
     ]);
     expect(createdMaterials.error).toBeNull();
     expect(createdMaterials.data).toHaveLength(2);
+
+    const secondPlot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera A2",
+      code: "A-02",
+    });
+
+    await createActivityAsUser(workerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: secondPlot.id,
+        activity_type: "spraying",
+        activity_date: "2026-04-21",
+        title: "Oprysk pracownika",
+        status: "done",
+        performed_by_profile_id: worker.user.id,
+        performed_by: worker.profile.display_name,
+        season_phase: "wiosna",
+      },
+      scopes: [
+        {
+          scope_level: "plot",
+          scope_order: 1,
+        },
+      ],
+      materials: [
+        {
+          name: "Preparat testowy",
+        },
+      ],
+    });
+
+    await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        activity_type: "spraying",
+        activity_date: "2026-04-25",
+        title: "Planowany oprysk",
+        status: "planned",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+        season_phase: "wiosna",
+      },
+      scopes: [
+        {
+          scope_level: "plot",
+          scope_order: 1,
+        },
+      ],
+      materials: [],
+    });
+
+    const details = await readActivityByIdForOrchard(
+      orchard.orchard_id,
+      createdActivity.activity_id,
+      ownerClient,
+    );
+    const summary = await getSeasonalActivitySummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        activity_type: "spraying",
+      },
+      ownerClient,
+    );
+    const ownerSummary = await getSeasonalActivitySummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        activity_type: "spraying",
+        performed_by_profile_id: owner.user.id,
+      },
+      ownerClient,
+    );
+    const coverage = await getSeasonalActivityCoverageForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        plot_id: plot.id,
+        activity_type: "spraying",
+      },
+      ownerClient,
+    );
+
+    expect(details).not.toBeNull();
+    expect(details).toMatchObject({
+      id: createdActivity.activity_id,
+      title: "Oprysk po opadach",
+      performed_by_profile_id: owner.user.id,
+    });
+    expect(details?.scopes).toHaveLength(1);
+    expect(details?.scopes[0]).toMatchObject({
+      scope_level: "tree",
+      tree_id: tree.id,
+    });
+    expect(details?.materials.map((material) => material.name)).toEqual([
+      "Miedzian 50 WP",
+      "Woda",
+    ]);
+
+    expect(summary).toMatchObject({
+      season_year: 2026,
+      activity_type: "spraying",
+      activity_subtype: null,
+      total_done_count: 2,
+    });
+    expect(summary.affected_plots).toEqual([
+      {
+        plot_id: secondPlot.id,
+        plot_name: "Kwatera A2",
+        total_done_count: 1,
+        last_activity_date: "2026-04-21",
+      },
+      {
+        plot_id: plot.id,
+        plot_name: "Kwatera A",
+        total_done_count: 1,
+        last_activity_date: "2026-04-19",
+      },
+    ]);
+    expect(ownerSummary.total_done_count).toBe(1);
+    expect(ownerSummary.affected_plots).toEqual([
+      {
+        plot_id: plot.id,
+        plot_name: "Kwatera A",
+        total_done_count: 1,
+        last_activity_date: "2026-04-19",
+      },
+    ]);
+
+    expect(coverage).toEqual([
+      {
+        activity_id: createdActivity.activity_id,
+        activity_date: "2026-04-19",
+        status: "done",
+        plot_id: plot.id,
+        plot_name: "Kwatera A",
+        activity_type: "spraying",
+        activity_subtype: null,
+        scope: expect.objectContaining({
+          scope_level: "tree",
+          tree_id: tree.id,
+        }),
+      },
+    ]);
 
     await updateActivityAsUser(workerClient, {
       activityId: createdActivity.activity_id,

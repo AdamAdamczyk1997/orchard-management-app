@@ -13,7 +13,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:baseline-users": "node scripts/bootstrap-baseline-seed-users.mjs",
+    "qa:baseline-status": "node scripts/check-baseline-qa-status.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",

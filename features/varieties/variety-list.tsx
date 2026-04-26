@@ -1,21 +1,37 @@
 import Link from "next/link";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import type { VarietySummary } from "@/types/contracts";
 
 type VarietyListProps = {
   varieties: VarietySummary[];
+  hasActiveFilters: boolean;
+  clearHref: string;
+  createHref: string;
 };
 
-export function VarietyList({ varieties }: VarietyListProps) {
+export function VarietyList({
+  varieties,
+  hasActiveFilters,
+  clearHref,
+  createHref,
+}: VarietyListProps) {
   if (varieties.length === 0) {
-    return (
-      <Card className="grid gap-3">
-        <CardTitle>Brak odmian</CardTitle>
-        <CardDescription>
-          Dodaj pierwsza odmiane, aby drzewa i przyszle wpisy zbioru mogly
-          korzystac z danych odmianowych przypisanych do sadu.
-        </CardDescription>
-      </Card>
+    return hasActiveFilters ? (
+      <EmptyStateCard
+        actions={[
+          { href: clearHref, label: "Wyczysc wyszukiwanie", variant: "secondary" },
+          { href: createHref, label: "Utworz odmiane", variant: "ghost" },
+        ]}
+        description="Zmien zapytanie albo wyczysc wyszukiwanie, aby zobaczyc pozostale odmiany z aktywnego sadu."
+        title="Brak wynikow dla tego wyszukiwania"
+      />
+    ) : (
+      <EmptyStateCard
+        actions={[{ href: createHref, label: "Utworz odmiane" }]}
+        description="Dodaj pierwsza odmiane, aby drzewa i przyszle wpisy zbioru mogly korzystac z danych odmianowych przypisanych do sadu."
+        title="Brak odmian"
+      />
     );
   }
 
@@ -28,7 +44,7 @@ export function VarietyList({ varieties }: VarietyListProps) {
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-lg">{variety.name}</CardTitle>
                 <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
-                {variety.species}
+                  {variety.species}
                 </span>
                 {variety.is_favorite ? (
                   <span className="rounded-full border border-[#dfd3bb] px-3 py-1 text-xs font-medium text-[#5b6155]">

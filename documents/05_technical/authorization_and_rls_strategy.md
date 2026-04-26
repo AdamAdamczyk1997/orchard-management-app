@@ -111,6 +111,7 @@ Zasady implementacyjne:
 
 - `super_admin` jest rozpoznawany przez `profiles.system_role = 'super_admin'`
 - membership orchard w helper functions zawsze sprawdza `orchard_memberships.status = 'active'`, chyba ze polityka dotyczy jawnie bootstrapu lub widocznosci membership
+- jesli wynik helper function nie zalezy od danych konkretnego wiersza, bezposrednie wywolania `auth.uid()`, `auth.jwt()` i podobnych helperow w politykach RLS opakowujemy jako `(select auth.uid())` / `(select auth.jwt())`, zeby unikac per-row reevaluacji i korzystac z `initPlan`
 - helper functions sa `security definer`
 - helper functions maja jawne `revoke execute ... from public` i `grant execute ... to authenticated`
 - self-service update `profiles` jest dodatkowo chroniony triggerem, ktory blokuje zmiane `id`, `email`, `system_role` i `created_at` dla zwyklego usera
@@ -120,7 +121,7 @@ Zasady implementacyjne:
 | Tabela | SELECT | INSERT | UPDATE | DELETE | Uwagi |
 |---|---|---|---|---|---|
 | `profiles` | swoj profil, `super_admin`, albo profile powiazane wspolnym orchard | brak bezposredniego insertu przez klienta | swoj profil lub `super_admin` | brak dla zwyklego usera | insert powstaje przez trigger po `auth.users`; polityka select korzysta z `can_read_profile()`; trigger ogranicza self-service update do bezpiecznych pol |
-| `orchards` | aktywne membership, creator bootstrapu, albo `super_admin` | `authenticated` dla rekordow z `created_by_profile_id = auth.uid()` albo `super_admin` | `owner`, creator bootstrapu, albo `super_admin` | tylko `super_admin` | fizyczne usuniecie nie jest flow MVP |
+| `orchards` | aktywne membership, creator bootstrapu, albo `super_admin` | `authenticated` dla rekordow z `created_by_profile_id = (select auth.uid())` albo `super_admin` | `owner`, creator bootstrapu, albo `super_admin` | tylko `super_admin` | fizyczne usuniecie nie jest flow MVP |
 | `orchard_memberships` | swoj membership, `owner` orchard, albo `super_admin` | bootstrap pierwszego `owner` po `createOrchard`, potem `owner` albo `super_admin` | `owner` albo `super_admin` | `owner` albo `super_admin` | `worker` nie ma mutacji na membership |
 | `plots` | aktywne membership w `orchard` albo `super_admin` | `owner`, `worker`, przyszlosciowo `manager` | `owner`, `worker`, przyszlosciowo `manager` | `owner` albo `super_admin` | polityka po `orchard_id`; delete bardziej konserwatywny niz zwykle update |
 | `varieties` | aktywne membership w `orchard` albo `super_admin` | `owner`, `worker`, przyszlosciowo `manager` | `owner`, `worker`, przyszlosciowo `manager` | `owner` albo `super_admin` | delete ograniczony ze wzgledu na powiazania z drzewami |

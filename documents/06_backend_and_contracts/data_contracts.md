@@ -337,6 +337,7 @@ type ActivityFormInput = {
 
 type ActivitySummary = {
   id: string
+  orchard_id: string
   plot_id: string
   tree_id?: string | null
   activity_type: ActivityFormInput["activity_type"]
@@ -346,10 +347,14 @@ type ActivitySummary = {
   season_phase?: string | null
   status: "planned" | "done" | "skipped" | "cancelled"
   title: string
+  description?: string | null
   plot_name?: string
   tree_display_name?: string | null
   scope_count?: number
+  material_count?: number
   performed_by_display?: string | null
+  created_at?: string
+  updated_at?: string
 }
 
 type ActivityListFilters = {
@@ -385,8 +390,6 @@ type ActivityMaterialSummary = {
 }
 
 type ActivityDetails = ActivitySummary & {
-  orchard_id: string
-  description?: string | null
   work_duration_minutes?: number | null
   cost_amount?: number | null
   weather_notes?: string | null
@@ -395,13 +398,11 @@ type ActivityDetails = ActivitySummary & {
   created_by_profile_id: string
   scopes: ActivityScopeSummary[]
   materials: ActivityMaterialSummary[]
-  created_at: string
-  updated_at: string
 }
 
 type SeasonalActivitySummary = {
   season_year: number
-  activity_type: ActivityFormInput["activity_type"]
+  activity_type: "pruning" | "mowing" | "spraying"
   activity_subtype?: "winter_pruning" | "summer_pruning" | null
   total_done_count: number
   affected_plots: Array<{
@@ -412,13 +413,25 @@ type SeasonalActivitySummary = {
   }>
 }
 
+type SeasonalActivitySummaryFilters = {
+  season_year: number
+  plot_id?: string
+  activity_type: "pruning" | "mowing" | "spraying"
+  activity_subtype?: "winter_pruning" | "summer_pruning"
+  performed_by_profile_id?: string
+}
+
+type SeasonalActivityCoverageFilters = SeasonalActivitySummaryFilters & {
+  plot_id: string
+}
+
 type SeasonalActivityCoverage = Array<{
   activity_id: string
   activity_date: string
   status: "planned" | "done" | "skipped" | "cancelled"
   plot_id: string
   plot_name: string
-  activity_type: ActivityFormInput["activity_type"]
+  activity_type: "pruning" | "mowing" | "spraying"
   activity_subtype?: "winter_pruning" | "summer_pruning" | null
   scope: ActivityScopeSummary
 }>
@@ -430,8 +443,13 @@ Uwagi Phase 3:
   sezonowych flow `pruning`, `mowing` i `spraying`; dla calej dzialki jest to scope `plot`
 - `getActivityDetails` powinno zwracac parent record razem z uporzadkowanymi
   `activity_scopes` i `activity_materials` w jednym payloadzie
+- `SeasonalActivitySummaryFilters` odpowiadaja query params `summary_*` na `/activities`
+- `summary_activity_subtype` ma sens tylko dla `activity_type = 'pruning'`
+- `SeasonalActivitySummary` agreguje tylko rekordy `status = 'done'`
 - `getSeasonalActivityCoverage` powinno opierac sie na zapisanych `activity_scopes`,
   a nie na inferencji z samych statusow drzew lub dzialek
+- `SeasonalActivityCoverageFilters.plot_id` jest wymagane, bo coverage renderuje sie
+  dopiero po wyborze konkretnej dzialki
 
 ## 8. Kontrakt formularza zbioru
 
@@ -465,23 +483,51 @@ type HarvestRecordSummary = {
   variety_name?: string | null
 }
 
+type HarvestSeasonSummaryFilters = {
+  season_year: number
+  plot_id?: string
+  variety_id?: string
+}
+
 type HarvestSeasonSummary = {
   season_year: number
   total_quantity_kg: number
+  record_count: number
   by_variety: Array<{
-    variety_id: string | null
+    variety_id: string
     variety_name: string | null
     total_quantity_kg: number
+    record_count: number
   }>
   by_plot: Array<{
-    plot_id: string | null
+    plot_id: string
     plot_name: string | null
     total_quantity_kg: number
+    record_count: number
   }>
 }
+
+type HarvestTimelineEntry = {
+  harvest_date: string
+  total_quantity_kg: number
+  record_count: number
+}
+
+type HarvestTimeline = Array<HarvestTimelineEntry>
 ```
 
-## 8. Kontrakt batch create - etap 0.2
+Uwagi Phase 4:
+
+- `HarvestSeasonSummaryFilters` odpowiadaja query params `season_year`, `plot_id`
+  i `variety_id` na `/reports/season-summary`
+- `HarvestSeasonSummary.total_quantity_kg` i `record_count` licza wszystkie rekordy
+  po aktywnych filtrach
+- `by_variety` pokazuje tylko rekordy z przypisana odmiana
+- `by_plot` pokazuje tylko rekordy z przypisana dzialka
+- `HarvestTimeline` grupuje rekordy po `harvest_date` i korzysta z tych samych filtrow
+  co summary screen
+
+## 9. Kontrakt batch create - etap 0.2
 
 ```ts
 type BulkTreeBatchInput = {
@@ -500,7 +546,7 @@ type BulkTreeBatchInput = {
 }
 ```
 
-## 9. Kontrakt masowego oznaczania drzew jako `removed` - etap 0.2
+## 10. Kontrakt masowego oznaczania drzew jako `removed` - etap 0.2
 
 ```ts
 type BulkDeactivateTreesInput = {
@@ -533,23 +579,22 @@ type DashboardSummary = {
     id: string
     title: string
     activity_date: string
-    status: string
+    status: ActivityStatus
     plot_name: string
   }>
   recent_harvests: Array<{
     id: string
     harvest_date: string
     quantity_kg: number
-    plot_name?: string | null
-  }>
-  upcoming_activities: Array<{
-    id: string
-    title: string
-    activity_date: string
     plot_name: string
   }>
 }
 ```
+
+Uwaga Phase 5A:
+
+- `DashboardSummary` nie zawiera jeszcze `upcoming_activities`
+- osobny planning block dla dashboardu jest odlozony do kolejnego sub-slice
 
 ## 11. Kontrakt eksportu
 

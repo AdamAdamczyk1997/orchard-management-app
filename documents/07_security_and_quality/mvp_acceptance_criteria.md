@@ -54,6 +54,7 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 - User moze opcjonalnie przypisac aktywnosc do konkretnego drzewa.
 - User moze edytowac aktywnosc.
 - User moze przegladac dziennik prac i filtrowac wpisy.
+- User moze wejsc w detail page aktywnosci z poziomu listy.
 - Aktywnosc moze miec status `planned`, `done`, `skipped` lub `cancelled`.
 - Aktywnosc zawsze ma date.
 - Aktywnosc moze zawierac wiele materialow.
@@ -75,17 +76,22 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 - Przy `spraying` user moze zapisac uzyte srodki wraz z iloscia i jednostka.
 - System pozwala odczytac, kto wykonal prace, przez `performed_by_profile_id` albo pole opisowe `performed_by`.
 - Historia aktywnosci pozwala odroznic, co zostalo wykonane, bez nadpisywania poprzednich wpisow sezonowych.
+- User moze zobaczyc na `/activities` sezonowe `summary + coverage` dla `pruning`, `mowing` i `spraying`.
+- Coverage pokazuje tylko zapisane `activity_scopes` dla rekordow `done` i aktywuje sie po wyborze konkretnej dzialki.
 
 ## 6b. Zbiory i podsumowania sezonowe
 
 - User moze zapisac rekord zbioru z iloscia owocow dla wybranego dnia.
+- User moze przegladac liste wpisow zbioru, wejsc w detail page i skorygowac rekord edycja.
 - Rekord zbioru moze byc zapisany:
   - dla calego orchard
   - dla dzialki
   - dla odmiany
   - dla zakresu lokalizacji
+  - dla pojedynczego drzewa
 - System wspiera co najmniej jednostki `kg` i `t`.
 - System przelicza ilosc do `quantity_kg`, aby poprawnie liczyc sumy.
+- User moze otworzyc `/reports/season-summary` i zobaczyc raport dla wybranego `season_year`.
 - User moze zobaczyc sume zbiorow:
   - per odmiana
   - per dzialka
@@ -95,8 +101,11 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 ## 7. Dashboard i nawigacja
 
 - Po zalogowaniu user trafia na onboarding orchard albo dashboard.
-- Dashboard pokazuje podstawowe podsumowanie danych i ostatnie aktywnosci.
+- Dashboard pokazuje liczniki aktywnych dzialek i aktywnych drzew, ostatnie aktywnosci oraz ostatnie zbiory.
 - Z glownej nawigacji da sie przejsc do dzialek, drzew, odmian, dziennika i zbiorow.
+- Glówne listy odrozniaja brak danych od braku wynikow po filtrowaniu i proponuja sensowne CTA.
+- Krytyczne trasy detail/edit nie koncza sie surowym bledem ani cichym redirectem, gdy rekord nie istnieje w aktywnym sadzie.
+- Flow zablokowany przez brak wymaganej dzialki pokazuje jasny kolejny krok zamiast bledu systemowego.
 - Kluczowe widoki dzialaja na telefonie i desktopie.
 
 ## 8. Bezpieczenstwo i spojnosci danych

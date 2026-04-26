@@ -7,13 +7,7 @@ import { createPlot } from "@/server/actions/plots";
 
 export default async function NewPlotPage() {
   const context = await requireActiveOrchard("/plots/new");
-  const orchard = context.orchard;
-
-  if (!orchard) {
-    throw new Error("Active orchard is required for plot creation.");
-  }
-
-  const plotCodes = await listPlotCodesForOrchard(orchard.id);
+  const plotCodes = await listPlotCodesForOrchard(context.orchard.id);
   const suggestedCode = suggestNextPlotCode(plotCodes);
 
   return (
@@ -22,7 +16,7 @@ export default async function NewPlotPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
           Nowa dzialka
         </p>
-        <CardTitle>{orchard.name}</CardTitle>
+        <CardTitle>{context.orchard.name}</CardTitle>
         <CardDescription>
           Dodaj fizyczna dzialke do aktywnego sadu, aby uporzadkowac drzewa i
           kolejne wpisy operacyjne w stabilnej strukturze.

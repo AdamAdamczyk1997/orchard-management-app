@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { PlotForm } from "@/features/plots/plot-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readPlotByIdForOrchard } from "@/lib/orchard-data/plots";
@@ -13,17 +13,17 @@ type EditPlotPageProps = {
 
 export default async function EditPlotPage({ params }: EditPlotPageProps) {
   const context = await requireActiveOrchard("/plots");
-  const orchard = context.orchard;
-
-  if (!orchard) {
-    throw new Error("Active orchard is required for plot editing.");
-  }
-
   const { plotId } = await params;
-  const plot = await readPlotByIdForOrchard(orchard.id, plotId);
+  const plot = await readPlotByIdForOrchard(context.orchard.id, plotId);
 
   if (!plot) {
-    redirect("/plots");
+    return (
+      <RecordNotFoundCard
+        backHref="/plots"
+        description="Nie da sie otworzyc tej dzialki do edycji, bo nie istnieje w aktywnym sadzie albo zostala juz usunieta."
+        title="Nie znaleziono dzialki do edycji"
+      />
+    );
   }
 
   return (

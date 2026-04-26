@@ -51,6 +51,7 @@ Bezpieczne komendy diagnostyczne:
 - `pnpm typecheck`
 - `pnpm test`
 - `supabase status`
+- `supabase db lint --local`
 - `docker ps`
 
 To sa komendy, ktore normalnie nie psuja projektu.
@@ -112,6 +113,7 @@ Jesli chcesz tylko sprawdzic, czy wszystko zyje:
 
 ```bash
 supabase status
+supabase db lint --local
 docker ps
 ```
 
@@ -160,6 +162,8 @@ pnpm build
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm seed:baseline-users
+pnpm qa:baseline-status
 ```
 
 Znaczenie:
@@ -180,6 +184,15 @@ Znaczenie:
 - `pnpm test`
   - uruchamia testy automatyczne projektu
   - dla testow integracyjnych wymaga dzialajacego lokalnego Supabase
+- `pnpm seed:baseline-users`
+  - tworzy albo aktualizuje lokalne konta `auth.users` potrzebne do referencyjnego seedu
+  - ustawia wspolne haslo lokalne dla tych kont
+  - nie odpala jeszcze samego SQL seedu
+- `pnpm qa:baseline-status`
+  - sprawdza, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
+  - zwraca niezerowy exit code, jesli baseline nie jest jeszcze kompletny
+  - podpowiada kolejny krok: bootstrap kont, rerun SQL seedu albo start smoke passa
+  - jesli widzisz liczby wieksze od referencyjnych, narzedzie zasugeruje pelny `supabase db reset`, bo lokalna baza jest zabrudzona po testach albo recznej pracy
 
 Najbezpieczniejszy zestaw po zmianach:
 
@@ -187,6 +200,15 @@ Najbezpieczniejszy zestaw po zmianach:
 pnpm lint
 pnpm typecheck
 pnpm test
+```
+
+Najpraktyczniejszy zestaw do seeded QA:
+
+```bash
+supabase db reset
+pnpm seed:baseline-users
+# uruchom potem supabase/seeds/001_baseline_reference_seed.sql
+pnpm qa:baseline-status
 ```
 
 Kiedy uwazac:
@@ -248,6 +270,7 @@ supabase start
 supabase status
 supabase stop
 supabase db reset
+supabase db lint --local
 ```
 
 Znaczenie:
@@ -263,11 +286,15 @@ Znaczenie:
   - resetuje lokalna baze
   - odpala migracje od nowa
   - zwykle seeduje dane, jesli projekt jest tak skonfigurowany
+- `supabase db lint --local`
+  - sprawdza lokalny schema package, funkcje i polityki pod typowe problemy SQL / RLS
+  - nic nie zmienia w repo ani danych
 
 Najbezpieczniejszy codzienny zestaw:
 
 ```bash
 supabase status
+supabase db lint --local
 supabase start
 supabase stop
 ```
@@ -309,6 +336,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 supabase status
+supabase db lint --local
 ```
 
 Jesli sama aplikacja ma sie uruchomic i byc widoczna w przegladarce, najwazniejsza komenda jest:

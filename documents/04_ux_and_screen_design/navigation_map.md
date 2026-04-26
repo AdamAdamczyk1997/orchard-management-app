@@ -115,14 +115,16 @@ Dodatkowo:
 
 - `dashboard -> activities`
 - `activities -> activity details`
-- `activity details -> plot details`
-- `activity details -> tree details`, jesli aktywnosc dotyczy konkretnego drzewa
+- `activities -> sezonowe summary i coverage` na tej samej trasie, przez niezalezne filtry `summary_*`
+- `activity details -> activities`
+- `activity details -> activities/[activityId]/edit`
+- szczegoly aktywnosci pokazuja nazwy dzialki i drzewa jako metadata, bez linkow do odlozonych detail pages
 
 ### Zbiory
 
 - `dashboard -> harvests`
 - `harvests -> harvest details`
-- `harvests -> season summary`
+- `harvests -> /reports/season-summary`
 - `season summary -> filtered harvest list`
 
 ## Szybkie akcje
@@ -153,10 +155,11 @@ Filtrowanie powinno byc utrzymywane w URL tam, gdzie to ma sens:
 - `/trees?plot_id=...`
 - `/trees?variety_id=...&condition_status=warning`
 - `/trees?is_active=true`
-- `/activities?plot=...&status=planned`
+- `/activities?plot_id=...&status=planned`
+- `/activities?summary_season_year=2026&summary_activity_type=pruning&summary_plot_id=...`
 - `/varieties?q=ligol`
-- `/harvests?season_year=2026&plot=...`
-- `/reports/season-summary?season_year=2026`
+- `/harvests?season_year=2026&plot_id=...`
+- `/reports/season-summary?season_year=2026&plot_id=...&variety_id=...`
 
 To pomaga:
 

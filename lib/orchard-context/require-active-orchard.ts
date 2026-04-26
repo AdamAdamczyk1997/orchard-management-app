@@ -3,6 +3,16 @@ import {
   buildActiveOrchardSyncPath,
 } from "@/lib/orchard-context/active-orchard-cookie";
 import { resolveActiveOrchardContext } from "@/lib/orchard-context/resolve-active-orchard";
+import type {
+  OrchardMembershipSummary,
+  OrchardSummary,
+  ResolvedActiveOrchardContext,
+} from "@/types/contracts";
+
+type RequiredActiveOrchardContext = ResolvedActiveOrchardContext & {
+  orchard: OrchardSummary;
+  membership: OrchardMembershipSummary;
+};
 
 export async function requireActiveOrchard(nextPath = "/dashboard") {
   const context = await resolveActiveOrchardContext();
@@ -32,5 +42,5 @@ export async function requireActiveOrchard(nextPath = "/dashboard") {
     );
   }
 
-  return context;
+  return context as RequiredActiveOrchardContext;
 }

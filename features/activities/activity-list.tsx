@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import {
   getActivityPruningSubtypeLabel,
   getActivityStatusLabel,
@@ -12,6 +13,9 @@ import type { ActivitySummary } from "@/types/contracts";
 type ActivityListProps = {
   activities: ActivitySummary[];
   redirectTo: string;
+  hasActiveFilters: boolean;
+  clearHref: string;
+  createHref: string;
 };
 
 function formatActivityDate(activityDate: string) {
@@ -20,16 +24,29 @@ function formatActivityDate(activityDate: string) {
   }).format(new Date(activityDate));
 }
 
-export function ActivityList({ activities, redirectTo }: ActivityListProps) {
+export function ActivityList({
+  activities,
+  redirectTo,
+  hasActiveFilters,
+  clearHref,
+  createHref,
+}: ActivityListProps) {
   if (activities.length === 0) {
-    return (
-      <Card className="grid gap-3">
-        <CardTitle>Brak aktywnosci</CardTitle>
-        <CardDescription>
-          Dodaj pierwszy wpis do dziennika prac albo zmien filtry, aby zobaczyc
-          zapisane aktywnosci.
-        </CardDescription>
-      </Card>
+    return hasActiveFilters ? (
+      <EmptyStateCard
+        actions={[
+          { href: clearHref, label: "Wyczysc filtry", variant: "secondary" },
+          { href: createHref, label: "Nowa aktywnosc", variant: "ghost" },
+        ]}
+        description="Zmien zakres dat, dzialke, status albo wykonawce, aby zobaczyc pozostale wpisy dziennika."
+        title="Brak aktywnosci dla wybranych filtrow"
+      />
+    ) : (
+      <EmptyStateCard
+        actions={[{ href: createHref, label: "Nowa aktywnosc" }]}
+        description="Dodaj pierwszy wpis do dziennika prac, aby zaczac dokumentowac operacje sezonowe w sadzie."
+        title="Brak aktywnosci"
+      />
     );
   }
 
@@ -40,7 +57,12 @@ export function ActivityList({ activities, redirectTo }: ActivityListProps) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="grid gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg">{activity.title}</CardTitle>
+                <Link
+                  className="rounded-xl transition hover:text-[#274430] focus:outline-none focus:ring-2 focus:ring-[#b48446]"
+                  href={`/activities/${activity.id}`}
+                >
+                  <CardTitle className="text-lg">{activity.title}</CardTitle>
+                </Link>
                 <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
                   {getActivityStatusLabel(activity.status)}
                 </span>
@@ -103,7 +125,12 @@ export function ActivityList({ activities, redirectTo }: ActivityListProps) {
           </div>
 
           {activity.description ? (
-            <CardDescription>{activity.description}</CardDescription>
+            <Link
+              className="rounded-xl transition hover:text-[#304335] focus:outline-none focus:ring-2 focus:ring-[#b48446]"
+              href={`/activities/${activity.id}`}
+            >
+              <CardDescription>{activity.description}</CardDescription>
+            </Link>
           ) : null}
 
           <form

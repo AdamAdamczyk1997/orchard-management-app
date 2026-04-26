@@ -103,6 +103,12 @@ export function ProtectedAppShell({
           >
             Aktywnosci
           </Link>
+          <Link
+            className="rounded-2xl px-3 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+            href="/harvests"
+          >
+            Zbiory
+          </Link>
           <div className="mt-2 border-t border-[#eee5d5] pt-3">
             <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9d7e4e]">
               Ustawienia
@@ -133,8 +139,8 @@ export function ProtectedAppShell({
             </div>
           </div>
           <div className="rounded-2xl border border-dashed border-[#dfd3bb] px-3 py-3 text-sm leading-6 text-[#6d7269]">
-            Zbiory i raporty sezonowe dolaczymy do tego shella po stabilizacji
-            dziennika prac.
+            Harvestowe podsumowanie sezonu jest juz dostepne w raportach, a panel
+            glowny zbiera teraz najwazniejsze wpisy operacyjne dla aktywnego sadu.
           </div>
         </aside>
         <section>{children}</section>

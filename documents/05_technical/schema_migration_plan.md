@@ -74,6 +74,14 @@ Rekomendowana kolejnosc plikow:
 | `012` | `012_add_core_integrity_and_rls_helpers.sql` | cross-table triggers, derived fields, RLS helper functions | `002`-`011` |
 | `013` | `013_create_v1_security_helpers.sql` | v1 helper functions for orchard read/write/manage policies | `012` |
 | `014` | `014_enable_rls_and_v1_policies.sql` | `enable RLS` + MVP policies for all baseline tables | `013` |
+| `015` | `015_create_orchard_with_owner_membership_rpc.sql` | atomowy onboarding RPC dla `orchards` + pierwszego membership `owner` | `003`, `004`, `014` |
+| `016` | `016_create_invite_orchard_member_rpc.sql` | owner-only RPC do dodania lub reaktywacji membership po emailu | `002`, `004`, `013`-`015` |
+| `017` | `017_harden_function_search_paths.sql` | hardening `search_path` dla helper functions i RPC | `012`-`016` |
+| `018` | `018_create_activity_mutation_rpcs.sql` | transakcyjne RPC dla `activities` + child rows i odczyt performer options | `002`-`010`, `014`, `017` |
+| `019` | `019_consolidate_orchard_membership_insert_policy.sql` | konsolidacja permissive `INSERT` policies dla `orchard_memberships` | `014` |
+| `020` | `020_wrap_auth_uid_in_orchard_membership_select_policy.sql` | optymalizacja `auth.uid()` w polityce `SELECT` dla `orchard_memberships` | `014`, `019` |
+| `021` | `021_wrap_auth_uid_in_orchards_update_policy.sql` | optymalizacja `auth.uid()` w polityce `UPDATE` dla `orchards` | `014` |
+| `022` | `022_wrap_auth_uid_in_orchards_insert_policy.sql` | optymalizacja `auth.uid()` w polityce `INSERT` dla `orchards` | `014`, `021` |
 
 ### Zaleznosci pakietu
 
@@ -147,10 +155,15 @@ Rekomendowana kolejnosc plikow:
 - bulk deactivate trees technical history
 - advanced location reporting extensions
 
-### Delivered in immediate `v1_security` package
+### Delivered in immediate `v1_security` and hardening package
 
 - `013_create_v1_security_helpers.sql`
 - `014_enable_rls_and_v1_policies.sql`
+- `017_harden_function_search_paths.sql`
+- `019_consolidate_orchard_membership_insert_policy.sql`
+- `020_wrap_auth_uid_in_orchard_membership_select_policy.sql`
+- `021_wrap_auth_uid_in_orchards_update_policy.sql`
+- `022_wrap_auth_uid_in_orchards_insert_policy.sql`
 - `enable row level security` on all baseline domain tables
 - final MVP policies for:
   - `profiles`
@@ -173,6 +186,15 @@ Rekomendowana kolejnosc plikow:
   - `can_write_activity_children(target_activity_id uuid)`
 - dodatkowy guard trigger:
   - `guard_profile_self_service_update()`
+
+### Delivered in immediate operational follow-up package
+
+- `015_create_orchard_with_owner_membership_rpc.sql`
+- `016_create_invite_orchard_member_rpc.sql`
+- `018_create_activity_mutation_rpcs.sql`
+- atomowy onboarding ownera przez `create_orchard_with_owner_membership(...)`
+- owner-only dodawanie lub reaktywacja membership po emailu przez `invite_orchard_member_by_email(...)`
+- transakcyjny zapis `activities + activity_scopes + activity_materials`
 
 ### Deferred beyond baseline and immediate security follow-up
 
@@ -202,6 +224,7 @@ Docelowy seed lokalnego developmentu i testow znajduje sie w:
 Prerequisites:
 
 - seed nalezy uruchamiac przez uprzywilejowany lokalny workflow (`supabase db reset`, `psql` jako owner bazy lub rownowazny kontekst administracyjny), a nie przez zwyklego `authenticated` usera
+- wymagane konta `auth.users` mozna zbootstrapowac lokalnie komenda `pnpm seed:baseline-users` przed odpaleniem SQL seedu
 - seed wymaga istnienia kont w `auth.users` dla emaili:
   - `admin@orchardlog.local`
   - `jan.owner@orchardlog.local`
@@ -237,12 +260,16 @@ Pokryte scenariusze:
 
 ### Validation status of the current package
 
-- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`014`
+- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`022`
+- lokalne `supabase db reset` przechodzi dla aktualnego pakietu
+- lokalne `pnpm seed:baseline-users` tworzy albo aktualizuje komplet 6 kont seedowych wymaganych przez `001_baseline_reference_seed.sql`
+- lokalne `pnpm qa:baseline-status` pozwala potwierdzic, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
+- lokalne `supabase db lint --local -o json` nie zgłasza juz warningow `Function Search Path Mutable`, `Multiple Permissive Policies` ani `Auth RLS Initialization Plan`; obecnie pozostaje tylko niezwiązany warning o nieuzywanej zmiennej `v_membership_joined_at` w RPC `create_orchard_with_owner_membership(...)`
 - pakiet jest gotowy do uruchomienia lokalnie w srodowisku z PostgreSQL lub Supabase CLI
-- faktyczne odpalenie `db reset` / `psql -f` nadal jest wymaganym krokiem operacyjnym przed pierwsza wspoldzielona baza
 
 ## 7. Readiness statement
 
 - `baseline SQL migrations v1` jest wystarczajaco stabilny do implementacji.
 - Pakiet opiera sie na finalnie skonsolidowanym core modelu danych i nie wymaga juz dodatkowych decyzji biznesowych, zeby wystartowac ze schematem.
-- Bezposredni kolejny krok po wdrozeniu baseline to lokalne odpalenie seedu i reczne testy izolacji RLS na `profiles`, `orchards`, `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`.
+- Aktualny lokalny workflow baseline seedu to: `supabase db reset` -> `pnpm seed:baseline-users` -> uruchomienie `supabase/seeds/001_baseline_reference_seed.sql` -> `pnpm qa:baseline-status`.
+- Bezposredni kolejny krok po wdrozeniu baseline to lokalne odpalenie seedu tym workflow i reczne testy izolacji RLS na `profiles`, `orchards`, `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`.

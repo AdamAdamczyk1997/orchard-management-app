@@ -57,11 +57,13 @@ Kazdy glowny widok powinien miec obsluge:
 ### Loading
 
 - skeleton dla kart podsumowan
+- skeleton dla karty szybkich akcji
 - placeholder dla ostatnich aktywnosci
 - placeholder dla kart zbiorow
 
 ### Empty state
 
+- pelny empty state pokazuje sie tylko wtedy, gdy nie ma aktywnych dzialek, aktywnych drzew i obu feedow wpisow
 - brak dzialek i drzew
 - onboardingowe CTA:
   - dodaj dzialke
@@ -71,15 +73,15 @@ Kazdy glowny widok powinien miec obsluge:
 
 ### Partial empty state
 
-- sa dzialki, ale brak aktywnosci
-- sa aktywnosci, ale brak planowanych prac
+- sa dane strukturalne, ale brak aktywnosci
 - sa dane orchard, ale brak rekordow zbioru
+- dashboard nadal pokazuje karty summary i szybkie akcje mimo pustych feedow
 
 ## 4. Listy dzialek, drzew, odmian, aktywnosci i zbiorow
 
 ### Loading
 
-- skeleton listy
+- streamingowy skeleton listy dla `plots`, `varieties`, `trees`, `activities` i `harvests`
 
 ### Empty state globalny
 
@@ -90,11 +92,18 @@ Kazdy glowny widok powinien miec obsluge:
 
 - komunikat typu `brak wynikow dla wybranych filtrow`
 - akcja czyszczenia filtrow
+- opcjonalne drugie CTA do utworzenia rekordu pozostaje dostepne, ale akcja czyszczenia filtrow jest priorytetowa
 
 ### Error state
 
 - blad pobrania danych
 - mozliwosc ponowienia
+
+### Record not found na detail/edit route
+
+- jesli rekord nie istnieje w aktywnym `orchard` albo zostal usuniety, ekran nie robi cichego redirectu
+- user widzi czytelny komunikat i jednoznaczne CTA powrotu do listy modulu
+- ten wzorzec dotyczy krytycznych tras `activities`, `harvests`, `plots`, `trees`, `varieties` oraz wybranych ekranow `settings`
 
 ## 5. Formularze
 
@@ -133,6 +142,12 @@ Przyklady:
 - subtelna informacja, ze drzewo nie ma kompletnej lokalizacji
 - CTA do uzupelnienia danych
 
+### Brak prerekwizytu do zapisu
+
+- jesli create/edit flow wymaga istnienia dzialki albo aktywnej dzialki, user widzi wspolny card z wyjasnieniem
+- card prowadzi do utworzenia brakujacej dzialki albo do powrotu do listy modulu
+- ten stan nie jest traktowany jako blad systemowy
+
 ### Brak potwierdzenia lokalizacji
 
 - informacja, ze `location_verified = false`
@@ -153,6 +168,18 @@ Przyklady:
 
 - sekcja materialow zwinieta, jesli pusta
 
+### Szczegoly aktywnosci
+
+- jesli `description`, `weather_notes` albo `result_notes` sa puste, sekcja moze sie nie renderowac
+- jesli brak `activity_scopes`, widok pokazuje czytelny komunikat zamiast pustej listy
+- jesli brak `activity_materials`, widok pokazuje czytelny komunikat zamiast pustej listy
+
+### Podsumowanie sezonowych prac na `/activities`
+
+- gdy brak rekordow `done` dla aktywnych filtrow, summary pokazuje pusty stan bez coverage
+- gdy nie wybrano `summary_plot_id`, coverage pokazuje instrukcje wyboru dzialki
+- gdy dzialka jest wybrana, ale brak matching `activity_scopes`, coverage pokazuje pusty stan dla tej kombinacji filtrow
+
 ## 8. Zbiory i podsumowanie sezonu
 
 ### Brak wpisow zbioru
@@ -164,6 +191,12 @@ Przyklady:
 
 - komunikat, ze wybrany `season_year` nie ma wpisow
 - akcja zmiany sezonu lub dodania wpisu
+
+### Breakdown bez przypisan
+
+- zestawienie per odmiana moze byc puste, jesli rekordy nie maja `variety_id`
+- zestawienie per dzialka moze byc puste, jesli rekordy nie maja `plot_id`
+- UI powinno to komunikowac jako brak przypisanych danych, a nie blad systemowy
 
 ### Summary loading
 
@@ -217,3 +250,4 @@ Przyklady:
 - komunikaty maja byc konkretne
 - unikamy surowych bledow technicznych wprost do usera
 - jesli mozliwe, komunikat powinien podpowiadac kolejne dzialanie
+- dla `record not found` i brakujacych prerekwizytow preferujemy recovery cards zamiast surowego `throw` albo cichego redirectu

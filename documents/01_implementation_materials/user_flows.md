@@ -330,24 +330,49 @@ Uzytkownik chce sprawdzic, jakie prace sezonowe zostaly juz wykonane na dzialce 
 
 ### Kroki
 
-1. Uzytkownik otwiera dziennik prac albo raport sezonowych aktywnosci.
+1. Uzytkownik otwiera `/activities`, gdzie lista wpisow i panel sezonowego podsumowania sa dostepne obok siebie.
 2. Filtruje dane po:
    - dzialce
    - typie aktywnosci
    - `activity_subtype` opcjonalnie
    - sezonie
    - wykonawcy opcjonalnie
-3. System pobiera rekordy `activities` razem z `activity_scopes`.
-4. Uzytkownik widzi:
-   - daty wykonania
-   - wykonawce
-   - zakresy juz objete praca
-5. Jesli user wskaze dodatkowy zakres terenowy do porownania, UI moze pokazac, ktore fragmenty nie maja jeszcze wpisu `done` dla danego typu pracy.
+3. System liczy summary tylko z rekordow `activities` o `status = done`.
+4. Jesli wybrano konkretna dzialke, system pobiera zapisane `activity_scopes` dla matching wpisow i buduje coverage.
+5. Uzytkownik widzi:
+   - liczbe wykonanych wpisow
+   - dzialki z wykonaniem i ostatnia data pracy
+   - po wyborze dzialki: zapisane zakresy wykonania pogrupowane per aktywnosc
+6. Z coverage mozna przejsc do detail view konkretnego wpisu aktywnosci.
 
 ### Wynik
 
 - odpowiedz `co juz zrobiono` wynika z historii aktywnosci i ich zakresow
 - odpowiedz `co zostalo` jest liczona porownawczo, bez zapisywania sztucznych flag na drzewach
+
+## Flow 4d - wejscie w szczegoly aktywnosci
+
+### Cel
+
+Uzytkownik chce otworzyc jeden wpis z dziennika i zobaczyc komplet informacji o wykonanej pracy.
+
+### Kroki
+
+1. Uzytkownik klika tytul albo glowny opis wpisu na liscie `/activities`.
+2. System otwiera `/activities/[activityId]`.
+3. Uzytkownik widzi:
+   - metadata wpisu
+   - opis
+   - notatki pogodowe
+   - efekt pracy
+   - zapisane `activity_scopes`
+   - zapisane `activity_materials`
+4. Z tego widoku uzytkownik moze zmienic status, przejsc do edycji albo usunac wpis.
+
+### Wynik
+
+- jeden wpis aktywnosci jest czytelny bez wracania do formularza edycji
+- historia prac zachowuje operacyjny kontekst wykonania
 
 ## Flow 5 - wyszukiwanie odmiany i przeglad wiedzy
 

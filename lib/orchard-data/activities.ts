@@ -1,6 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   deriveSeasonPhaseFromDate,
-  getActivityScopeLevelLabel,
+  formatActivityScopeLabel,
 } from "@/lib/domain/activities";
 import { formatTreeLocationLabel } from "@/lib/orchard-data/trees";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -13,6 +14,10 @@ import type {
   ActivitySummary,
   OrchardMembershipRole,
   PlotStatus,
+  SeasonalActivityCoverage,
+  SeasonalActivityCoverageFilters,
+  SeasonalActivitySummary,
+  SeasonalActivitySummaryFilters,
   TreeOption,
 } from "@/types/contracts";
 
@@ -77,6 +82,7 @@ type ActivityDetailsQueryRow = Omit<ActivityListQueryRow, "activity_scopes" | "a
 
 type ActivityScopeQueryRow = {
   id: string;
+  activity_id: string;
   scope_order: number | null;
   scope_level: ActivityScopeSummary["scope_level"];
   section_name: string | null;
@@ -131,6 +137,29 @@ type MemberOptionRpcRow = {
   email: string;
   display_name: string | null;
   role: OrchardMembershipRole;
+};
+
+type SeasonalActivitySummaryQueryRow = {
+  id: string;
+  plot_id: string;
+  activity_date: string;
+  plot:
+    | { id: string; name: string }
+    | Array<{ id: string; name: string }>
+    | null;
+};
+
+type SeasonalActivityCoverageQueryRow = {
+  id: string;
+  plot_id: string;
+  activity_type: SeasonalActivityCoverage[number]["activity_type"];
+  activity_subtype: SeasonalActivityCoverage[number]["activity_subtype"];
+  activity_date: string;
+  status: SeasonalActivityCoverage[number]["status"];
+  plot:
+    | { id: string; name: string }
+    | Array<{ id: string; name: string }>
+    | null;
 };
 
 const activityListSelect = `
@@ -217,6 +246,10 @@ function pickJoinedRecord<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
+async function resolveSupabaseClient(supabaseClient?: SupabaseClient) {
+  return supabaseClient ?? createSupabaseServerClient();
+}
+
 function formatTreeDisplayName(tree: {
   display_name?: string | null;
   tree_code?: string | null;
@@ -301,33 +334,6 @@ function buildScopeActivityFilter(
   return `tree_id.eq.${treeId},id.in.(${scopedActivityIds.join(",")})`;
 }
 
-function formatScopeLabel(scope: ActivityScopeSummary) {
-  switch (scope.scope_level) {
-    case "plot":
-      return "Cala dzialka";
-    case "section":
-      return scope.section_name ? `Sekcja ${scope.section_name}` : "Sekcja";
-    case "row":
-      return scope.row_number ? `Rzad ${scope.row_number}` : "Rzad";
-    case "location_range":
-      if (
-        typeof scope.row_number === "number" &&
-        typeof scope.from_position === "number" &&
-        typeof scope.to_position === "number"
-      ) {
-        return `Rzad ${scope.row_number}, pozycje ${scope.from_position}-${scope.to_position}`;
-      }
-
-      return getActivityScopeLevelLabel(scope.scope_level);
-    case "tree":
-      return scope.tree_display_name ?? "Jedno drzewo";
-    default:
-      return getActivityScopeLevelLabel(scope.scope_level);
-  }
-}
-
-export { formatScopeLabel };
-
 export async function listActivitiesForOrchard(
   orchardId: string,
   filters: ActivityListFilters = {},
@@ -397,8 +403,9 @@ export async function listActivitiesForOrchard(
 export async function readActivityByIdForOrchard(
   orchardId: string,
   activityId: string,
+  supabaseClient?: SupabaseClient,
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await resolveSupabaseClient(supabaseClient);
   const [{ data: activityData, error: activityError }, { data: scopesData, error: scopesError }, { data: materialsData, error: materialsError }] = await Promise.all([
     supabase
       .from("activities")
@@ -411,6 +418,7 @@ export async function readActivityByIdForOrchard(
       .select(
         `
           id,
+          activity_id,
           scope_order,
           scope_level,
           section_name,
@@ -479,6 +487,242 @@ export async function readActivityByIdForOrchard(
       }),
     ),
   } satisfies ActivityDetails;
+}
+
+function buildSeasonalActivitySummary(
+  filters: SeasonalActivitySummaryFilters,
+  rows: SeasonalActivitySummaryQueryRow[],
+): SeasonalActivitySummary {
+  const affectedPlots = new Map<
+    string,
+    SeasonalActivitySummary["affected_plots"][number]
+  >();
+
+  for (const row of rows) {
+    const plot = pickJoinedRecord(row.plot);
+    const plotName = plot?.name ?? "Nieznana dzialka";
+    const existingPlot = affectedPlots.get(row.plot_id);
+
+    if (!existingPlot) {
+      affectedPlots.set(row.plot_id, {
+        plot_id: row.plot_id,
+        plot_name: plotName,
+        total_done_count: 1,
+        last_activity_date: row.activity_date,
+      });
+      continue;
+    }
+
+    existingPlot.total_done_count += 1;
+
+    if (
+      !existingPlot.last_activity_date ||
+      existingPlot.last_activity_date < row.activity_date
+    ) {
+      existingPlot.last_activity_date = row.activity_date;
+    }
+  }
+
+  return {
+    season_year: filters.season_year,
+    activity_type: filters.activity_type,
+    activity_subtype: filters.activity_subtype ?? null,
+    total_done_count: rows.length,
+    affected_plots: [...affectedPlots.values()].sort((left, right) => {
+      if (left.total_done_count !== right.total_done_count) {
+        return right.total_done_count - left.total_done_count;
+      }
+
+      if (left.last_activity_date !== right.last_activity_date) {
+        return (right.last_activity_date ?? "").localeCompare(
+          left.last_activity_date ?? "",
+        );
+      }
+
+      return left.plot_name.localeCompare(right.plot_name, "pl");
+    }),
+  };
+}
+
+export async function getSeasonalActivitySummaryForOrchard(
+  orchardId: string,
+  filters: SeasonalActivitySummaryFilters,
+  supabaseClient?: SupabaseClient,
+) {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  let query = supabase
+    .from("activities")
+    .select(
+      `
+        id,
+        plot_id,
+        activity_date,
+        plot:plots (
+          id,
+          name
+        )
+      `,
+    )
+    .eq("orchard_id", orchardId)
+    .eq("status", "done")
+    .eq("season_year", filters.season_year)
+    .eq("activity_type", filters.activity_type);
+
+  if (filters.activity_subtype) {
+    query = query.eq("activity_subtype", filters.activity_subtype);
+  }
+
+  if (filters.plot_id) {
+    query = query.eq("plot_id", filters.plot_id);
+  }
+
+  if (filters.performed_by_profile_id) {
+    query = query.eq("performed_by_profile_id", filters.performed_by_profile_id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return buildSeasonalActivitySummary(
+    filters,
+    (data ?? []) as SeasonalActivitySummaryQueryRow[],
+  );
+}
+
+export async function getSeasonalActivityCoverageForOrchard(
+  orchardId: string,
+  filters: SeasonalActivityCoverageFilters,
+  supabaseClient?: SupabaseClient,
+) {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  let activitiesQuery = supabase
+    .from("activities")
+    .select(
+      `
+        id,
+        plot_id,
+        activity_type,
+        activity_subtype,
+        activity_date,
+        status,
+        plot:plots (
+          id,
+          name
+        )
+      `,
+    )
+    .eq("orchard_id", orchardId)
+    .eq("status", "done")
+    .eq("season_year", filters.season_year)
+    .eq("activity_type", filters.activity_type)
+    .eq("plot_id", filters.plot_id)
+    .order("activity_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (filters.activity_subtype) {
+    activitiesQuery = activitiesQuery.eq("activity_subtype", filters.activity_subtype);
+  }
+
+  if (filters.performed_by_profile_id) {
+    activitiesQuery = activitiesQuery.eq(
+      "performed_by_profile_id",
+      filters.performed_by_profile_id,
+    );
+  }
+
+  const { data: activityData, error: activityError } = await activitiesQuery;
+
+  if (activityError) {
+    throw activityError;
+  }
+
+  const activityRows = (activityData ?? []) as SeasonalActivityCoverageQueryRow[];
+
+  if (activityRows.length === 0) {
+    return [] satisfies SeasonalActivityCoverage;
+  }
+
+  const activityIds = activityRows.map((row) => row.id);
+  const activityOrderById = new Map(
+    activityIds.map((activityId, index) => [activityId, index]),
+  );
+  const activitiesById = new Map(activityRows.map((row) => [row.id, row]));
+  const { data: scopesData, error: scopesError } = await supabase
+    .from("activity_scopes")
+    .select(
+      `
+        id,
+        activity_id,
+        scope_order,
+        scope_level,
+        section_name,
+        row_number,
+        from_position,
+        to_position,
+        tree_id,
+        notes,
+        tree:trees (
+          id,
+          display_name,
+          tree_code,
+          species
+        )
+      `,
+    )
+    .in("activity_id", activityIds)
+    .order("scope_order", { ascending: true });
+
+  if (scopesError) {
+    throw scopesError;
+  }
+
+  const coverageItems: SeasonalActivityCoverage = [];
+
+  for (const scopeRow of (scopesData ?? []) as ActivityScopeQueryRow[]) {
+    const activity = activitiesById.get(scopeRow.activity_id);
+
+    if (!activity) {
+      continue;
+    }
+
+    const plot = pickJoinedRecord(activity.plot);
+
+    coverageItems.push({
+      activity_id: scopeRow.activity_id,
+      activity_date: activity.activity_date,
+      status: activity.status,
+      plot_id: activity.plot_id,
+      plot_name: plot?.name ?? "Nieznana dzialka",
+      activity_type: activity.activity_type,
+      activity_subtype: activity.activity_subtype ?? null,
+      scope: mapActivityScopeRow(scopeRow),
+    });
+  }
+
+  return coverageItems.sort((left, right) => {
+      const activityOrderDiff =
+        (activityOrderById.get(left.activity_id) ?? Number.MAX_SAFE_INTEGER) -
+        (activityOrderById.get(right.activity_id) ?? Number.MAX_SAFE_INTEGER);
+
+      if (activityOrderDiff !== 0) {
+        return activityOrderDiff;
+      }
+
+      const leftScopeOrder = left.scope.scope_order ?? Number.MAX_SAFE_INTEGER;
+      const rightScopeOrder = right.scope.scope_order ?? Number.MAX_SAFE_INTEGER;
+
+      if (leftScopeOrder !== rightScopeOrder) {
+        return leftScopeOrder - rightScopeOrder;
+      }
+
+      return formatActivityScopeLabel(left.scope).localeCompare(
+        formatActivityScopeLabel(right.scope),
+        "pl",
+      );
+    });
 }
 
 export async function listActiveMemberOptionsForOrchard(orchardId: string) {

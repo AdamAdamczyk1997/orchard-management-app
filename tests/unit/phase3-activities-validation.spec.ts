@@ -6,6 +6,7 @@ import {
 import {
   activityFormSchema,
   normalizeActivityPayload,
+  resolveActivitySummaryFilters,
 } from "@/lib/validation/activities";
 
 const VALID_PLOT_ID = "11111111-1111-4111-8111-111111111111";
@@ -134,5 +135,38 @@ describe("phase 3 activities validation", () => {
         unit: "kg",
       },
     ]);
+  });
+
+  it("resolves summary filters with current year defaults and seasonal type guard", () => {
+    const filters = resolveActivitySummaryFilters({}, 2026);
+
+    expect(filters).toEqual({
+      season_year: 2026,
+      activity_type: "pruning",
+      activity_subtype: undefined,
+      plot_id: undefined,
+      performed_by_profile_id: undefined,
+    });
+  });
+
+  it("ignores pruning subtype outside pruning and keeps valid summary params", () => {
+    const filters = resolveActivitySummaryFilters(
+      {
+        summary_season_year: "2025",
+        summary_plot_id: VALID_PLOT_ID,
+        summary_activity_type: "mowing",
+        summary_activity_subtype: "winter_pruning",
+        summary_performed_by_profile_id: VALID_PROFILE_ID,
+      },
+      2026,
+    );
+
+    expect(filters).toEqual({
+      season_year: 2025,
+      activity_type: "mowing",
+      activity_subtype: undefined,
+      plot_id: VALID_PLOT_ID,
+      performed_by_profile_id: VALID_PROFILE_ID,
+    });
   });
 });
