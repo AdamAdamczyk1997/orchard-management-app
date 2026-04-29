@@ -121,6 +121,13 @@ Kazdy glowny widok powinien miec obsluge:
 - czytelny komunikat o zapisaniu
 - przekierowanie albo pozostanie na widoku szczegolow
 
+### Redirect success feedback
+
+- jesli zapis, usuniecie, archiwizacja albo zmiana statusu konczy sie redirectem, ekran docelowy pokazuje zielony banner sukcesu
+- banner ma byc widoczny od razu po przejsciu na liste albo detail
+- user moze ukryc banner bez utraty biezacych filtrow
+- formularz dzialki po create / edit powinien po redirectcie potwierdzac tez zapis ustawien ukladu i numeracji
+
 ### Validation error
 
 - komunikat przy konkretnym polu
@@ -152,6 +159,29 @@ Przyklady:
 
 - informacja, ze `location_verified = false`
 - przydatne zwlaszcza przy raportach terenowych
+
+### Guidance po wyborze dzialki
+
+- formularz drzewa, formularze `activities` / `harvests` i flow batchowe pokazuja skrot `layout_type`, numeracje, planowana siatke i punkt odniesienia wybranej dzialki
+- ten stan ma wspierac usera operacyjnie, a nie blokowac pracy
+
+### Plot layout unsupported
+
+- jesli wybrana dzialka ma `layout_type = irregular`, flow `batch create`, `bulk deactivate`, row-based scope w `activities` i harvestowy `location_range` pokazuja czytelny stan `unsupported`
+- UI wyjasnia, ze ten fragment formularza obsluguje tylko zakresy rzedowe dla `rows` i `mixed`
+- przyciski preview / write pozostaja zablokowane do czasu wyboru wspieranej dzialki
+
+### Batch create preview
+
+- po poprawnym preview user widzi liczbe planowanych pozycji i liste rekordow do utworzenia
+- jesli zakres ma konflikty, UI pokazuje konfliktowe lokalizacje zamiast przycisku zapisu
+- krok zapisu jest dostepny dopiero po preview bez konfliktow
+
+### Bulk deactivate preview
+
+- po preview user widzi liczbe aktywnych drzew do wycofania
+- zakres moze zwrocic ostrzezenia o pustych pozycjach albo drzewach juz nieaktywnych
+- jesli preview nie znajdzie zadnego aktywnego drzewa, ekran pokazuje czytelny empty/error state bez potwierdzenia write
 
 ## 7. Dziennik prac
 
@@ -203,19 +233,26 @@ Przyklady:
 - placeholder kart sumarycznych
 - placeholder wykresu lub listy timeline
 
+### Raport lokalizacji zbiorow
+
+- gdy brak rekordow po aktywnych filtrach, ekran pokazuje pusty stan z CTA do dodania wpisu zbioru
+- gdy sa wpisy, ale zaden nie ma precyzyjnej lokalizacji, ekran nadal pokazuje sume i breakdown dzialek, ale komunikuje brak grup terenowych
+- gdy sa wpisy `orchard` bez dzialki, ekran pokazuje osobny komunikat o rekordach tylko na poziomie sadu
+- loading dla raportu powinien miec placeholder kart i list breakdownu
+
 ## 9. Membership i eksport
 
 ### `Export forbidden for worker`
 
-- komunikat, ze tylko `owner` albo `super_admin` moze eksportowac dane konta
+- komunikat, ze tylko user z aktywnym membership `owner` moze eksportowac dane konta
 - brak aktywnego CTA eksportu
 
-### `Export generating` - etap 0.2
+### `Export generating`
 
 - czytelny pending state po uruchomieniu `exportAccountData`
 - blokada ponownego klikniecia podczas generowania
 
-### `Export success` - etap 0.2
+### `Export success`
 
 - informacja, ze plik eksportu jest gotowy do pobrania
 - jasne wskazanie zakresu: tylko orchard z aktywnym membership `owner`
@@ -229,16 +266,31 @@ Przyklady:
 - orchard ma tylko `owner`
 - CTA `zapros pracownika`
 
-## 10. Raport lokalizacji odmiany - etap 0.2
+## 10. Raport lokalizacji odmiany
+
+### Prerequisite state
+
+- brak odmian w aktywnym sadzie
+- CTA do `utworz odmiane`
 
 ### Empty state
 
 - brak drzew z przypisana odmiana
 - brak drzew z wystarczajaca lokalizacja
+- brak wyboru odmiany powinien prowadzic do instrukcji, a nie do pustej listy
 
 ### Loading
 
 - prosty placeholder listy zakresow
+
+### Record not found
+
+- jesli `variety_id` z URL nie nalezy do aktywnego `orchard` albo rekord nie istnieje, user widzi lagodny recovery state z powrotem do wyboru odmiany
+
+### Partial information state
+
+- jesli odmiana ma aktywne drzewa poza raportem, UI pokazuje licznik rekordow bez kompletnego `row_number + position_in_row`
+- jesli czesc lokalizacji nie jest potwierdzona, UI pokazuje liczbe rekordow `location_verified = false`, zamiast ukrywac ten fakt
 
 ### Error
 
@@ -251,3 +303,4 @@ Przyklady:
 - unikamy surowych bledow technicznych wprost do usera
 - jesli mozliwe, komunikat powinien podpowiadac kolejne dzialanie
 - dla `record not found` i brakujacych prerekwizytow preferujemy recovery cards zamiast surowego `throw` albo cichego redirectu
+- dla udanych akcji z redirectem preferujemy czytelny success banner zamiast milczacego powrotu na liste

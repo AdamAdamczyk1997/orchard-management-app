@@ -1,12 +1,15 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  aggregateHarvestLocationSummary,
   aggregateHarvestSeasonSummary,
   aggregateHarvestTimeline,
+  type HarvestLocationSourceRecord,
 } from "@/lib/domain/harvests";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   HarvestActivityOption,
+  HarvestLocationSummaryFilters,
   HarvestRecordDetails,
   HarvestRecordListFilters,
   HarvestRecordSummary,
@@ -51,12 +54,28 @@ type HarvestQueryRow = {
         display_name: string | null;
         tree_code: string | null;
         species: string;
+        plot_id: string;
+        section_name: string | null;
+        row_number: number | null;
+        position_in_row: number | null;
+        plot:
+          | { id: string; name: string; status: PlotStatus }
+          | Array<{ id: string; name: string; status: PlotStatus }>
+          | null;
       }
     | Array<{
         id: string;
         display_name: string | null;
         tree_code: string | null;
         species: string;
+        plot_id: string;
+        section_name: string | null;
+        row_number: number | null;
+        position_in_row: number | null;
+        plot:
+          | { id: string; name: string; status: PlotStatus }
+          | Array<{ id: string; name: string; status: PlotStatus }>
+          | null;
       }>
     | null;
   activity:
@@ -135,7 +154,16 @@ const harvestSelect = `
     id,
     display_name,
     tree_code,
-    species
+    species,
+    plot_id,
+    section_name,
+    row_number,
+    position_in_row,
+    plot:plots (
+      id,
+      name,
+      status
+    )
   ),
   activity:activities (
     id,
@@ -229,6 +257,18 @@ const listHarvestSummarySourceRecordsCached = cache(
     }),
 );
 
+const listHarvestLocationSourceRecordsCached = cache(
+  async (
+    orchardId: string,
+    seasonYear: number,
+    varietyId?: string,
+  ) =>
+    listHarvestLocationSourceRecordsForOrchard(orchardId, {
+      season_year: seasonYear,
+      variety_id: varietyId,
+    }),
+);
+
 async function listHarvestSummarySourceRecords(
   orchardId: string,
   filters: HarvestSeasonSummaryFilters,
@@ -252,6 +292,31 @@ async function listHarvestSummarySourceRecords(
     filters.plot_id,
     filters.variety_id,
   );
+}
+
+async function listHarvestLocationSourceRecordsForOrchard(
+  orchardId: string,
+  filters: Pick<HarvestLocationSummaryFilters, "season_year" | "variety_id">,
+  supabaseClient?: SupabaseClient,
+) {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  let query = supabase
+    .from("harvest_records")
+    .select(harvestSelect)
+    .eq("orchard_id", orchardId)
+    .eq("season_year", filters.season_year);
+
+  if (filters.variety_id) {
+    query = query.eq("variety_id", filters.variety_id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as HarvestQueryRow[]).map(mapHarvestRowToLocationSourceRecord);
 }
 
 export async function listHarvestRecordsForOrchard(
@@ -322,6 +387,70 @@ export async function readHarvestRecordByIdForOrchard(
   } satisfies HarvestRecordDetails;
 }
 
+function mapHarvestRowToLocationSourceRecord(row: HarvestQueryRow): HarvestLocationSourceRecord {
+  const plot = pickJoinedRecord(row.plot);
+  const tree = pickJoinedRecord(row.tree);
+  const treePlot = tree ? pickJoinedRecord(tree.plot) : null;
+  const resolvedPlotId = row.plot_id ?? tree?.plot_id ?? treePlot?.id ?? null;
+  const resolvedPlotName = plot?.name ?? treePlot?.name ?? null;
+  const resolvedPlotStatus = plot?.status ?? treePlot?.status ?? null;
+
+  if (
+    row.scope_level === "location_range" &&
+    typeof row.row_number === "number" &&
+    typeof row.from_position === "number" &&
+    typeof row.to_position === "number"
+  ) {
+    return {
+      id: row.id,
+      scope_level: row.scope_level,
+      harvest_date: row.harvest_date,
+      quantity_kg: row.quantity_kg,
+      plot_id: resolvedPlotId,
+      plot_name: resolvedPlotName,
+      plot_status: resolvedPlotStatus,
+      section_name: row.section_name,
+      row_number: row.row_number,
+      from_position: row.from_position,
+      to_position: row.to_position,
+    };
+  }
+
+  if (
+    row.scope_level === "tree" &&
+    typeof tree?.row_number === "number" &&
+    typeof tree.position_in_row === "number"
+  ) {
+    return {
+      id: row.id,
+      scope_level: row.scope_level,
+      harvest_date: row.harvest_date,
+      quantity_kg: row.quantity_kg,
+      plot_id: resolvedPlotId,
+      plot_name: resolvedPlotName,
+      plot_status: resolvedPlotStatus,
+      section_name: row.section_name ?? tree.section_name,
+      row_number: tree.row_number,
+      from_position: tree.position_in_row,
+      to_position: tree.position_in_row,
+    };
+  }
+
+  return {
+    id: row.id,
+    scope_level: row.scope_level,
+    harvest_date: row.harvest_date,
+    quantity_kg: row.quantity_kg,
+    plot_id: resolvedPlotId,
+    plot_name: resolvedPlotName,
+    plot_status: resolvedPlotStatus,
+    section_name: row.section_name,
+    row_number: null,
+    from_position: null,
+    to_position: null,
+  };
+}
+
 export async function getHarvestSeasonSummaryForOrchard(
   orchardId: string,
   filters: HarvestSeasonSummaryFilters,
@@ -348,6 +477,33 @@ export async function getHarvestTimelineForOrchard(
   );
 
   return aggregateHarvestTimeline(records);
+}
+
+export async function getHarvestLocationSummaryForOrchard(
+  orchardId: string,
+  filters: HarvestLocationSummaryFilters,
+  supabaseClient?: SupabaseClient,
+) {
+  const sourceRecords = supabaseClient
+    ? await listHarvestLocationSourceRecordsForOrchard(
+        orchardId,
+        {
+          season_year: filters.season_year,
+          variety_id: filters.variety_id,
+        },
+        supabaseClient,
+      )
+    : await listHarvestLocationSourceRecordsCached(
+        orchardId,
+        filters.season_year,
+        filters.variety_id,
+      );
+
+  const filteredRecords = filters.plot_id
+    ? sourceRecords.filter((record) => record.plot_id === filters.plot_id)
+    : sourceRecords;
+
+  return aggregateHarvestLocationSummary(filteredRecords, filters.season_year);
 }
 
 export async function listHarvestActivityOptionsForOrchard(orchardId: string) {

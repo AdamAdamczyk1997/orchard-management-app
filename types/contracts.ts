@@ -11,6 +11,17 @@ export type OrchardMembershipRole = "owner" | "worker" | "manager" | "viewer";
 export type OrchardMembershipStatus = "invited" | "active" | "revoked";
 export type OrchardStatus = "active" | "archived";
 export type PlotStatus = "planned" | "active" | "archived";
+export type PlotLayoutType = "rows" | "mixed" | "irregular";
+export type RowNumberingScheme =
+  | "left_to_right_from_entrance"
+  | "right_to_left_from_entrance"
+  | "north_to_south"
+  | "south_to_north"
+  | "custom";
+export type TreeNumberingScheme =
+  | "from_row_start"
+  | "from_row_end"
+  | "custom";
 export type TreeConditionStatus =
   | "new"
   | "good"
@@ -169,6 +180,13 @@ export type PlotFormInput = {
   area_m2?: number;
   soil_type?: string;
   irrigation_type?: string;
+  layout_type: PlotLayoutType;
+  row_numbering_scheme?: RowNumberingScheme;
+  tree_numbering_scheme?: TreeNumberingScheme;
+  entrance_description?: string;
+  layout_notes?: string;
+  default_row_count?: number;
+  default_trees_per_row?: number;
   status: PlotStatus;
 };
 
@@ -182,6 +200,13 @@ export type PlotSummary = {
   area_m2?: number | null;
   soil_type?: string | null;
   irrigation_type?: string | null;
+  layout_type: PlotLayoutType;
+  row_numbering_scheme?: RowNumberingScheme | null;
+  tree_numbering_scheme?: TreeNumberingScheme | null;
+  entrance_description?: string | null;
+  layout_notes?: string | null;
+  default_row_count?: number | null;
+  default_trees_per_row?: number | null;
   status: PlotStatus;
   is_active: boolean;
   tree_count?: number;
@@ -189,7 +214,19 @@ export type PlotSummary = {
   updated_at?: string;
 };
 
-export type PlotOption = Pick<PlotSummary, "id" | "name" | "status">;
+export type PlotOption = Pick<
+  PlotSummary,
+  | "id"
+  | "name"
+  | "status"
+  | "layout_type"
+  | "row_numbering_scheme"
+  | "tree_numbering_scheme"
+  | "entrance_description"
+  | "layout_notes"
+  | "default_row_count"
+  | "default_trees_per_row"
+>;
 
 export type PlotListFilters = {
   status?: PlotStatus | "all";
@@ -227,6 +264,42 @@ export type VarietyOption = Pick<VarietySummary, "id" | "species" | "name">;
 
 export type VarietyListFilters = {
   q?: string;
+};
+
+export type VarietyLocationsReportFilters = {
+  variety_id?: string;
+};
+
+export type VarietyLocationRange = {
+  from_position: number;
+  to_position: number;
+  tree_count: number;
+  verified_trees_count: number;
+  unverified_trees_count: number;
+};
+
+export type VarietyLocationGroup = {
+  plot_id: string;
+  plot_name: string;
+  plot_status: PlotStatus;
+  section_name?: string | null;
+  row_number: number;
+  tree_count: number;
+  verified_trees_count: number;
+  unverified_trees_count: number;
+  ranges: VarietyLocationRange[];
+};
+
+export type VarietyLocationsReport = {
+  variety_id: string;
+  variety_name: string;
+  variety_species: string;
+  total_active_trees_count: number;
+  located_trees_count: number;
+  unlocated_trees_count: number;
+  verified_trees_count: number;
+  unverified_trees_count: number;
+  groups: VarietyLocationGroup[];
 };
 
 export type TreeFormInput = {
@@ -292,6 +365,105 @@ export type TreeListFilters = {
   species?: string;
   condition_status?: TreeConditionStatus | "all";
   is_active?: "true" | "false" | "all";
+};
+
+export type BulkTreeImportBatchStatus = "draft" | "done" | "failed";
+
+export type BulkTreeBatchConditionStatus = Exclude<TreeConditionStatus, "removed">;
+
+export type BulkTreeBatchFormInput = {
+  plot_id: string;
+  variety_id?: string | null;
+  species: string;
+  section_name?: string;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+  generated_tree_code_pattern?: string;
+  default_condition_status: BulkTreeBatchConditionStatus;
+  default_planted_at?: string;
+  default_rootstock?: string;
+  default_notes?: string;
+};
+
+export type BulkTreeBatchPreviewTree = {
+  position_in_row: number;
+  tree_code?: string | null;
+  location_label: string;
+};
+
+export type BulkTreeBatchConflict = {
+  tree_id: string;
+  position_in_row: number;
+  tree_code?: string | null;
+  display_name?: string | null;
+  condition_status: TreeConditionStatus;
+  location_label: string;
+};
+
+export type BulkTreeBatchPreviewResult = {
+  plot_id: string;
+  plot_name: string;
+  variety_id?: string | null;
+  variety_name?: string | null;
+  species: string;
+  section_name?: string | null;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+  requested_positions_count: number;
+  generated_tree_code_pattern?: string | null;
+  planned_trees: BulkTreeBatchPreviewTree[];
+  conflicts: BulkTreeBatchConflict[];
+};
+
+export type BulkTreeBatchCreateResult = {
+  batch_id: string;
+  created_trees_count: number;
+  plot_id: string;
+  plot_name: string;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+};
+
+export type BulkDeactivateTreesFormInput = {
+  plot_id: string;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+  reason?: string;
+};
+
+export type BulkDeactivateTreeMatch = {
+  tree_id: string;
+  position_in_row: number;
+  tree_code?: string | null;
+  display_name?: string | null;
+  condition_status: TreeConditionStatus;
+  location_label: string;
+  notes?: string | null;
+};
+
+export type BulkDeactivateTreesPreviewResult = {
+  plot_id: string;
+  plot_name: string;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+  requested_positions_count: number;
+  matched_trees: BulkDeactivateTreeMatch[];
+  missing_positions: number[];
+  warnings: string[];
+};
+
+export type BulkDeactivateTreesResult = {
+  updated_trees_count: number;
+  plot_id: string;
+  plot_name: string;
+  row_number: number;
+  from_position: number;
+  to_position: number;
 };
 
 export type ActiveMemberOption = {
@@ -566,3 +738,83 @@ export type HarvestTimelineEntry = {
 };
 
 export type HarvestTimeline = HarvestTimelineEntry[];
+
+export type HarvestLocationSummaryFilters = HarvestSeasonSummaryFilters;
+
+export type HarvestLocationRangeSummary = {
+  from_position: number;
+  to_position: number;
+  total_quantity_kg: number;
+  record_count: number;
+};
+
+export type HarvestLocationRowSummary = {
+  section_name?: string | null;
+  row_number: number;
+  total_quantity_kg: number;
+  record_count: number;
+  ranges: HarvestLocationRangeSummary[];
+};
+
+export type HarvestLocationPlotSummary = {
+  plot_id: string;
+  plot_name: string | null;
+  plot_status: PlotStatus;
+  total_quantity_kg: number;
+  record_count: number;
+  precisely_located_quantity_kg: number;
+  precisely_located_record_count: number;
+  unresolved_quantity_kg: number;
+  unresolved_record_count: number;
+  rows: HarvestLocationRowSummary[];
+};
+
+export type HarvestLocationSummary = {
+  season_year: number;
+  total_quantity_kg: number;
+  record_count: number;
+  precisely_located_quantity_kg: number;
+  precisely_located_record_count: number;
+  unresolved_quantity_kg: number;
+  unresolved_record_count: number;
+  orchard_level_quantity_kg: number;
+  orchard_level_record_count: number;
+  plots: HarvestLocationPlotSummary[];
+};
+
+export type ExportAvailabilitySummary = {
+  can_export: boolean;
+  owned_orchards_count: number;
+};
+
+export type ExportAccountDataResult = {
+  version: "1";
+  exported_at: string;
+  profile: {
+    id: string;
+    email: string;
+    display_name?: string | null;
+    locale?: string | null;
+    timezone?: string | null;
+  };
+  orchards: Array<{
+    orchard: {
+      id: string;
+      name: string;
+      code?: string | null;
+      description?: string | null;
+      status: OrchardStatus;
+      created_by_profile_id: string;
+      created_at: string;
+      updated_at: string;
+    };
+    orchard_memberships: OrchardMembershipSummary[];
+    plots: Array<Record<string, unknown>>;
+    varieties: Array<Record<string, unknown>>;
+    trees: Array<Record<string, unknown>>;
+    activities: Array<Record<string, unknown>>;
+    activity_scopes: Array<Record<string, unknown>>;
+    activity_materials: Array<Record<string, unknown>>;
+    harvest_records: Array<Record<string, unknown>>;
+  }>;
+};

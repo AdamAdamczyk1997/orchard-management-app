@@ -12,6 +12,7 @@ export default defineConfig({
     fileParallelism: false,
     setupFiles: ["./tests/setup/load-env.ts"],
     include: ["tests/**/*.spec.ts"],
+    exclude: ["tests/e2e/**"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
   },

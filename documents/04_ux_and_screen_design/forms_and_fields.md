@@ -13,6 +13,7 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 - Bledy walidacji musza byc zrozumiale i odnosic sie do konkretnego pola.
 - Wartosci domyslne powinny ograniczac liczbe klikniec.
 - Standardowe formularze domenowe nie przesylaja recznie `orchard_id`; pracuja w kontekscie `active_orchard`.
+- Jesli create/edit flow konczy sie redirectem na liste albo detail, ekran docelowy powinien pokazac czytelne potwierdzenie sukcesu.
 
 ## 1. Formularz rejestracji
 
@@ -52,13 +53,13 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | `status` | tak | `active` | `planned`, `active`, `archived` |
 | `is_active` | techniczne | `true` | sterowane przez status, nie jako osobne pole UI w Phase 2 |
 
-### Pola rozszerzone etapu 0.2
+### Pola ukladu dzialki
 
 | Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
 | `layout_type` | tak | `rows` | `rows`, `mixed`, `irregular` |
-| `row_numbering_scheme` | nie | brak | wymagane przy dopracowanej numeracji |
-| `tree_numbering_scheme` | nie | brak | wymagane przy dopracowanej numeracji |
+| `row_numbering_scheme` | nie | brak | np. `left_to_right_from_entrance`, `north_to_south`, `custom` |
+| `tree_numbering_scheme` | nie | brak | np. `from_row_start`, `from_row_end`, `custom` |
 | `entrance_description` | nie | brak | opis punktu odniesienia |
 | `layout_notes` | nie | brak | dodatkowe informacje o ukladzie |
 | `default_row_count` | nie | brak | liczba dodatnia |
@@ -92,9 +93,11 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 ### Walidacje specjalne dla drzewa
 
-- W MVP `layout_type` nie jest jeszcze pelnym polem formularza dzialki; jesli user zapisuje drzewo w modelu rzedowym, pola `row_number` i `position_in_row` powinny byc podawane razem.
+- `layout_type` jest juz pelnym polem formularza dzialki i pozwala zapisac orientacje oraz numeracje terenu.
 - Formularz drzewa nie powinien pozwalac zapisac drzewa do dzialki `archived`; user musi wybrac dzialke aktywna albo planowana.
-- Po wejsciu rozszerzonego `layout_type` w etapie 0.2 dzialka typu `rows` wymaga `row_number` i `position_in_row`.
+- Po wyborze dzialki formularz powinien pokazywac guidance z `layout_type`, numeracja, planowana siatka, punktem odniesienia i notatkami ukladu.
+- Dla `layout_type = rows` wymagane sa `row_number` i `position_in_row`.
+- Dla `layout_type = mixed` i `layout_type = irregular` wymagane jest co najmniej jedno praktyczne oznaczenie lokalizacji, np. `section_name`, `row_label`, `position_label`, `tree_code` albo komplet `row_number + position_in_row`.
 - Aktywne drzewo nie moze duplikowac lokalizacji `plot + row + position`.
 - Jesli ustawiono `variety_id`, system powinien pilnowac zgodnosci orchard.
 
@@ -111,6 +114,19 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | `resistance_notes` | nie | brak | odpornosc / podatnosc |
 | `origin_country` | nie | brak | kraj pochodzenia |
 | `is_favorite` | tak | `false` | przechowywane jako boolean |
+
+### Filtr raportu lokalizacji odmiany - etap 0.2
+
+| Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
+|---|---:|---|---|
+| `variety_id` | tak | brak | musi wskazywac odmiane z aktywnego `orchard`; raport uruchamia sie po wyborze jednej odmiany |
+
+### Zachowanie raportu lokalizacji odmiany
+
+- Raport pokazuje tylko aktywne drzewa wybranej odmiany.
+- Do grup terenowych trafiaja tylko rekordy z kompletnym `row_number` i `position_in_row`.
+- UI powinno osobno pokazywac liczbe drzew poza raportem, jesli odmiana ma aktywne rekordy bez precyzyjnej lokalizacji.
+- W grupach i zakresach trzeba zachowac informacje o `location_verified`, aby odroznic lokalizacje potwierdzone od niepotwierdzonych.
 
 ## 7. Formularz aktywnosci
 
@@ -149,12 +165,14 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 - Dla `pruning` `activity_subtype` jest wymagane.
 - Jedna aktywnosc moze miec wiele rekordow `activity_scopes`.
+- Po wyborze dzialki formularz powinien pokazywac guidance z `layout_type`, numeracja i punktem odniesienia.
 - W dedykowanym flow sezonowym `pruning`, `mowing` i `spraying` powinny zapisywac
   co najmniej jeden rekord `activity_scopes`; dla calej dzialki jest to scope `plot`.
 - Dla `scope_level = plot` nie wymagamy dodatkowych pol lokalizacyjnych.
 - Dla `scope_level = section` wymagane jest `section_name`.
 - Dla `scope_level = row` wymagane jest `row_number`.
 - Dla `scope_level = location_range` wymagane sa `row_number`, `from_position`, `to_position`.
+- Dla dzialki `irregular` formularz powinien blokowac `scope_level = row` i `scope_level = location_range`.
 - Dla `scope_level = tree` wymagane jest `tree_id`.
 - `scope_order`, jesli jest przesylane, powinno byc dodatnia liczba calkowita i sluzy tylko
   do zachowania kolejnosci zakresow w UI.
@@ -203,10 +221,26 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 
 - `quantity_value` musi byc dodatnie.
 - `season_year` powinno byc wyliczane z `harvest_date`.
+- Po wyborze dzialki formularz powinien pokazywac guidance z `layout_type`, numeracja i punktem odniesienia.
 - Dla `scope_level = location_range` wymagane sa `plot_id`, `row_number`, `from_position`, `to_position`.
+- Dla dzialki `irregular` formularz powinien blokowac `scope_level = location_range`.
 - Dla `scope_level = tree` wymagane jest `tree_id`.
 - Jesli ustawiono `tree_id`, system powinien uzupelnic albo zweryfikowac zgodnosc `plot_id` i `variety_id`.
 - Jednostka raportowa systemu powinna byc liczona po `quantity_kg`, niezaleznie od jednostki wpisanej przez usera.
+
+### Filtry raportu lokalizacji zbiorow - etap 0.2
+
+| Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
+|---|---:|---|---|
+| `season_year` | tak | biezacy rok kalendarzowy | liczba calkowita z sensownego zakresu |
+| `plot_id` | nie | brak | jesli ustawione, raport ogranicza sie do jednej dzialki |
+| `variety_id` | nie | brak | jesli ustawione, raport ogranicza sie do rekordow z przypisana odmiana |
+
+### Zachowanie raportu lokalizacji zbiorow
+
+- Raport pracuje na `harvest_records`, ale dla scope `tree` moze odziedziczyc lokalizacje z drzewa.
+- Wpis jest uznany za precyzyjnie zlokalizowany, gdy finalnie ma `plot_id`, `row_number`, `from_position` i `to_position`.
+- Wpisy `orchard`, `plot` i `variety` bez konkretnego rzedu nie znikaja z raportu; trafiaja do licznika `bez precyzyjnej lokalizacji`.
 
 ## 9. Formularz batchowego dodawania drzew - etap 0.2
 
@@ -230,6 +264,28 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 - Caly zakres musi byc sprawdzony przed utworzeniem rekordow.
 - Konflikt w jednej pozycji powinien zatrzymac caly batch.
 - Dzialka i odmiana musza nalezec do tego samego `orchard`.
+- Formularz powinien pokazywac guidance z wybranej dzialki i blokowac create / preview dla `layout_type = irregular`.
+- `generated_tree_code_pattern`, jesli jest podany, musi zawierac placeholder `{{n}}`.
+- `default_condition_status` wspiera tylko statusy aktywnych drzew: `new`, `good`, `warning`, `critical`.
+- Create step jest dostepny dopiero po udanym preview bez konfliktow.
+
+## 9A. Formularz masowego wycofania drzew - etap 0.2
+
+| Pole | Wymagane | Domyslna wartosc | Walidacja / uwagi |
+|---|---:|---|---|
+| `plot_id` | tak | brak | dzialka aktywnego orchard |
+| `row_number` | tak | brak | liczba dodatnia |
+| `from_position` | tak | brak | liczba dodatnia |
+| `to_position` | tak | brak | musi byc `>= from_position` |
+| `reason` | nie | brak | opcjonalny powod, dopisywany do `trees.notes` dla zmienionych rekordow |
+
+### Walidacje specjalne dla masowego wycofania
+
+- Formularz powinien pokazywac guidance z wybranej dzialki i blokowac preview / write dla `layout_type = irregular`.
+- Preview pokazuje tylko aktywne drzewa z wybranego zakresu.
+- Puste pozycje albo drzewa juz nieaktywne nie blokuja preview, ale sa zwracane jako ostrzezenia.
+- Write step jest dostepny dopiero po preview z co najmniej jednym matching aktywnym drzewem.
+- Finalny zapis ustawia `condition_status = removed` oraz `is_active = false` bez fizycznego kasowania rekordu.
 
 ## 10. Formularz profilu
 
@@ -238,6 +294,23 @@ Ma pomoc przy projektowaniu UI, walidacji i kontraktow operacji.
 | `display_name` | nie | brak | nazwa wyswietlana |
 | `locale` | nie | `pl` | w MVP mozna ograniczyc do `pl` |
 | `timezone` | nie | `Europe/Warsaw` | lista stref czasowych |
+
+### Karta `Eksport konta`
+
+To nie jest klasyczny formularz zapisu, tylko akcja pobrania pliku JSON z danymi konta.
+
+| Element | Wymagane | Domyslna wartosc | Walidacja / uwagi |
+|---|---:|---|---|
+| `Pobierz eksport konta` | tak | aktywny dla ownera | dostepne tylko, jesli user ma co najmniej jedno aktywne membership `owner` |
+| `pending state` | techniczne | ukryty | podczas pobierania blokuje ponowne klikniecie i pokazuje stan przygotowywania eksportu |
+| `success message` | techniczne | ukryty | potwierdza pobranie i zakres liczby owned orchards |
+| `error message` | techniczne | ukryty | pokazuje blad route `/settings/profile/export` lub brak uprawnien |
+
+Uwagi:
+
+- Eksport jest account-wide, ale obejmuje tylko orchards, dla ktorych user ma aktywne membership `owner`.
+- User pracujacy wylacznie jako `worker` widzi zablokowany stan informacyjny, bez CTA do pobrania.
+- Plik pobiera sie jako JSON z route `GET /settings/profile/export`.
 
 ## 11. Formularz ustawien orchard
 

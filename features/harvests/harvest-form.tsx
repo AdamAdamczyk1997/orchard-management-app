@@ -14,6 +14,14 @@ import {
   HARVEST_SCOPE_LEVELS,
   getHarvestScopeLabel,
 } from "@/lib/domain/harvests";
+import {
+  formatPlotDefaultGridLabel,
+  getPlotLayoutTypeLabel,
+  getPlotOperationalLocationGuidance,
+  getRowNumberingSchemeLabel,
+  getTreeNumberingSchemeLabel,
+  supportsHarvestScopeLevelForPlotLayout,
+} from "@/lib/domain/plots";
 import type {
   ActionResult,
   HarvestActivityOption,
@@ -66,6 +74,10 @@ export function HarvestForm({
   const [quantityUnit, setQuantityUnit] = useState<HarvestQuantityUnit>(
     harvestRecord?.quantity_unit ?? "kg",
   );
+  const selectedPlot = useMemo(
+    () => plotOptions.find((plot) => plot.id === selectedPlotId),
+    [plotOptions, selectedPlotId],
+  );
 
   const filteredTreeOptions = useMemo(() => {
     if (!selectedPlotId) {
@@ -74,6 +86,15 @@ export function HarvestForm({
 
     return treeOptions.filter((tree) => tree.plot_id === selectedPlotId);
   }, [selectedPlotId, treeOptions]);
+  const hasUnsupportedLocationRange =
+    scopeLevel === "location_range" &&
+    Boolean(
+      selectedPlot &&
+        !supportsHarvestScopeLevelForPlotLayout(
+          selectedPlot.layout_type,
+          scopeLevel,
+        ),
+    );
 
   useEffect(() => {
     if (
@@ -118,7 +139,18 @@ export function HarvestForm({
               value={scopeLevel}
             >
               {HARVEST_SCOPE_LEVELS.map((value) => (
-                <option key={value} value={value}>
+                <option
+                  disabled={
+                    selectedPlot
+                      ? !supportsHarvestScopeLevelForPlotLayout(
+                          selectedPlot.layout_type,
+                          value,
+                        )
+                      : false
+                  }
+                  key={value}
+                  value={value}
+                >
                   {getHarvestScopeLabel(value)}
                 </option>
               ))}
@@ -234,6 +266,41 @@ export function HarvestForm({
             ) : null}
           </div>
         ) : null}
+        {scopeLevel !== "orchard" && selectedPlot ? (
+          <div className="rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-4 text-sm text-[#4f584e]">
+            <div className="grid gap-1">
+              <p className="font-medium text-[#304335]">
+                Uklad dzialki: {getPlotLayoutTypeLabel(selectedPlot.layout_type)}
+              </p>
+              <p>{getPlotOperationalLocationGuidance(selectedPlot.layout_type)}</p>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
+                {selectedPlot.row_numbering_scheme
+                  ? getRowNumberingSchemeLabel(selectedPlot.row_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
+                {selectedPlot.tree_numbering_scheme
+                  ? getTreeNumberingSchemeLabel(selectedPlot.tree_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
+                {formatPlotDefaultGridLabel(selectedPlot)}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
+                {selectedPlot.entrance_description ?? "Brak"}
+              </p>
+            </div>
+            {selectedPlot.layout_notes ? (
+              <p className="mt-3">{selectedPlot.layout_notes}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         {scopeLevel === "tree" ? (
           <Field
@@ -269,65 +336,73 @@ export function HarvestForm({
         ) : null}
 
         {scopeLevel === "location_range" ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            <Field
-              error={state.field_errors?.section_name}
-              htmlFor="section_name"
-              label="Sekcja"
-            >
-              <Input
-                defaultValue={harvestRecord?.section_name ?? ""}
-                id="section_name"
-                name="section_name"
-                placeholder="np. Poludnie"
-              />
-            </Field>
-            <Field
-              error={state.field_errors?.row_number}
-              htmlFor="row_number"
-              label="Rzad"
-            >
-              <Input
-                defaultValue={harvestRecord?.row_number ?? ""}
-                id="row_number"
-                inputMode="numeric"
-                min="1"
-                name="row_number"
-                step="1"
-                type="number"
-              />
-            </Field>
-            <Field
-              error={state.field_errors?.from_position}
-              htmlFor="from_position"
-              label="Od pozycji"
-            >
-              <Input
-                defaultValue={harvestRecord?.from_position ?? ""}
-                id="from_position"
-                inputMode="numeric"
-                min="1"
-                name="from_position"
-                step="1"
-                type="number"
-              />
-            </Field>
-            <Field
-              error={state.field_errors?.to_position}
-              htmlFor="to_position"
-              label="Do pozycji"
-            >
-              <Input
-                defaultValue={harvestRecord?.to_position ?? ""}
-                id="to_position"
-                inputMode="numeric"
-                min="1"
-                name="to_position"
-                step="1"
-                type="number"
-              />
-            </Field>
-          </div>
+          <>
+            {hasUnsupportedLocationRange ? (
+              <div className="rounded-2xl border border-[#d8b675] bg-[#f8f0df] px-4 py-3 text-sm text-[#6d4c1d]">
+                Dla dzialki nieregularnej uzyj calej dzialki, odmiany albo pojedynczych drzew
+                zamiast zakresu po rzedach i pozycjach.
+              </div>
+            ) : null}
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              <Field
+                error={state.field_errors?.section_name}
+                htmlFor="section_name"
+                label="Sekcja"
+              >
+                <Input
+                  defaultValue={harvestRecord?.section_name ?? ""}
+                  id="section_name"
+                  name="section_name"
+                  placeholder="np. Poludnie"
+                />
+              </Field>
+              <Field
+                error={state.field_errors?.row_number}
+                htmlFor="row_number"
+                label="Rzad"
+              >
+                <Input
+                  defaultValue={harvestRecord?.row_number ?? ""}
+                  id="row_number"
+                  inputMode="numeric"
+                  min="1"
+                  name="row_number"
+                  step="1"
+                  type="number"
+                />
+              </Field>
+              <Field
+                error={state.field_errors?.from_position}
+                htmlFor="from_position"
+                label="Od pozycji"
+              >
+                <Input
+                  defaultValue={harvestRecord?.from_position ?? ""}
+                  id="from_position"
+                  inputMode="numeric"
+                  min="1"
+                  name="from_position"
+                  step="1"
+                  type="number"
+                />
+              </Field>
+              <Field
+                error={state.field_errors?.to_position}
+                htmlFor="to_position"
+                label="Do pozycji"
+              >
+                <Input
+                  defaultValue={harvestRecord?.to_position ?? ""}
+                  id="to_position"
+                  inputMode="numeric"
+                  min="1"
+                  name="to_position"
+                  step="1"
+                  type="number"
+                />
+              </Field>
+            </div>
+          </>
         ) : null}
 
         <Field
@@ -364,7 +439,10 @@ export function HarvestForm({
       <FormMessage state={state} />
 
       <div className="flex flex-wrap gap-3">
-        <SubmitButton pendingLabel="Zapisywanie wpisu...">
+        <SubmitButton
+          disabled={hasUnsupportedLocationRange}
+          pendingLabel="Zapisywanie wpisu..."
+        >
           {mode === "create" ? "Zapisz wpis zbioru" : "Zapisz zmiany"}
         </SubmitButton>
         <LinkButton href="/harvests" variant="secondary">
@@ -378,8 +456,8 @@ export function HarvestForm({
       </div>
 
       <div className="rounded-2xl border border-dashed border-[#dfd3bb] px-4 py-4 text-sm leading-6 text-[#6d7269]">
-        W tym kroku skupiamy sie na stabilnym CRUD dla wpisow zbioru. Harvestowe
-        podsumowanie sezonu dojdzie jako osobny reportingowy slice.
+        Ten formularz zasila juz liste historii oraz raporty sezonowe i lokalizacyjne
+        dla zbiorow, wiec warto pilnowac czytelnego poziomu szczegolowosci wpisu.
       </div>
     </form>
   );

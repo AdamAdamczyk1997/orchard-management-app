@@ -1,10 +1,15 @@
 import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { HarvestList } from "@/features/harvests/harvest-list";
+import {
+  FEEDBACK_NOTICE_QUERY_PARAM,
+  resolveFeedbackNotice,
+} from "@/lib/domain/feedback-notices";
 import { hasActiveHarvestListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listHarvestRecordsForOrchard } from "@/lib/orchard-data/harvests";
@@ -14,6 +19,7 @@ import {
   buildPathWithSearchParams,
   getSingleSearchParam,
   type NextSearchParams,
+  toUrlSearchParams,
 } from "@/lib/utils/search-params";
 import { resolveHarvestListFilters } from "@/lib/validation/harvests";
 
@@ -21,7 +27,9 @@ type HarvestsPageProps = {
   searchParams: Promise<NextSearchParams>;
 };
 
-export default async function HarvestsPage({ searchParams }: HarvestsPageProps) {
+export default async function HarvestsPage({
+  searchParams,
+}: HarvestsPageProps) {
   const context = await requireActiveOrchard("/harvests");
 
   return (
@@ -45,11 +53,16 @@ async function HarvestsPageContent({
   searchParams: Promise<NextSearchParams>;
 }) {
   const currentYear = new Date().getFullYear();
-  const [plotOptions, varietyOptions, resolvedSearchParams] = await Promise.all([
-    listPlotOptionsForOrchard(orchardId),
-    listVarietyOptionsForOrchard(orchardId),
-    searchParams,
-  ]);
+  const [plotOptions, varietyOptions, resolvedSearchParams] = await Promise.all(
+    [
+      listPlotOptionsForOrchard(orchardId),
+      listVarietyOptionsForOrchard(orchardId),
+      searchParams,
+    ],
+  );
+  const feedbackNotice = resolveFeedbackNotice(
+    getSingleSearchParam(resolvedSearchParams[FEEDBACK_NOTICE_QUERY_PARAM]),
+  );
 
   const filters = resolveHarvestListFilters(
     {
@@ -64,6 +77,12 @@ async function HarvestsPageContent({
 
   const harvestRecords = await listHarvestRecordsForOrchard(orchardId, filters);
   const hasActiveFilters = hasActiveHarvestListFilters(filters, currentYear);
+  const dismissHref = buildPathWithSearchParams(
+    "/harvests",
+    toUrlSearchParams(resolvedSearchParams, {
+      excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+    }),
+  );
   const currentSearchParams = new URLSearchParams();
 
   if (filters.season_year !== currentYear) {
@@ -86,7 +105,10 @@ async function HarvestsPageContent({
     currentSearchParams.set("variety_id", filters.variety_id);
   }
 
-  const redirectTo = buildPathWithSearchParams("/harvests", currentSearchParams);
+  const redirectTo = buildPathWithSearchParams(
+    "/harvests",
+    currentSearchParams,
+  );
   const seasonSummarySearchParams = new URLSearchParams();
 
   if (filters.season_year !== currentYear) {
@@ -105,9 +127,16 @@ async function HarvestsPageContent({
     "/reports/season-summary",
     seasonSummarySearchParams,
   );
+  const locationSummaryHref = buildPathWithSearchParams(
+    "/reports/harvest-locations",
+    seasonSummarySearchParams,
+  );
 
   return (
     <div className="grid gap-6">
+      {feedbackNotice ? (
+        <FeedbackBanner dismissHref={dismissHref} notice={feedbackNotice} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
@@ -122,10 +151,15 @@ async function HarvestsPageContent({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <LinkButton href={locationSummaryHref} variant="secondary">
+            Zbiory po lokalizacji
+          </LinkButton>
           <LinkButton href={seasonSummaryHref} variant="secondary">
             Podsumowanie sezonu
           </LinkButton>
-          <LinkButton href="/harvests/new">Nowy wpis zbioru</LinkButton>
+          <div className="text-[#fffefe]">
+            <LinkButton href="/harvests/new">Nowy wpis zbioru</LinkButton>
+          </div>
         </div>
       </div>
 
@@ -133,8 +167,8 @@ async function HarvestsPageContent({
         <div className="grid gap-1">
           <CardTitle className="text-lg">Filtry</CardTitle>
           <CardDescription>
-            Lista domyslnie pokazuje biezacy sezon. Mozesz zawęzic wynik po dacie,
-            dzialce albo odmianie.
+            Lista domyslnie pokazuje biezacy sezon. Mozesz zawęzic wynik po
+            dacie, dzialce albo odmianie.
           </CardDescription>
         </div>
         <form className="grid gap-4 lg:grid-cols-3" method="get">

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateHarvestLocationSummary,
   aggregateHarvestSeasonSummary,
   aggregateHarvestTimeline,
   deriveHarvestSeasonYearFromDate,
   normalizeHarvestQuantityToKg,
+  type HarvestLocationSourceRecord,
 } from "@/lib/domain/harvests";
 import {
   harvestFormSchema,
@@ -68,6 +70,25 @@ function buildHarvestRecordSummary(
     created_by_display: "Jan",
     created_at: "2026-09-15T08:00:00Z",
     updated_at: "2026-09-15T08:00:00Z",
+    ...overrides,
+  };
+}
+
+function buildHarvestLocationSourceRecord(
+  overrides: Partial<HarvestLocationSourceRecord> = {},
+): HarvestLocationSourceRecord {
+  return {
+    id: `location-${Math.random().toString(36).slice(2, 10)}`,
+    scope_level: "location_range",
+    harvest_date: "2026-09-15",
+    quantity_kg: 100,
+    plot_id: VALID_PLOT_ID,
+    plot_name: "Kwatera A",
+    plot_status: "active",
+    section_name: "North",
+    row_number: 1,
+    from_position: 1,
+    to_position: 3,
     ...overrides,
   };
 }
@@ -341,5 +362,129 @@ describe("phase 4 harvest validation", () => {
         record_count: 2,
       },
     ]);
+  });
+
+  it("aggregates harvest locations by plot, row, and range while keeping unresolved totals", () => {
+    const records = [
+      buildHarvestLocationSourceRecord({
+        id: "range-a",
+        quantity_kg: 200,
+        from_position: 1,
+        to_position: 3,
+      }),
+      buildHarvestLocationSourceRecord({
+        id: "tree-a",
+        scope_level: "tree",
+        quantity_kg: 25,
+        from_position: 4,
+        to_position: 4,
+      }),
+      buildHarvestLocationSourceRecord({
+        id: "plot-a",
+        scope_level: "plot",
+        quantity_kg: 50,
+        row_number: null,
+        from_position: null,
+        to_position: null,
+      }),
+      buildHarvestLocationSourceRecord({
+        id: "orchard-a",
+        scope_level: "orchard",
+        quantity_kg: 100,
+        plot_id: null,
+        plot_name: null,
+        plot_status: null,
+        section_name: null,
+        row_number: null,
+        from_position: null,
+        to_position: null,
+      }),
+      buildHarvestLocationSourceRecord({
+        id: "range-b",
+        quantity_kg: 300,
+        plot_id: SECOND_PLOT_ID,
+        plot_name: "Kwatera B",
+        section_name: "South",
+        row_number: 2,
+        from_position: 10,
+        to_position: 12,
+      }),
+    ];
+
+    const summary = aggregateHarvestLocationSummary(records, 2026);
+
+    expect(summary).toEqual({
+      season_year: 2026,
+      total_quantity_kg: 675,
+      record_count: 5,
+      precisely_located_quantity_kg: 525,
+      precisely_located_record_count: 3,
+      unresolved_quantity_kg: 150,
+      unresolved_record_count: 2,
+      orchard_level_quantity_kg: 100,
+      orchard_level_record_count: 1,
+      plots: [
+        {
+          plot_id: VALID_PLOT_ID,
+          plot_name: "Kwatera A",
+          plot_status: "active",
+          total_quantity_kg: 275,
+          record_count: 3,
+          precisely_located_quantity_kg: 225,
+          precisely_located_record_count: 2,
+          unresolved_quantity_kg: 50,
+          unresolved_record_count: 1,
+          rows: [
+            {
+              section_name: "North",
+              row_number: 1,
+              total_quantity_kg: 225,
+              record_count: 2,
+              ranges: [
+                {
+                  from_position: 1,
+                  to_position: 3,
+                  total_quantity_kg: 200,
+                  record_count: 1,
+                },
+                {
+                  from_position: 4,
+                  to_position: 4,
+                  total_quantity_kg: 25,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          plot_id: SECOND_PLOT_ID,
+          plot_name: "Kwatera B",
+          plot_status: "active",
+          total_quantity_kg: 300,
+          record_count: 1,
+          precisely_located_quantity_kg: 300,
+          precisely_located_record_count: 1,
+          unresolved_quantity_kg: 0,
+          unresolved_record_count: 0,
+          rows: [
+            {
+              section_name: "South",
+              row_number: 2,
+              total_quantity_kg: 300,
+              record_count: 1,
+              ranges: [
+                {
+                  from_position: 10,
+                  to_position: 12,
+                  total_quantity_kg: 300,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 });

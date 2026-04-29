@@ -6,8 +6,8 @@ Ten dokument porzadkuje formaty plikow i zakres danych dla importu i eksportu.
 
 ## 1. Decyzja etapowa
 
-- W wersji 0.1 import / export moze pozostac glownie narzedziem technicznym.
-- W etapie 0.2 funkcje eksportu i wybranych importow powinny byc dostepne z poziomu aplikacji.
+- Eksport danych konta jest juz dostepny z poziomu aplikacji dla `owner`.
+- Import pozostaje funkcja planowana i nie ma jeszcze wspieranego UI ani workflow recovery.
 
 ## 2. Format eksportu pelnego
 
@@ -129,7 +129,7 @@ Eksport powinien zawierac:
 W przyszlosci:
 
 - zalaczniki
-- raporty terenowe
+- rozszerzone warianty importu i restore
 
 ## 8. Restore
 

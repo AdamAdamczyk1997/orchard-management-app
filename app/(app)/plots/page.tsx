@@ -1,8 +1,13 @@
 import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { LinkButton } from "@/components/ui/link-button";
 import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { Select } from "@/components/ui/select";
+import {
+  FEEDBACK_NOTICE_QUERY_PARAM,
+  resolveFeedbackNotice,
+} from "@/lib/domain/feedback-notices";
 import { PlotList } from "@/features/plots/plot-list";
 import { hasActivePlotListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
@@ -11,6 +16,7 @@ import {
   buildPathWithSearchParams,
   getSingleSearchParam,
   type NextSearchParams,
+  toUrlSearchParams,
 } from "@/lib/utils/search-params";
 import { plotListFiltersSchema } from "@/lib/validation/plots";
 
@@ -42,6 +48,9 @@ async function PlotsPageContent({
   searchParams: Promise<NextSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
+  const feedbackNotice = resolveFeedbackNotice(
+    getSingleSearchParam(resolvedSearchParams[FEEDBACK_NOTICE_QUERY_PARAM]),
+  );
   const parsedFilters = plotListFiltersSchema.safeParse({
     status: getSingleSearchParam(resolvedSearchParams.status),
   });
@@ -54,10 +63,19 @@ async function PlotsPageContent({
     currentSearchParams.set("status", filters.status);
   }
 
+  const dismissHref = buildPathWithSearchParams(
+    "/plots",
+    toUrlSearchParams(resolvedSearchParams, {
+      excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+    }),
+  );
   const redirectTo = buildPathWithSearchParams("/plots", currentSearchParams);
 
   return (
     <div className="grid gap-6">
+      {feedbackNotice ? (
+        <FeedbackBanner dismissHref={dismissHref} notice={feedbackNotice} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">

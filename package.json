@@ -14,7 +14,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:install": "playwright install chromium",
     "seed:baseline-users": "node scripts/bootstrap-baseline-seed-users.mjs",
+    "seed:baseline-sql": "node scripts/run-baseline-sql-seed.mjs",
+    "seed:baseline-reset": "node scripts/reset-and-seed-baseline.mjs",
     "qa:baseline-status": "node scripts/check-baseline-qa-status.mjs"
   },
   "dependencies": {
@@ -26,6 +31,7 @@
     "zod": "4.1.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "4.1.13",
     "@types/node": "24.3.1",
     "@types/react": "19.1.12",

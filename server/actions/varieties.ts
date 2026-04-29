@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { buildRedirectTargetWithNotice } from "@/lib/domain/feedback-notices";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readVarietyByIdForOrchard } from "@/lib/orchard-data/varieties";
 import {
@@ -78,7 +79,7 @@ export async function createVariety(
 
   revalidatePath("/varieties");
   revalidatePath("/trees");
-  redirect("/varieties");
+  redirect(buildRedirectTargetWithNotice("/varieties", "variety_created"));
 }
 
 export async function updateVariety(
@@ -132,5 +133,5 @@ export async function updateVariety(
 
   revalidatePath("/varieties");
   revalidatePath("/trees");
-  redirect("/varieties");
+  redirect(buildRedirectTargetWithNotice("/varieties", "variety_updated"));
 }

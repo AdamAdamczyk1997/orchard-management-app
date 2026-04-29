@@ -11,7 +11,7 @@ Ma odpowiadac na cztery pytania:
 - jak przygotowac lokalne srodowisko
 - jak korzystac z referencyjnych danych seed
 
-## Dwa tryby pracy
+## Trzy tryby pracy
 
 ### 1. Szybki smoke test bez seedu
 
@@ -34,6 +34,28 @@ Uzyj tego trybu, gdy:
 
 To jest glowny tryb do pelniejszej recznej weryfikacji przed merge albo przed releasem.
 
+### 3. Browser automation na baseline
+
+Uzyj tego trybu, gdy:
+
+- chcesz sprawdzic caly krytyczny flow bez recznego klikania
+- ruszales auth, orchard context, `activities`, `harvests`, batch flow albo export
+- chcesz potwierdzic brak przeciekow miedzy orchard i ograniczenia `worker` / outsidera
+
+Rekomendowany workflow:
+
+1. Uruchom `pnpm seed:baseline-reset`.
+2. Uruchom `pnpm qa:baseline-status` i upewnij sie, ze wynik to `READY`.
+3. Uruchom `pnpm test:e2e`.
+
+Aktualny pakiet `Playwright` pokrywa onboarding, orchard switcher, ograniczenia `worker`, outsider onboarding, glowne flow `plot -> variety -> tree`, aktywnosci sezonowe, raport zbiorow oraz batch create / bulk deactivate.
+
+Referencyjny baseline seed zawiera tez przykladowe dzialki z ukladami:
+
+- `rows`
+- `mixed`
+- `irregular`
+
 ## Co jest aktualnie wdrozone i powinno byc testowane
 
 Na obecnym etapie mozna realnie testowac:
@@ -51,18 +73,24 @@ Na obecnym etapie mozna realnie testowac:
   - create
   - edit
   - archive / restore
+  - ustawienia ukladu dzialki: `layout_type`, numeracja, punkt odniesienia i notatki
 - `varieties`:
   - list
   - create
   - edit
   - search
+  - raport lokalizacji odmiany na `/reports/variety-locations`
 - `trees`:
   - list
   - create
   - edit
   - filters
+  - plot-aware guidance i walidacje zalezne od `layout_type`
+  - batch create na `/trees/batch/new`
+  - bulk deactivate na `/trees/batch/deactivate`
 - `settings`:
   - `profile`
+  - export konta dla usera z aktywnym membership `owner`
   - `orchard settings`
   - `members`
 - `activities`:
@@ -73,6 +101,7 @@ Na obecnym etapie mozna realnie testowac:
   - detail
   - change status
   - delete
+  - plot-aware guidance i ograniczenia zakresow dla dzialek `irregular`
   - seasonal `summary + coverage` na `/activities`
 - `harvests`:
   - list
@@ -81,17 +110,16 @@ Na obecnym etapie mozna realnie testowac:
   - edit
   - detail
   - delete
+  - plot-aware guidance i blokada `location_range` dla dzialek `irregular`
   - optional link do aktywnosci typu `harvest`
   - `Season Summary` i timeline na `/reports/season-summary`
+  - raport lokalizacji na `/reports/harvest-locations`
 
 ## Swiadomie jeszcze nie traktowac jako bug
 
 Te obszary sa nadal odlozone albo nie sa jeszcze domkniete:
 
 - detail pages dla `plots`, `varieties` i `trees`
-- browser E2E
-- `batch create` drzew
-- `bulk deactivate`
 - osobny global admin shell dla `super_admin`
 
 Jesli cos z tej listy nie dziala albo nie istnieje w UI, to na ten moment nie jest to regresja.
@@ -148,8 +176,13 @@ pnpm dev
 Przyklady:
 
 - po zmianach w `plots`: create -> edit -> archive / restore
+- po zmianach w ukladzie dzialki: create / edit -> sprawdzenie zapisu `layout_type`, numeracji i planowanej siatki na liscie
 - po zmianach w `varieties`: create -> edit -> search
 - po zmianach w `trees`: create -> edit -> filter
+  - sprawdzenie `rows -> wymagane row_number + position_in_row`
+  - sprawdzenie `mixed / irregular -> wymagana co najmniej jedna wskazowka lokalizacyjna`
+  - albo `batch create -> conflict preview -> successful create`
+  - albo `bulk deactivate -> preview -> confirm`
 - po zmianach w `activities`: create -> detail -> status -> edit -> delete
 - po zmianach w `harvests`: create -> detail -> edit -> delete
 
@@ -174,6 +207,12 @@ W tym repo na czystym lokalnym stacku seed moze zatrzymac sie na prerequisite ch
 
 To nie oznacza, ze migracje sa zepsute.
 To znaczy tylko, ze trzeba najpierw utworzyc lokalne konta seedowe, a potem odpalic sam seed.
+
+Jesli chcesz przejsc cala sekwencje jednym ruchem, uzyj:
+
+```bash
+pnpm seed:baseline-reset
+```
 
 ### Krok 3. Zbootstrapuj wymagane konta `auth.users`
 
@@ -228,12 +267,18 @@ Plik seedu:
 
 Najprostsza droga:
 
-1. Otworz Supabase Studio pod `http://127.0.0.1:54323`
-2. Wejdz do SQL Editor
-3. Wklej zawartosc `supabase/seeds/001_baseline_reference_seed.sql`
-4. Uruchom caly skrypt
+```bash
+pnpm seed:baseline-sql
+```
 
-Alternatywnie mozesz odpalic seed przez `psql` jako owner lokalnej bazy.
+Wazne:
+
+- nie uruchamiaj tego seedu przez Supabase Studio SQL Editor jako standardowego fallbacku
+- seed aktualizuje `public.profiles`, w tym `system_role`
+- SQL Editor potrafi uruchomic skrypt w kontekście, ktory wpada w trigger `guard_profile_self_service_update()`
+- objawia sie to bledem `Profile system_role cannot be changed by the current user`
+- rekomendowana i wspierana droga to `pnpm seed:baseline-sql` albo pelne `pnpm seed:baseline-reset`
+- jesli taki blad pojawil sie po nieudanej probie recznej, po prostu wroc do wspieranej sciezki i uruchom `pnpm seed:baseline-sql`; seed dziala transakcyjnie i nie powinien zostawic czesciowo zaladowanych danych
 
 ### Krok 5. Potwierdz gotowosc baseline do manual QA
 
@@ -257,7 +302,7 @@ Wazny niuans:
 
 - jesli w raporcie widzisz liczby wieksze od referencyjnych, lokalna baza jest najpewniej zabrudzona po testach albo recznych eksperymentach
 - w takim przypadku nie wystarczy ponownie odpalic samego SQL seedu
-- trzeba wrocic do pelnej sekwencji: `supabase db reset -> pnpm seed:baseline-users -> 001_baseline_reference_seed.sql -> pnpm qa:baseline-status`
+- trzeba wrocic do pelnej sekwencji: `pnpm seed:baseline-reset -> pnpm qa:baseline-status`
 
 ### Krok 6. Zaloguj sie na gotowe konta i testuj role
 
@@ -286,6 +331,12 @@ Najwazniejsze konta:
 - `admin@orchardlog.local`
   - `super_admin`
   - przydatne glownie do technicznych spot-checkow; nie ma jeszcze osobnego admin shell
+
+Szybki dodatkowy check po zalogowaniu jako `jan.owner@orchardlog.local`:
+
+- wejdz w `/settings/profile`
+- uruchom `Pobierz eksport konta`
+- potwierdz, ze plik JSON pobiera sie poprawnie i obejmuje tylko owned orchard
 
 ## Co zawiera aktualny seed
 
@@ -318,8 +369,10 @@ Seed szczegolnie dobrze nadaje sie do testowania:
 - owner-only settings
 - worker permissions
 - outsider / onboarding state
+- plot-aware flow `rows / mixed / irregular` w module `trees`
 - `spraying` z materialami
 - `activities` z sezonowym `summary + coverage`
+- raportu lokalizacji odmiany dla drzew z pelna i niepelna lokalizacja
 - rekordow zbioru dla zakresow:
   - `orchard`
   - `plot`
@@ -349,6 +402,15 @@ Sprawdz:
 - create
 - edit
 - filtry i search tam, gdzie istnieja
+- dla `trees`:
+  - `rows` wymaga `row_number + position_in_row`
+  - `mixed` i `irregular` wymagaja przynajmniej jednej wskazowki lokalizacyjnej
+- `batch create`, jesli byl ruszany
+- `bulk deactivate`, jesli byl ruszany
+- dla flow batchowych:
+  - dzialka `rows` albo `mixed` pozwala przejsc do preview
+  - dzialka `irregular` pokazuje stan `unsupported`
+- `/reports/variety-locations`, jesli byly ruszane lokalizacje drzew albo biblioteka odmian
 - czy `worker` nadal moze robic operacje operacyjne
 - czy outsider nadal nie widzi danych orchard
 
@@ -362,6 +424,9 @@ Sprawdz:
 - status change
 - delete
 - filtry listy
+- dla dzialki `irregular`:
+  - brak mozliwosci zapisania scope `row`
+  - brak mozliwosci zapisania scope `location_range`
 - `summary + coverage` na `/activities`
 - dla `spraying`:
   - materials
@@ -377,10 +442,14 @@ Sprawdz:
 - detail page
 - delete
 - filtry listy po sezonie, dacie, dzialce i odmianie
+- dla dzialki `irregular`:
+  - brak mozliwosci zapisania `scope_level = location_range`
 - powiazanie z aktywnoscia typu `harvest`, jesli bylo ruszane
 - `quantity_kg` oraz zachowanie jednostek `kg` / `t`
 - `/reports/season-summary` z filtrem po sezonie, dzialce i odmianie
+- `/reports/harvest-locations` z filtrem po sezonie, dzialce i odmianie
 - linki z raportu z powrotem do filtrowanej listy `harvests`
+- rozdzielenie wpisow z precyzyjna lokalizacja od wpisow tylko na poziomie sadu lub dzialki
 
 ### Po zmianach w migracjach, RLS albo politykach dostepu
 
@@ -400,6 +469,7 @@ Minimalny pass:
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
+- `pnpm test:e2e`
 - szybki manual smoke jako `owner`
 - szybki manual smoke jako `worker`
 - szybki check outsidera albo onboardingu
@@ -428,14 +498,9 @@ Jesli chcesz zrobic bardzo krotki, ale sensowny pass:
 
 ## Najwazniejsze ostrzezenie operacyjne
 
-W tym repo `supabase db reset` i seed referencyjny nie sa jeszcze domkniete jako jedno-bezklikowe doswiadczenie dla testera.
+W tym repo referencyjny baseline jest juz domkniety jako lokalny workflow bez recznego klikania w SQL Editor.
 
-Praktycznie oznacza to:
+Praktycznie masz teraz dwie drogi:
 
-- najpierw stawiasz schema przez `supabase db reset`
-- potem bootstrapujesz wymagane konta `auth.users` przez `pnpm seed:baseline-users`
-- dopiero potem uruchamiasz `001_baseline_reference_seed.sql`
-- na koncu sprawdzasz gotowosc baseline przez `pnpm qa:baseline-status`
-
-Najbardziej uciazliwy fragment, czyli tworzenie seedowych kont i walidacja gotowosci baseline, jest juz zautomatyzowany.
-Jesli kiedys domkniemy tez automatyczne odpalanie samego SQL seedu, ten plik trzeba bedzie jeszcze uproscic.
+- pelny rebuild baseline: `pnpm seed:baseline-reset`
+- wariant rozdzielony: `pnpm seed:baseline-users -> pnpm seed:baseline-sql -> pnpm qa:baseline-status`

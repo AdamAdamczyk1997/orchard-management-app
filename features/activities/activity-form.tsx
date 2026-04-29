@@ -21,6 +21,14 @@ import {
   getActivityStatusLabel,
   getActivityTypeLabel,
 } from "@/lib/domain/activities";
+import {
+  formatPlotDefaultGridLabel,
+  getPlotLayoutTypeLabel,
+  getPlotOperationalLocationGuidance,
+  getRowNumberingSchemeLabel,
+  getTreeNumberingSchemeLabel,
+  supportsActivityScopeLevelForPlotLayout,
+} from "@/lib/domain/plots";
 import type {
   ActionResult,
   ActiveMemberOption,
@@ -192,12 +200,23 @@ export function ActivityForm({
   const [materials, setMaterials] = useState<ActivityMaterialInput[]>(
     buildInitialMaterials(activity),
   );
+  const selectedPlot = plotOptions.find((plot) => plot.id === selectedPlotId);
 
   const selectedPlotTreeOptions = selectedPlotId
     ? treeOptions.filter((tree) => tree.plot_id === selectedPlotId)
     : [];
   const scopesRequired = activityTypeRequiresScope(activityType);
   const activityTypeIsSpraying = activityType === "spraying";
+  const hasUnsupportedScopeSelection = Boolean(
+    selectedPlot &&
+      scopes.some(
+        (scope) =>
+          !supportsActivityScopeLevelForPlotLayout(
+            selectedPlot.layout_type,
+            scope.scope_level,
+          ),
+      ),
+  );
 
   useEffect(() => {
     if (!seasonPhaseEdited) {
@@ -266,7 +285,7 @@ export function ActivityForm({
   }, [selectedPlotId, selectedTreeId, treeOptions]);
 
   return (
-    <form action={formAction} className="grid gap-6">
+    <form action={formAction} className="grid gap-6" data-testid="activity-form">
       {mode === "edit" && activity ? (
         <input name="activity_id" type="hidden" value={activity.id} />
       ) : null}
@@ -316,6 +335,42 @@ export function ActivityForm({
               ))}
             </Select>
           </Field>
+          {selectedPlot ? (
+            <div
+              className="rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-4 text-sm text-[#4f584e] md:col-span-2"
+              data-testid="activity-plot-guidance"
+            >
+              <div className="grid gap-1">
+                <p className="font-medium text-[#304335]">
+                  Uklad dzialki: {getPlotLayoutTypeLabel(selectedPlot.layout_type)}
+                </p>
+                <p>{getPlotOperationalLocationGuidance(selectedPlot.layout_type)}</p>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <p>
+                  <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
+                  {selectedPlot.row_numbering_scheme
+                    ? getRowNumberingSchemeLabel(selectedPlot.row_numbering_scheme)
+                    : "Brak"}
+                </p>
+                <p>
+                  <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
+                  {selectedPlot.tree_numbering_scheme
+                    ? getTreeNumberingSchemeLabel(selectedPlot.tree_numbering_scheme)
+                    : "Brak"}
+                </p>
+                <p>
+                  <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
+                  {formatPlotDefaultGridLabel(selectedPlot)}
+                </p>
+                <p>
+                  <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
+                  {selectedPlot.entrance_description ?? "Brak"}
+                </p>
+              </div>
+              {selectedPlot.layout_notes ? <p className="mt-3">{selectedPlot.layout_notes}</p> : null}
+            </div>
+          ) : null}
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           <Field
@@ -516,11 +571,17 @@ export function ActivityForm({
               Dla tego typu aktywnosci potrzebny jest co najmniej jeden zakres.
             </p>
           ) : null}
+          {hasUnsupportedScopeSelection ? (
+            <div className="rounded-2xl border border-[#d8b675] bg-[#f8f0df] px-4 py-3 text-sm text-[#6d4c1d]">
+              Dla dzialki nieregularnej korzystaj z calej dzialki, sekcji albo
+              pojedynczych drzew. Zakresy `rzad` i `zakres lokalizacji` nie sa tu wspierane.
+            </div>
+          ) : null}
         </div>
 
         <input name="scopes" type="hidden" value={JSON.stringify(scopes)} />
 
-        <div className="grid gap-4">
+        <div className="grid gap-4" data-testid="activity-scopes">
           {scopes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#dfd3bb] px-4 py-4 text-sm text-[#5b6155]">
               Nie dodano jeszcze zadnego zakresu. To jest opcjonalne dla zwyklych
@@ -531,6 +592,7 @@ export function ActivityForm({
           {scopes.map((scope, index) => (
             <div
               className="grid gap-4 rounded-2xl border border-[#eadfcb] bg-[#fbfaf7] p-4"
+              data-testid={`activity-scope-${index}`}
               key={`${scope.scope_level}-${index}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -573,7 +635,18 @@ export function ActivityForm({
                     value={scope.scope_level}
                   >
                     {ACTIVITY_SCOPE_LEVELS.map((scopeLevel) => (
-                      <option key={scopeLevel} value={scopeLevel}>
+                      <option
+                        disabled={
+                          selectedPlot
+                            ? !supportsActivityScopeLevelForPlotLayout(
+                                selectedPlot.layout_type,
+                                scopeLevel,
+                              )
+                            : false
+                        }
+                        key={scopeLevel}
+                        value={scopeLevel}
+                      >
                         {getActivityScopeLevelLabel(scopeLevel)}
                       </option>
                     ))}
@@ -748,6 +821,7 @@ export function ActivityForm({
 
         <div className="flex flex-wrap gap-3">
           <Button
+            data-testid="activity-add-scope"
             onClick={() =>
               setScopes((currentScopes) => [...currentScopes, createEmptyScope()])
             }
@@ -772,7 +846,7 @@ export function ActivityForm({
 
         <input name="materials" type="hidden" value={JSON.stringify(materials)} />
 
-        <div className="grid gap-4">
+        <div className="grid gap-4" data-testid="activity-materials">
           {materials.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#dfd3bb] px-4 py-4 text-sm text-[#5b6155]">
               Nie dodano jeszcze zadnych materialow do tego wpisu.
@@ -782,6 +856,7 @@ export function ActivityForm({
           {materials.map((material, index) => (
             <div
               className="grid gap-4 rounded-2xl border border-[#eadfcb] bg-[#fbfaf7] p-4"
+              data-testid={`activity-material-${index}`}
               key={`${material.name}-${index}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -911,6 +986,7 @@ export function ActivityForm({
 
         <div className="flex flex-wrap gap-3">
           <Button
+            data-testid="activity-add-material"
             onClick={() =>
               setMaterials((currentMaterials) => [
                 ...currentMaterials,
@@ -962,6 +1038,7 @@ export function ActivityForm({
 
       <div className="flex flex-wrap gap-3">
         <SubmitButton
+          disabled={hasUnsupportedScopeSelection}
           pendingLabel={
             mode === "create" ? "Zapisywanie aktywnosci..." : "Aktualizowanie aktywnosci..."
           }

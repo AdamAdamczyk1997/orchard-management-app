@@ -54,7 +54,9 @@ function DashboardActivityFeed(props: {
           key={activity.id}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium text-[#304335]">{activity.title}</p>
+            <p className="text-sm font-medium text-[#304335]">
+              {activity.title}
+            </p>
             <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
               {getActivityStatusLabel(activity.status)}
             </span>
@@ -75,8 +77,8 @@ function DashboardHarvestFeed(props: {
     return (
       <div className="grid gap-3">
         <CardDescription>
-          Nie ma jeszcze wpisow zbioru. Dodaj pierwszy rekord, aby sledzic mase i
-          historie sezonu.
+          Nie ma jeszcze wpisow zbioru. Dodaj pierwszy rekord, aby sledzic mase
+          i historie sezonu.
         </CardDescription>
         <div className="flex flex-wrap gap-3">
           <LinkButton href="/harvests/new">Dodaj zbior</LinkButton>
@@ -126,9 +128,9 @@ export default async function DashboardPage() {
         </p>
         <CardTitle>{context.orchard.name}</CardTitle>
         <CardDescription>
-          Pracujesz teraz jako `{getOrchardRoleLabel(context.membership.role)}`. Ten
-          widok pokazuje biezacy stan operacyjny sadu: aktywne rekordy struktury,
-          ostatnie prace i ostatnie wpisy zbioru.
+          Pracujesz teraz jako `{getOrchardRoleLabel(context.membership.role)}`.
+          Ten widok pokazuje biezacy stan operacyjny sadu: aktywne rekordy
+          struktury, ostatnie prace i ostatnie wpisy zbioru.
         </CardDescription>
       </Card>
 
@@ -142,7 +144,10 @@ export default async function DashboardPage() {
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-3">
-            <LinkButton href="/plots/new">Dodaj dzialke</LinkButton>
+            {" "}
+            <div className="text-[#fffefe]">
+              <LinkButton href="/plots/new">Dodaj dzialke</LinkButton>
+            </div>
             <LinkButton href="/trees/new" variant="secondary">
               Dodaj drzewo
             </LinkButton>
@@ -178,7 +183,9 @@ export default async function DashboardPage() {
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-3">
-                <LinkButton href="/plots/new">Dodaj dzialke</LinkButton>
+                <div className="text-[#fffefe]">
+                  <LinkButton href="/plots/new">Dodaj dzialke</LinkButton>
+                </div>
                 <LinkButton href="/trees/new" variant="secondary">
                   Dodaj drzewo
                 </LinkButton>

@@ -1,22 +1,11 @@
-### Notatki na dzień 18/04/2026
+### Notatki na dzień 29/04/2026
 
-Najlepszy krok teraz to wejść w `Phase 3 - Activities + activity_scopes + activity_materials`.
+#### Odmiany
 
-To jest najbardziej logiczne z naszych planów, bo:
+- W ekranie variteties/new w formularzu do tworzenia nowej odmiany pole okres dojrzewania to będzie po prostu do wyboru miesiący od do ale że tylko miesiące.
 
-- `Phase 1-2` i pre-`Phase 3` stabilization są już domknięte,
-- schema, RLS i dokumentacja dla aktywności są przygotowane,
-- ten slice daje największy realny przyrost wartości,
-- po nim dużo łatwiej wejść w `Phase 4` z `harvest_records` i summary.
+- jak się tworzy to gatunek jest z małej litery a w proponowanych jest z dużych
 
-Najrozsądniej zrobić to jako wąski vertical slice, nie wszystko naraz:
+- W Raport lokalizacji odmiany - przycisk Utworz drzewo - kolor czcionki do zmiany
 
-1. kontrakty + walidacja `ActivityFormInput`, `ActivityScopeInput`, `ActivityMaterialInput`
-2. server actions: `listActivities`, `createActivity`, `updateActivity`
-3. transakcyjny zapis `activities + scopes + materials`
-4. minimalny UI: lista + create/edit form
-5. testy unit/integration dla subtype, scope rules i performer membership
-
-Nie zaczynałbym teraz od `harvest`, detail pages ani kolejnego polishu UI. Najwięcej sensu ma najpierw dowieźć działający dziennik prac sezonowych.
-
-Jeśli chcesz, mogę od razu wejść w ten slice i zacząć od warstwy backend/contracts dla `activities`.
+- dlaczego niektóre są Potwierdzone a niektore nie potwierdzone drzewa?

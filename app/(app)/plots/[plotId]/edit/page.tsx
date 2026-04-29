@@ -34,7 +34,8 @@ export default async function EditPlotPage({ params }: EditPlotPageProps) {
         </p>
         <CardTitle>{plot.name}</CardTitle>
         <CardDescription>
-          Zmien podstawowe informacje oraz status zycia tej dzialki w aktywnym sadzie.
+          Zmien podstawowe informacje, status oraz zasady ukladu tej dzialki w
+          aktywnym sadzie.
         </CardDescription>
       </Card>
       <Card className="grid gap-5">

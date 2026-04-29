@@ -163,6 +163,8 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm seed:baseline-users
+pnpm seed:baseline-sql
+pnpm seed:baseline-reset
 pnpm qa:baseline-status
 ```
 
@@ -188,11 +190,17 @@ Znaczenie:
   - tworzy albo aktualizuje lokalne konta `auth.users` potrzebne do referencyjnego seedu
   - ustawia wspolne haslo lokalne dla tych kont
   - nie odpala jeszcze samego SQL seedu
+- `pnpm seed:baseline-sql`
+  - automatycznie odpala `supabase/seeds/001_baseline_reference_seed.sql` przez Supabase CLI
+  - zaklada, ze wymagane konta `auth.users` sa juz gotowe
+- `pnpm seed:baseline-reset`
+  - robi pelny lokalny rebuild baseline: reset bazy, bootstrap `auth.users`, odpalenie SQL seedu
+  - to jest najszybsza komenda, gdy chcesz odtworzyc referencyjny dataset od zera
 - `pnpm qa:baseline-status`
   - sprawdza, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
   - zwraca niezerowy exit code, jesli baseline nie jest jeszcze kompletny
   - podpowiada kolejny krok: bootstrap kont, rerun SQL seedu albo start smoke passa
-  - jesli widzisz liczby wieksze od referencyjnych, narzedzie zasugeruje pelny `supabase db reset`, bo lokalna baza jest zabrudzona po testach albo recznej pracy
+  - jesli widzisz liczby wieksze od referencyjnych, narzedzie zasugeruje `pnpm seed:baseline-reset`, bo lokalna baza jest zabrudzona po testach albo recznej pracy
 
 Najbezpieczniejszy zestaw po zmianach:
 
@@ -205,9 +213,7 @@ pnpm test
 Najpraktyczniejszy zestaw do seeded QA:
 
 ```bash
-supabase db reset
-pnpm seed:baseline-users
-# uruchom potem supabase/seeds/001_baseline_reference_seed.sql
+pnpm seed:baseline-reset
 pnpm qa:baseline-status
 ```
 

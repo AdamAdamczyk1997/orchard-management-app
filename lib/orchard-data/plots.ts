@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlotListFilters, PlotOption, PlotSummary } from "@/types/contracts";
 
 const plotSelect =
-  "id, orchard_id, name, code, description, location_name, area_m2, soil_type, irrigation_type, status, is_active, created_at, updated_at";
+  "id, orchard_id, name, code, description, location_name, area_m2, soil_type, irrigation_type, layout_type, row_numbering_scheme, tree_numbering_scheme, entrance_description, layout_notes, default_row_count, default_trees_per_row, status, is_active, created_at, updated_at";
 
 const plotStatusPriority: Record<PlotSummary["status"], number> = {
   active: 0,
@@ -69,7 +69,9 @@ export async function listPlotOptionsForOrchard(orchardId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("plots")
-    .select("id, name, status")
+    .select(
+      "id, name, status, layout_type, row_numbering_scheme, tree_numbering_scheme, entrance_description, layout_notes, default_row_count, default_trees_per_row",
+    )
     .eq("orchard_id", orchardId);
 
   if (error) {

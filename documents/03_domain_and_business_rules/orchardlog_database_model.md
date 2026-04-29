@@ -158,10 +158,10 @@ Finalny zestaw encji poza baseline v1:
   - `row_label`
   - `position_label`
   - `tree_code`
-  - `location_verified`
+- `location_verified`
 - Unikalnosc aktywnej pozycji jest egzekwowana partial unique indexem na `(plot_id, row_number, position_in_row)` dla aktywnych drzew z pelna lokalizacja rzedowa.
 - `plot_sections` nie istnieje jako osobna tabela w baseline v1.
-- `plots.layout_type`, `row_numbering_scheme` i `tree_numbering_scheme` nie wchodza do baseline SQL v1; pozostaja zakresem `0.2`.
+- Aktualny model operacyjny rozszerza `plots` o `layout_type`, `row_numbering_scheme` i `tree_numbering_scheme`, ale tree-level enforcement nadal jest wdrazane etapowo.
 
 #### Final activities model
 
@@ -240,12 +240,10 @@ Finalny zestaw encji poza baseline v1:
   - `activity_scopes`
   - `activity_materials`
   - `harvest_records`
-- Poza baseline pozostaja:
+- Poza baseline v1 pozostawaly historycznie:
   - `bulk_tree_import_batches`
-  - rozszerzony plot layout model:
-    - `plots.layout_type`
-    - `row_numbering_scheme`
-    - `tree_numbering_scheme`
+  - rozszerzony plot layout model
+- W aktualnym schemacie operacyjnym te rozszerzenia sa juz wdrozone.
 - Nie ma blockerow biznesowych dla przygotowania baseline SQL migrations v1.
   Pozostale pytania rozwojowe, takie jak `plot_sections`, klasy jakosci zbioru albo ewentualne przesuniecie batch create do `0.1`, nie blokuja baseline v1.
 
@@ -566,7 +564,7 @@ Jeden rekord = jedno fizyczne drzewo.
 - index on `orchard_id`
 - index on `(plot_id, condition_status)`
 - index on `(orchard_id, variety_id)`
-- `planted_batch_id` jest swiadomie poza baseline SQL v1 i wraca razem z `bulk_tree_import_batches` w etapie `0.2`
+- `planted_batch_id` jest juz aktywna czescia aktualnego modelu operacyjnego i linkuje rekordy `trees` z `bulk_tree_import_batches`
 
 ```sql
 create table trees (
@@ -938,8 +936,8 @@ create index idx_harvest_records_orchard_plot_season
 ### `bulk_tree_import_batches`
 
 Techniczny zapis operacji batch create.
-Tabela nie wchodzi do `baseline SQL migrations v1`.
-W tym samym pakiecie `0.2` nalezy dopiero dodac `trees.planted_batch_id`.
+Tabela nie wchodzila do `baseline SQL migrations v1`, ale jest juz wdrozona w aktualnym pakiecie `0.2`.
+W tym samym pakiecie aktywne jest tez `trees.planted_batch_id`.
 
 | Pole | Typ | Null | Opis |
 |---|---|---:|---|

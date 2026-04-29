@@ -36,19 +36,45 @@ describe("phase 2 management flow", () => {
       name: "North Block",
       code: "NB-01",
       areaM2: 1400,
+      layoutType: "rows",
+      rowNumberingScheme: "left_to_right_from_entrance",
+      treeNumberingScheme: "from_row_start",
+      entranceDescription: "Gate from the west side",
+      defaultRowCount: 8,
+      defaultTreesPerRow: 180,
     });
+
+    expect(plot.layout_type).toBe("rows");
+    expect(plot.row_numbering_scheme).toBe("left_to_right_from_entrance");
+    expect(plot.tree_numbering_scheme).toBe("from_row_start");
+    expect(plot.default_row_count).toBe(8);
+    expect(plot.default_trees_per_row).toBe(180);
 
     const updatedPlot = await updatePlotAsUser(client, {
       plotId: plot.id,
       orchardId: orchard.orchard_id,
       patch: {
         description: "Main production block",
+        layout_type: "mixed",
+        row_numbering_scheme: "custom",
+        tree_numbering_scheme: "from_row_end",
+        entrance_description: "Service road from the south",
+        layout_notes: "Eastern half has irregular spacing",
+        default_row_count: 6,
+        default_trees_per_row: 150,
         status: "archived",
         is_active: false,
       },
     });
 
     expect(updatedPlot.description).toBe("Main production block");
+    expect(updatedPlot.layout_type).toBe("mixed");
+    expect(updatedPlot.row_numbering_scheme).toBe("custom");
+    expect(updatedPlot.tree_numbering_scheme).toBe("from_row_end");
+    expect(updatedPlot.entrance_description).toBe("Service road from the south");
+    expect(updatedPlot.layout_notes).toBe("Eastern half has irregular spacing");
+    expect(updatedPlot.default_row_count).toBe(6);
+    expect(updatedPlot.default_trees_per_row).toBe(150);
     expect(updatedPlot.status).toBe("archived");
     expect(updatedPlot.is_active).toBe(false);
 
@@ -63,6 +89,9 @@ describe("phase 2 management flow", () => {
 
     expect(restoredPlot.status).toBe("active");
     expect(restoredPlot.is_active).toBe(true);
+    expect(restoredPlot.layout_type).toBe("mixed");
+    expect(restoredPlot.row_numbering_scheme).toBe("custom");
+    expect(restoredPlot.tree_numbering_scheme).toBe("from_row_end");
 
     const duplicatePlot = await client
       .from("plots")

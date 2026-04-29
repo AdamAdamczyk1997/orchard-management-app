@@ -30,13 +30,16 @@ Ten dokument tlumaczy te decyzje na warstwy walidacji i integralnosci, ale nie t
 
 - wymagane `name`
 - liczby dodatnie dla `area_m2`
+- wymagane `layout_type`
+- liczby dodatnie calkowite dla `default_row_count` i `default_trees_per_row`, jesli sa podane
 - czytelny komunikat dla duplikatu nazwy w obrebie aktywnego `orchard`
 
 ### Formularz drzewa
 
 - wymagane `plot_id` i `species`
-- w MVP, jesli user opisuje drzewo w modelu rzedowym, `row_number` i `position_in_row` powinny byc podawane razem
-- po wprowadzeniu `plots.layout_type` w etapie 0.2 dzialka typu `rows` wymaga `row_number` i `position_in_row`
+- dla `plots.layout_type = rows` wymagane sa `row_number` i `position_in_row`
+- dla `plots.layout_type = mixed` i `plots.layout_type = irregular` wymagane jest co najmniej jedno praktyczne oznaczenie lokalizacji
+- UI pokazuje guidance z ustawien dzialki po wyborze `plot_id`
 - podpowiedz, gdy brak odmiany jest dopuszczalny
 - blokada pustych wartosci dla wymaganych pol
 
@@ -51,6 +54,7 @@ Ten dokument tlumaczy te decyzje na warstwy walidacji i integralnosci, ale nie t
 - walidacja liczb nieujemnych dla czasu i kosztu
 - dla `pruning` wymagane `activity_subtype`
 - dla `location_range` wymagane `row_number`, `from_position`, `to_position`
+- dla dzialki `irregular` zakresy `row` i `location_range` sa niedostepne; uzywamy `plot`, `section` albo `tree`
 
 ### Formularz zbioru
 
@@ -58,11 +62,13 @@ Ten dokument tlumaczy te decyzje na warstwy walidacji i integralnosci, ale nie t
 - dla `scope_level = location_range` wymagane `plot_id`, `row_number`, `from_position`, `to_position`
 - dla `scope_level = tree` wymagane `tree_id`
 - walidacja `quantity_value > 0`
+- dla dzialki `irregular` `scope_level = location_range` jest blokowane; user powinien wybrac inny poziom szczegolowosci
 
 ### Formularz batch create
 
 - wymagane `plot_id`, `species`, `row_number`, `from_position`, `to_position`
 - walidacja `to_position >= from_position`
+- flow jest dostepny tylko dla dzialek `rows` i `mixed`
 
 ## 2. Walidacje w warstwie serwerowej / operacjach
 
@@ -105,6 +111,7 @@ Ten dokument tlumaczy te decyzje na warstwy walidacji i integralnosci, ale nie t
 - konflikt jednej pozycji blokuje cala operacje
 - batch powinien byc wykonywany transakcyjnie
 - bulk deactivate dziala tylko dla jednego `plot_id` i jednego zakresu w ramach tego samego `orchard`
+- operacje zakresowe po `row_number + from_position + to_position` sa blokowane dla dzialek `irregular`
 
 ### Eksport account-wide
 
@@ -166,9 +173,12 @@ Powiazania odroczone do etapu `0.2`:
 
 - brak mozliwosci utworzenia drzewa na dzialce z innego `orchard`
 - brak mozliwosci przypisania odmiany z innego `orchard`
+- brak mozliwosci zapisania drzewa typu `rows` bez `row_number + position_in_row`
+- brak mozliwosci zapisania drzewa na `mixed` albo `irregular` bez zadnej czytelnej wskazowki lokalizacyjnej
 - brak mozliwosci przypisania aktywnosci do drzewa z innej dzialki
 - brak mozliwosci duplikacji lokalizacji aktywnego drzewa
 - brak czesciowego zapisu batcha przy konflikcie
+- brak mozliwosci uruchomienia batch create albo bulk deactivate dla dzialki `irregular`
 - brak eksportu dla `worker`
 - poprawne ograniczenie eksportu do orchard, gdzie user ma role `owner`
 

@@ -73,6 +73,14 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - wdrozone sa: `listPlots`, `createPlot`, `updatePlot`, `archivePlot`, `restorePlot`
 - lista domyslnie pokazuje tylko `active` i `planned`
 - `archived` i `all` sa obslugiwane przez filtr w URL
+- create / edit obsluguje tez ustawienia ukladu dzialki:
+  - `layout_type`
+  - `row_numbering_scheme`
+  - `tree_numbering_scheme`
+  - `entrance_description`
+  - `layout_notes`
+  - `default_row_count`
+  - `default_trees_per_row`
 - detail page jest swiadomie odlozona
 
 ## 4. Operacje dla odmian
@@ -107,13 +115,16 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 | `deactivateTree` | oznaczenie drzewa jako nieaktywne | `tree_id`, reason opcjonalnie | `is_active = false` | pozniej |
 | `previewBulkDeactivateTrees` | podglad masowego wycofania drzew | `plot_id`, `row_number`, `from_position`, `to_position` | liczba aktywnych drzew i potencjalne braki w zakresie | 0.2 |
 | `bulkDeactivateTrees` | masowe oznaczenie drzew jako `removed` | zakres lokalizacji + powod opcjonalnie | liczba zmienionych rekordow + podsumowanie operacji | 0.2 |
+| `previewBulkTreeBatch` | podglad i walidacja batch create | dane formularza batcha | lista planowanych pozycji i konflikty lokalizacji | 0.2 |
+| `createBulkTreeBatch` | transakcyjne utworzenie zakresu drzew | dane formularza batcha | rekord `bulk_tree_import_batches` + liczba utworzonych drzew | 0.2 |
 
 ### Zalecana walidacja dla drzew
 
 - `plot_id` musi nalezec do aktywnego `orchard`
 - `variety_id`, jesli ustawione, musi nalezec do aktywnego `orchard`
 - brak konfliktu lokalizacji dla aktywnego drzewa
-- `row_number` i `position_in_row` w MVP sa walidowane parami: oba wypelnione albo oba puste
+- dla `plot.layout_type = rows` wymagane sa `row_number` i `position_in_row`
+- dla `plot.layout_type = mixed` i `plot.layout_type = irregular` wymagane jest co najmniej jedno praktyczne oznaczenie lokalizacji
 - przy masowej deaktywacji zakres musi byc poprawny: `from_position <= to_position`
 - przy masowej deaktywacji operacja powinna oznaczac rekordy jako `removed` i `is_active = false`, bez fizycznego kasowania
 - przy masowej deaktywacji system powinien zwrocic podsumowanie znalezionych i zmienionych rekordow
@@ -130,6 +141,23 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
   - `q` po `tree_code` i `display_name`
 - create/edit blokuje zapis do `plot.status = 'archived'`
 - detail page i deactivate UI sa swiadomie odlozone
+
+### Aktualizacja Phase 6B dla drzew
+
+- wdrozone sa:
+  - `/trees/batch/new`
+  - `/trees/batch/deactivate`
+  - preview-before-write dla obu flow
+  - RPC `create_bulk_tree_batch`
+  - RPC `bulk_deactivate_trees`
+- batch create zapisuje historie do `bulk_tree_import_batches` i linkuje nowe rekordy przez `trees.planted_batch_id`
+- bulk deactivate dziala tylko w zakresie jednej dzialki i jednego rzedu
+- bulk deactivate dopisuje opcjonalny powod do `trees.notes`, jesli user go poda
+
+### Aktualizacja Phase 6F dla drzew
+
+- create / edit `trees` wykorzystuje teraz `plots.layout_type` oraz ustawienia numeracji do guidance i walidacji
+- batch create i bulk deactivate pozostaja flow rzedowymi i sa jawnie blokowane dla dzialek `irregular`
 
 ## 6. Operacje dla aktywnosci i materialow
 
@@ -158,6 +186,7 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
   jeden rekord `activity_scopes`; dla calej dzialki powinien to byc scope `plot`
 - dla `scope_level = 'tree'` `tree_id` w `activity_scopes` musi nalezec do tej samej dzialki co `plot_id`
 - dla `scope_level = 'location_range'` wymagane sa `row_number`, `from_position`, `to_position`
+- dla dzialki `irregular` scope `row` i `location_range` nie sa wspierane i powinny byc odrzucone juz w server actions oraz triggerze `activity_scopes`
 - jedna aktywnosc moze miec wiele `activity_scopes`, ale wszystkie musza nalezec do tej samej dzialki glownej
 - `getSeasonalActivitySummary` liczy tylko rekordy `status = 'done'`
 - `getSeasonalActivityCoverage` korzysta wylacznie z zapisanych `activity_scopes`, bez inferencji z drzew lub dzialek
@@ -188,6 +217,7 @@ Uwaga Phase 5A:
 - `season_year` wyliczane z `harvest_date`
 - `plot_id`, `variety_id`, `tree_id` i `activity_id`, jesli ustawione, musza nalezec do tego samego `orchard`
 - dla `scope_level = 'location_range'` wymagane sa `plot_id`, `row_number`, `from_position`, `to_position`
+- dla dzialki `irregular` `scope_level = 'location_range'` pozostaje niewspierane i powinno byc blokowane w server actions oraz triggerze `harvest_records`
 - dla `tree_id` system powinien pilnowac spojnosci `plot_id` i `variety_id`
 - `getHarvestSeasonSummary` liczy sume globalna ze wszystkich matching rekordow
 - breakdown `per odmiana` pokazuje tylko rekordy z przypisana `variety_id`
@@ -213,9 +243,42 @@ Uwaga Phase 5A:
 - brak konfliktow lokalizacji w zadanym zakresie
 - zgodnosc orchard dla dzialki i odmiany
 - `from_position <= to_position`
-- operacja najlepiej transakcyjna
+- flow jest wspierany tylko dla dzialek `rows` i `mixed`
+- `generated_tree_code_pattern`, jesli ustawione, powinno zawierac placeholder `{{n}}`
+- operacja create jest transakcyjna i dziala w formule `all-or-nothing`
 - przy masowej deaktywacji operacja nie moze wychodzic poza jedna dzialke i jeden `orchard`
+- bulk deactivate w tym kontrakcie jest row-range flow i rowniez pozostaje niedostepne dla dzialek `irregular`
 - preferowane jest logiczne usuniecie, nie fizyczny `delete`
+- aktualne entry pointy UI:
+  - `/trees/batch/new`
+  - `/trees/batch/deactivate`
+  - `/reports/variety-locations`
+
+### Kontrakt wykonawczy `getVarietyLocationsReport`
+
+- raport pracuje w kontekscie jednego `active_orchard` i jednej wybranej odmiany
+- grupy raportu obejmuja tylko `trees.is_active = true`
+- do grup trafiaja tylko rekordy z kompletnym `row_number` oraz `position_in_row`
+- wynik grupuje dane po `plot_id + section_name + row_number`
+- kolejne pozycje w tym samym rzedzie sa scalane do zakresow
+- kontrakt zwraca osobne liczniki dla:
+  - wszystkich aktywnych drzew odmiany
+  - drzew z raportowalna lokalizacja
+  - drzew poza raportem
+  - lokalizacji potwierdzonych i niepotwierdzonych
+
+### Kontrakt wykonawczy `getHarvestLocationSummary`
+
+- raport pracuje w kontekscie jednego `active_orchard`
+- filtruje po `season_year` oraz opcjonalnie po `plot_id` i `variety_id`
+- sumuje wszystkie `harvest_records`, ale osobno rozdziela wpisy:
+  - z precyzyjna lokalizacja
+  - bez precyzyjnej lokalizacji
+  - tylko na poziomie sadu
+- wpis `tree` moze odziedziczyc `plot_id`, `section_name`, `row_number` i pozycje z rekordu drzewa
+- grupy terenowe sa agregowane po `plot + section_name + row_number + from_position + to_position`
+- aktualny entry point UI:
+  - `/reports/harvest-locations`
 
 ## 9. Operacje import / export
 
@@ -229,6 +292,8 @@ Uwaga Phase 5A:
 
 - `exportAccountData` jest account-wide w sensie konta uzytkownika
 - eksport obejmuje `profile` oraz wszystkie orchard, dla ktorych user ma aktywne membership `owner`
+- aktualny entry point UI znajduje sie na `/settings/profile`
+- aktualna odpowiedz jest plikiem JSON do pobrania
 - eksport zawiera:
   - `orchards`
   - `orchard_memberships`

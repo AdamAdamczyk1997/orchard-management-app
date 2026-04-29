@@ -17,6 +17,13 @@ describe("phase 2 validation", () => {
       area_m2: "1250.50",
       soil_type: "  clay loam ",
       irrigation_type: "  drip ",
+      layout_type: "rows",
+      row_numbering_scheme: "left_to_right_from_entrance",
+      tree_numbering_scheme: "from_row_start",
+      entrance_description: "  Main gate from the west  ",
+      layout_notes: "  Count rows from the fence side.  ",
+      default_row_count: "8",
+      default_trees_per_row: "180",
       status: "active",
     });
 
@@ -28,21 +35,59 @@ describe("phase 2 validation", () => {
       area_m2: 1250.5,
       soil_type: "clay loam",
       irrigation_type: "drip",
+      layout_type: "rows",
+      row_numbering_scheme: "left_to_right_from_entrance",
+      tree_numbering_scheme: "from_row_start",
+      entrance_description: "Main gate from the west",
+      layout_notes: "Count rows from the fence side.",
+      default_row_count: 8,
+      default_trees_per_row: 180,
       status: "active",
     });
   });
 
-  it("rejects invalid plot area values", () => {
+  it("rejects invalid plot area and layout count values", () => {
     const parsed = plotFormSchema.safeParse({
       name: "Plot A",
+      layout_type: "rows",
       status: "active",
       area_m2: "0",
+      default_row_count: "0",
+      default_trees_per_row: "1.5",
     });
 
     expect(parsed.success).toBe(false);
     expect(parsed.error?.flatten().fieldErrors.area_m2).toContain(
       "Powierzchnia musi byc wieksza od 0.",
     );
+    expect(parsed.error?.flatten().fieldErrors.default_row_count).toContain(
+      "Liczba rzedow musi byc dodatnia liczba calkowita.",
+    );
+    expect(parsed.error?.flatten().fieldErrors.default_trees_per_row).toContain(
+      "Liczba drzew w rzedzie musi byc dodatnia liczba calkowita.",
+    );
+  });
+
+  it("allows blank optional layout settings", () => {
+    const parsed = plotFormSchema.parse({
+      name: "Plot B",
+      layout_type: "mixed",
+      row_numbering_scheme: "",
+      tree_numbering_scheme: "",
+      entrance_description: "",
+      layout_notes: "",
+      status: "planned",
+    });
+
+    expect(parsed).toMatchObject({
+      name: "Plot B",
+      layout_type: "mixed",
+      row_numbering_scheme: undefined,
+      tree_numbering_scheme: undefined,
+      entrance_description: undefined,
+      layout_notes: undefined,
+      status: "planned",
+    });
   });
 
   it("parses variety form values including favorite checkbox", () => {

@@ -2,6 +2,12 @@
 
 Ten katalog porzadkuje dokumentacje wedlug typu materialu, tak aby latwo bylo znalezc aktywne source of truth podczas projektowania i implementacji.
 
+To jest jedyny kanoniczny katalog aktywnej dokumentacji projektu.
+
+Szybka mapa wejscia:
+
+- [documentation_map.md](./00_overview_and_checklists/documentation_map.md)
+
 ## Jak czytac skroty i oznaczenia
 
 - `MVP`
@@ -85,7 +91,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 
 ### Dokumenty historyczne
 
-- Materialy historyczne i starsze szkice sa przeniesione do `documents/archive/`.
+- Materialy historyczne i starsze szkice sa trzymane w `documents/archive/`.
 - Dokumenty w archiwum nie sa podstawa do migracji, API, RLS, ekranow ani testow.
 - Jesli pojawi sie konflikt miedzy aktywnym dokumentem a plikiem archiwalnym, pierwszenstwo ma dokument aktywny.
 
@@ -116,7 +122,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
   Kryteria akceptacji, testy, security, backup i observability.
 
 - `archive`
-  Wczesne szkice i dokumenty historyczne, ktore zachowujemy tylko jako kontekst.
+  Wczesne szkice, stare implementation notes i dokumenty historyczne.
 
 ## Aktualny zestaw dokumentow
 
@@ -188,3 +194,5 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `high_level_plan.md`
 - `technology_and_responsibilities.md`
 - `orchardlog_data_model_location_and_variety_reports_update.md`
+- `phase_1_auth_onboarding_vertical_slice.md`
+- `phase_2_core_orchard_structure_vertical_slice.md`

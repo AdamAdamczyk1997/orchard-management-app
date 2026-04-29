@@ -1,15 +1,22 @@
 import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { VarietyList } from "@/features/varieties/variety-list";
+import {
+  FEEDBACK_NOTICE_QUERY_PARAM,
+  resolveFeedbackNotice,
+} from "@/lib/domain/feedback-notices";
 import { hasActiveVarietyListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listVarietiesForOrchard } from "@/lib/orchard-data/varieties";
 import {
+  buildPathWithSearchParams,
   getSingleSearchParam,
   type NextSearchParams,
+  toUrlSearchParams,
 } from "@/lib/utils/search-params";
 import { varietyListFiltersSchema } from "@/lib/validation/varieties";
 import type { VarietyListFilters } from "@/types/contracts";
@@ -44,6 +51,9 @@ async function VarietiesPageContent({
   searchParams: Promise<NextSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
+  const feedbackNotice = resolveFeedbackNotice(
+    getSingleSearchParam(resolvedSearchParams[FEEDBACK_NOTICE_QUERY_PARAM]),
+  );
   const parsedFilters = varietyListFiltersSchema.safeParse({
     q: getSingleSearchParam(resolvedSearchParams.q),
   });
@@ -52,9 +62,18 @@ async function VarietiesPageContent({
     : {};
   const varieties = await listVarietiesForOrchard(orchardId, filters);
   const hasActiveFilters = hasActiveVarietyListFilters(filters);
+  const dismissHref = buildPathWithSearchParams(
+    "/varieties",
+    toUrlSearchParams(resolvedSearchParams, {
+      excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+    }),
+  );
 
   return (
     <div className="grid gap-6">
+      {feedbackNotice ? (
+        <FeedbackBanner dismissHref={dismissHref} notice={feedbackNotice} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
@@ -69,6 +88,11 @@ async function VarietiesPageContent({
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-[#eff2ed]">
+          <div className="text-[#0c0c0c]">
+            <LinkButton href="/reports/variety-locations" variant="secondary">
+              Raport lokalizacji
+            </LinkButton>
+          </div>
           <LinkButton href="/varieties/new">Utworz odmiane</LinkButton>
         </div>
       </div>

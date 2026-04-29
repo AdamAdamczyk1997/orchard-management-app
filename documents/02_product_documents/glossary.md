@@ -37,6 +37,11 @@ W modelu wielouzytkownikowym to do `orchards` naleza dzialki, drzewa, odmiany i 
 Powiazanie uzytkownika z konkretnym `orchard`.
 W modelu odpowiada mu rekord w tabeli `orchard_memberships`.
 
+### Active orchard
+
+Aktualnie wybrany sad, w kontekscie ktorego user pracuje w aplikacji.
+Wpływa na to, jakie rekordy widzi i jakie operacje moze wykonywac.
+
 ### Global role
 
 Rola systemowa przypisana do konta, a nie do konkretnego gospodarstwa.
@@ -51,6 +56,25 @@ W MVP wspieramy `owner` i `worker`, a model jest przygotowany na `manager` i `vi
 
 Podstawowy obszar fizyczny nalezacy do `orchard`.
 To glowny kontener dla drzew i aktywnosci.
+
+### Layout type
+
+Typ ukladu dzialki zapisany w polu `layout_type`.
+Okresla, jak interpretujemy lokalizacje drzew i czy dana dzialka wspiera workflow oparte o rzedy oraz zakresy.
+
+### Rows
+
+Uklad dzialki, w ktorym lokalizacja jest naturalnie opisywana przez `row_number` i `position_in_row`.
+To najbardziej uporzadkowany wariant pracy terenowej.
+
+### Mixed
+
+Uklad dzialki, w ktorym czesc lokalizacji da sie opisac rzedami, ale potrzebne sa tez bardziej elastyczne wskazowki, takie jak sekcja, etykieta rzedu albo kod drzewa.
+
+### Irregular
+
+Uklad dzialki bez stabilnej logiki zakresow rzedowych.
+W tym wariancie formularze i walidacje blokuja niektore operacje oparte o `row` albo `location_range`.
 
 ### Sekcja
 
@@ -105,6 +129,11 @@ Jeden zakres wykonania zapisany dla aktywnosci.
 W modelu odpowiada mu rekord w tabeli `activity_scopes`.
 Pozwala opisac cala dzialke, sekcje, rzad, zakres drzew albo pojedyncze drzewo.
 
+### Location range
+
+Zakres lokalizacji w rzedzie, zapisywany przez `row_number`, `from_position` i `to_position`.
+Uzywamy go w aktywnosciach i zbiorach, gdy operacja dotyczy odcinka rzedu, a nie calej dzialki albo pojedynczego drzewa.
+
 ### Material aktywnosci
 
 Srodek, zasob albo material zuzyty w ramach aktywnosci.
@@ -136,6 +165,16 @@ Opisuje fakt wykonania pracy, natomiast ilosci owocow powinny byc zapisywane w `
 Raport sumujacy dane z `harvest_records` dla wybranego `season_year`.
 Powinien pozwalac policzyc zbiory per odmiana, per dzialka i dla calego orchard.
 
+### Seasonal activity summary
+
+Podsumowanie sezonowych prac, budowane na podstawie aktywnosci typu `pruning`, `mowing` albo `spraying`.
+Pomaga odpowiedziec na pytanie, co zostalo wykonane w danym sezonie i na jakich dzialkach.
+
+### Coverage
+
+Widok pokrycia wykonanych prac sezonowych dla wybranej dzialki.
+Pokazuje zapisane zakresy z `activity_scopes`, zamiast zgadywac wykonanie na podstawie samych drzew albo dzialek.
+
 ### Sezon
 
 Rok i faza prac sadowniczych powiazana z aktywnoscia.
@@ -161,10 +200,39 @@ Znaczy, ze polozenie drzewa zostalo sprawdzone i mozna na nim polegac w raportac
 Jedna operacja hurtowego utworzenia wielu drzew.
 W modelu odpowiada jej `bulk_tree_import_batches`.
 
+### Batch create
+
+Operacyjny flow tworzenia wielu drzew jednym zapisem, po wczesniejszym preview konfliktow lokalizacji.
+W obecnym produkcie dziala tylko dla dzialek wspierajacych workflow zakresowy.
+
+### Bulk deactivate
+
+Operacyjny flow masowego oznaczania grupy drzew jako `removed`.
+Nie kasuje historii, tylko zmienia stan roboczy i aktywnosc rekordow.
+
 ### Raport lokalizacji odmiany
 
 Widok lub wynik zapytania odpowiadajacy na pytanie, gdzie znajduje sie dana odmiana w sadzie.
 Nie jest osobna tabela z danymi zrodlowymi.
+
+### Raport lokalizacji zbiorow
+
+Widok raportowy pokazujacy, gdzie terenowo zapisano rekordy zbioru.
+Moze grupowac dane po dzialce, sekcji, rzedzie i zakresie pozycji.
+
+### Export konta
+
+Pobranie danych usera do pliku JSON.
+W obecnym produkcie obejmuje profil i te sady, w ktorych user ma aktywne membership `owner`.
+
+### Baseline seed
+
+Referencyjny zestaw danych lokalnych do manual QA i testow developerskich.
+Zawiera konta, sady, membershipy oraz przykladowe rekordy domenowe.
+
+### Baseline QA
+
+Powtarzalna weryfikacja, czy lokalne srodowisko i referencyjne dane seedowe sa gotowe do recznych testow.
 
 ### Archiwizacja dzialki
 

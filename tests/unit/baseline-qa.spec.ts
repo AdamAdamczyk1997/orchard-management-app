@@ -187,7 +187,7 @@ describe("baseline QA readiness", () => {
     expect(report.ready).toBe(false);
     expect(report.nextSteps).toEqual([
       "Uruchom pnpm seed:baseline-users",
-      "Po bootstrapie kont uruchom supabase/seeds/001_baseline_reference_seed.sql",
+      "Po bootstrapie kont uruchom pnpm seed:baseline-sql",
       "Uruchom ponownie pnpm qa:baseline-status",
     ]);
   });
@@ -212,7 +212,7 @@ describe("baseline QA readiness", () => {
 
     expect(report.ready).toBe(false);
     expect(report.nextSteps).toEqual([
-      "Uruchom ponownie supabase/seeds/001_baseline_reference_seed.sql",
+      "Uruchom ponownie pnpm seed:baseline-sql",
       "Uruchom ponownie pnpm qa:baseline-status",
     ]);
     expect(
@@ -262,9 +262,7 @@ describe("baseline QA readiness", () => {
 
     expect(report.ready).toBe(false);
     expect(report.nextSteps).toEqual([
-      "Uruchom supabase db reset",
-      "Uruchom pnpm seed:baseline-users",
-      "Uruchom supabase/seeds/001_baseline_reference_seed.sql",
+      "Uruchom pnpm seed:baseline-reset",
       "Uruchom ponownie pnpm qa:baseline-status",
     ]);
   });

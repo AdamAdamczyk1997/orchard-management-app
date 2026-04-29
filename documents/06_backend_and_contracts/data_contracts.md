@@ -134,6 +134,18 @@ type PlotFormInput = {
   area_m2?: number
   soil_type?: string
   irrigation_type?: string
+  layout_type: "rows" | "mixed" | "irregular"
+  row_numbering_scheme?:
+    | "left_to_right_from_entrance"
+    | "right_to_left_from_entrance"
+    | "north_to_south"
+    | "south_to_north"
+    | "custom"
+  tree_numbering_scheme?: "from_row_start" | "from_row_end" | "custom"
+  entrance_description?: string
+  layout_notes?: string
+  default_row_count?: number
+  default_trees_per_row?: number
   status: "planned" | "active" | "archived"
 }
 
@@ -147,6 +159,19 @@ type PlotSummary = {
   area_m2?: number | null
   soil_type?: string | null
   irrigation_type?: string | null
+  layout_type: "rows" | "mixed" | "irregular"
+  row_numbering_scheme?:
+    | "left_to_right_from_entrance"
+    | "right_to_left_from_entrance"
+    | "north_to_south"
+    | "south_to_north"
+    | "custom"
+    | null
+  tree_numbering_scheme?: "from_row_start" | "from_row_end" | "custom" | null
+  entrance_description?: string | null
+  layout_notes?: string | null
+  default_row_count?: number | null
+  default_trees_per_row?: number | null
   status: "planned" | "active" | "archived"
   is_active: boolean
   created_at: string
@@ -157,12 +182,31 @@ type PlotOption = {
   id: string
   name: string
   status: "planned" | "active" | "archived"
+  layout_type: "rows" | "mixed" | "irregular"
+  row_numbering_scheme?:
+    | "left_to_right_from_entrance"
+    | "right_to_left_from_entrance"
+    | "north_to_south"
+    | "south_to_north"
+    | "custom"
+    | null
+  tree_numbering_scheme?: "from_row_start" | "from_row_end" | "custom" | null
+  entrance_description?: string | null
+  layout_notes?: string | null
+  default_row_count?: number | null
+  default_trees_per_row?: number | null
 }
 
 type PlotListFilters = {
   status?: "active" | "planned" | "archived" | "all"
 }
 ```
+
+Uwagi Phase 6E:
+
+- `layout_type` jest wymagane i domyslnie przyjmuje `rows`
+- `row_numbering_scheme` oraz `tree_numbering_scheme` pozostaja opcjonalne, bo nie kazda dzialka ma ustalona numeracje
+- `default_row_count` i `default_trees_per_row` sa dodatnimi liczbami calkowitymi, jesli sa podane
 
 ## 5. Kontrakt formularza drzewa
 
@@ -232,6 +276,13 @@ type TreeListFilters = {
 }
 ```
 
+Uwagi Phase 6F:
+
+- `PlotOption` niesie juz wystarczajaco duzo danych do plot-aware guidance na formularzach `trees` i batchowych.
+- `TreeFormInput` pozostaje ten sam shape, ale server-side walidacja zalezy teraz od `plot.layout_type`.
+- Dla `rows` wymagane sa `row_number` i `position_in_row`.
+- Dla `mixed` i `irregular` wymagane jest co najmniej jedno praktyczne oznaczenie lokalizacji.
+
 ## 6. Kontrakt formularza odmiany
 
 ```ts
@@ -272,6 +323,42 @@ type VarietyOption = {
 type VarietyListFilters = {
   q?: string
 }
+
+type VarietyLocationsReportFilters = {
+  variety_id?: string
+}
+
+type VarietyLocationRange = {
+  from_position: number
+  to_position: number
+  tree_count: number
+  verified_trees_count: number
+  unverified_trees_count: number
+}
+
+type VarietyLocationGroup = {
+  plot_id: string
+  plot_name: string
+  plot_status: "planned" | "active" | "archived"
+  section_name?: string | null
+  row_number: number
+  tree_count: number
+  verified_trees_count: number
+  unverified_trees_count: number
+  ranges: VarietyLocationRange[]
+}
+
+type VarietyLocationsReport = {
+  variety_id: string
+  variety_name: string
+  variety_species: string
+  total_active_trees_count: number
+  located_trees_count: number
+  unlocated_trees_count: number
+  verified_trees_count: number
+  unverified_trees_count: number
+  groups: VarietyLocationGroup[]
+}
 ```
 
 Uwagi Phase 2:
@@ -279,6 +366,12 @@ Uwagi Phase 2:
 - `plots`, `varieties` i `trees` maja osobne listy `new` / `edit`, ale bez dedykowanych detail pages.
 - formularz drzewa nie pozwala wybrac archiwalnej dzialki do zapisu.
 - standardowe formularze nadal nie przesylaja `orchard_id`; wszystko rozstrzyga `active_orchard`.
+
+Uwagi Phase 6C:
+
+- `VarietyLocationsReport.groups` obejmuja tylko aktywne drzewa z kompletnym `row_number` i `position_in_row`.
+- `unlocated_trees_count` pokazuje aktywne drzewa wybranej odmiany, ktore nie trafily do grup terenowych.
+- `verified_trees_count` i `unverified_trees_count` odnosza sie do drzew obecnych w raporcie, nie do wszystkich historycznych rekordow odmiany.
 
 ## 7. Kontrakt formularza aktywnosci
 
@@ -441,6 +534,8 @@ Uwagi Phase 3:
 
 - `ActivityFormInput.scopes` powinno zawierac co najmniej jeden scope dla dedykowanych
   sezonowych flow `pruning`, `mowing` i `spraying`; dla calej dzialki jest to scope `plot`
+- formularz aktywnosci korzysta z `PlotOption` do guidance po wyborze dzialki
+- dla dzialki `irregular` scope `row` i `location_range` sa blokowane, nawet jesli sam shape `ActivityScopeInput` nadal je opisuje
 - `getActivityDetails` powinno zwracac parent record razem z uporzadkowanymi
   `activity_scopes` i `activity_materials` w jednym payloadzie
 - `SeasonalActivitySummaryFilters` odpowiadaja query params `summary_*` na `/activities`
@@ -514,7 +609,60 @@ type HarvestTimelineEntry = {
 }
 
 type HarvestTimeline = Array<HarvestTimelineEntry>
+
+type HarvestLocationSummaryFilters = {
+  season_year: number
+  plot_id?: string
+  variety_id?: string
+}
+
+type HarvestLocationRangeSummary = {
+  from_position: number
+  to_position: number
+  total_quantity_kg: number
+  record_count: number
+}
+
+type HarvestLocationRowSummary = {
+  section_name?: string | null
+  row_number: number
+  total_quantity_kg: number
+  record_count: number
+  ranges: HarvestLocationRangeSummary[]
+}
+
+type HarvestLocationPlotSummary = {
+  plot_id: string
+  plot_name: string | null
+  plot_status: "planned" | "active" | "archived"
+  total_quantity_kg: number
+  record_count: number
+  precisely_located_quantity_kg: number
+  precisely_located_record_count: number
+  unresolved_quantity_kg: number
+  unresolved_record_count: number
+  rows: HarvestLocationRowSummary[]
+}
+
+type HarvestLocationSummary = {
+  season_year: number
+  total_quantity_kg: number
+  record_count: number
+  precisely_located_quantity_kg: number
+  precisely_located_record_count: number
+  unresolved_quantity_kg: number
+  unresolved_record_count: number
+  orchard_level_quantity_kg: number
+  orchard_level_record_count: number
+  plots: HarvestLocationPlotSummary[]
+}
 ```
+
+Uwagi Phase 6G:
+
+- formularz zbioru korzysta z `PlotOption` do guidance po wyborze dzialki
+- `HarvestRecordFormInput.scope_level = "location_range"` pozostaje wspierane tylko dla dzialek `rows` i `mixed`
+- dla dzialki `irregular` user powinien wybrac `orchard`, `plot`, `variety` albo `tree`
 
 Uwagi Phase 4:
 
@@ -526,6 +674,9 @@ Uwagi Phase 4:
 - `by_plot` pokazuje tylko rekordy z przypisana dzialka
 - `HarvestTimeline` grupuje rekordy po `harvest_date` i korzysta z tych samych filtrow
   co summary screen
+- `HarvestLocationSummaryFilters` odpowiadaja tym samym query params na `/reports/harvest-locations`
+- `HarvestLocationSummary` rozdziela wpisy precyzyjnie zlokalizowane od wpisow bez konkretnego rzedu i zakresu
+- wpisy `tree` moga byc lokalizowane przez rekord drzewa, nawet jesli sam harvest nie ma zapisanego `plot_id`
 
 ## 9. Kontrakt batch create - etap 0.2
 
@@ -539,12 +690,54 @@ type BulkTreeBatchInput = {
   from_position: number
   to_position: number
   generated_tree_code_pattern?: string
-  default_condition_status?: "new" | "good" | "warning" | "critical" | "removed"
+  default_condition_status: "new" | "good" | "warning" | "critical"
   default_planted_at?: string
   default_rootstock?: string
   default_notes?: string
 }
+
+type BulkTreeBatchPreviewResult = {
+  plot_id: string
+  plot_name: string
+  variety_id?: string | null
+  variety_name?: string | null
+  species: string
+  section_name?: string | null
+  row_number: number
+  from_position: number
+  to_position: number
+  requested_positions_count: number
+  generated_tree_code_pattern?: string | null
+  planned_trees: Array<{
+    position_in_row: number
+    tree_code?: string | null
+    location_label: string
+  }>
+  conflicts: Array<{
+    tree_id: string
+    position_in_row: number
+    tree_code?: string | null
+    display_name?: string | null
+    condition_status: TreeConditionStatus
+    location_label: string
+  }>
+}
+
+type BulkTreeBatchCreateResult = {
+  batch_id: string
+  created_trees_count: number
+  plot_id: string
+  plot_name: string
+  row_number: number
+  from_position: number
+  to_position: number
+}
 ```
+
+Uwagi wykonawcze:
+
+- `BulkTreeBatchInput` pozostaje row-range kontraktem i jest wspierany tylko dla dzialek `rows` i `mixed`.
+- Dla dzialki `irregular` operacja powinna zwrocic czytelny blad domenowy zamiast probowac generowac preview.
 
 ## 10. Kontrakt masowego oznaczania drzew jako `removed` - etap 0.2
 
@@ -557,17 +750,39 @@ type BulkDeactivateTreesInput = {
   reason?: string
 }
 
-type BulkDeactivateTreesResult = {
+type BulkDeactivateTreesPreviewResult = {
   plot_id: string
+  plot_name: string
   row_number: number
   from_position: number
   to_position: number
-  matched_trees_count: number
-  deactivated_trees_count: number
-  already_inactive_count: number
-  empty_positions_count: number
+  requested_positions_count: number
+  matched_trees: Array<{
+    tree_id: string
+    position_in_row: number
+    tree_code?: string | null
+    display_name?: string | null
+    condition_status: TreeConditionStatus
+    location_label: string
+    notes?: string | null
+  }>
+  missing_positions: number[]
+  warnings: string[]
+}
+
+type BulkDeactivateTreesResult = {
+  updated_trees_count: number
+  plot_id: string
+  plot_name: string
+  row_number: number
+  from_position: number
+  to_position: number
 }
 ```
+
+Uwagi wykonawcze:
+
+- `BulkDeactivateTreesInput` jest tym samym row-range kontraktem i takze pozostaje niedostepny dla dzialek `irregular`.
 
 ## 10. Kontrakt dashboardu
 

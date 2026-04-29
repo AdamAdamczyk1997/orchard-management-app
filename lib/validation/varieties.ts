@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { normalizeSpeciesInput } from "@/lib/domain/species";
 import {
+  optionalUuidString,
   checkboxBoolean,
   optionalTrimmedString,
   trimmedString,
@@ -54,4 +55,8 @@ export const varietyListFiltersSchema = z.object({
     (value) => !value || value.length <= 120,
     "Fraza wyszukiwania moze miec maksymalnie 120 znakow.",
   ),
+});
+
+export const varietyLocationsReportFiltersSchema = z.object({
+  variety_id: optionalUuidString("Wybierz poprawna odmiane."),
 });

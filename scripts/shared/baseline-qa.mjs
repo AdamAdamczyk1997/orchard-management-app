@@ -7,6 +7,12 @@ import {
   BASELINE_USER_EMAILS,
   DEFAULT_BASELINE_PASSWORD,
 } from "./baseline-seed.mjs";
+import {
+  BASELINE_QA_STATUS_COMMAND,
+  BASELINE_RESET_COMMAND,
+  BASELINE_SQL_SEED_COMMAND,
+  BASELINE_USERS_COMMAND,
+} from "./baseline-workflow.mjs";
 
 function normalizeEmail(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -231,20 +237,18 @@ export function evaluateBaselineQaReadiness(snapshot) {
   const nextSteps = [];
 
   if (missingAuthUsers.length > 0) {
-    nextSteps.push("Uruchom pnpm seed:baseline-users");
-    nextSteps.push("Po bootstrapie kont uruchom supabase/seeds/001_baseline_reference_seed.sql");
+    nextSteps.push(`Uruchom ${BASELINE_USERS_COMMAND}`);
+    nextSteps.push(`Po bootstrapie kont uruchom ${BASELINE_SQL_SEED_COMMAND}`);
   } else if (!ready) {
     if (likelyDirtyLocalDataset) {
-      nextSteps.push("Uruchom supabase db reset");
-      nextSteps.push("Uruchom pnpm seed:baseline-users");
-      nextSteps.push("Uruchom supabase/seeds/001_baseline_reference_seed.sql");
+      nextSteps.push(`Uruchom ${BASELINE_RESET_COMMAND}`);
     } else {
-      nextSteps.push("Uruchom ponownie supabase/seeds/001_baseline_reference_seed.sql");
+      nextSteps.push(`Uruchom ponownie ${BASELINE_SQL_SEED_COMMAND}`);
     }
   }
 
   if (!ready) {
-    nextSteps.push("Uruchom ponownie pnpm qa:baseline-status");
+    nextSteps.push(`Uruchom ponownie ${BASELINE_QA_STATUS_COMMAND}`);
   }
 
   if (ready) {

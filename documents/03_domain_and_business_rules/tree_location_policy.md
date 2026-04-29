@@ -12,8 +12,8 @@ Dlatego polityka lokalizacji musi byc elastyczna, ale na tyle scisla, aby raport
 Wazne doprecyzowanie etapowe:
 
 - w MVP pola lokalizacji na `trees` sa dostepne od razu,
-- explicit `plots.layout_type` i rozbudowane ustawienia ukladu dzialki wchodza dopiero w etapie 0.2,
-- w MVP nazwy `rows`, `mixed` i `irregular` traktujemy jako model koncepcyjny pomocny dla walidacji i UX, a nie jako obowiazkowe pole zapisane juz na `plots`.
+- explicit `plots.layout_type` i rozbudowane ustawienia ukladu dzialki sa juz zapisane na `plots`,
+- tree form i flow batchowe korzystaja juz z `plots.layout_type` oraz zapisanych wskazowek numeracji i orientacji terenu.
 
 ## 2. Typy ukladu dzialki
 
@@ -94,14 +94,16 @@ Rekomendowane pola:
 
 - Dla dzialki `rows` aktywne drzewo nie moze duplikowac lokalizacji `plot + row + position`.
 - `row_number` i `position_in_row` powinny byc dodatnie.
+- Flow oparte o zakres rzedowy, takie jak batch create i bulk deactivate, sa wspierane tylko dla dzialek `rows` i `mixed`.
+- Dzialka `irregular` nie moze uruchomic batch create ani bulk deactivate po `row_number + zakres pozycji`.
 - Jesli drzewo jest kluczowe dla raportow odmianowych, warto oznaczyc `location_verified = true`.
 
 ## 7. Rekomendacja MVP
 
 - Juz w MVP przechowywac pola potrzebne do rozwoju lokalizacji.
-- W pierwszym wydaniu pozwolic na bardziej elastyczne uzupelnianie danych.
-- W MVP lokalizacja rzedowa moze byc wnioskowana z obecnosci `row_number` i `position_in_row`, nawet bez osobnego `layout_type` na dzialce.
-- W etapie 0.2 dopracowac formularze i reguly dla batch create i raportow terenowych.
+- W pierwszym wydaniu zachowac elastycznosc dla `mixed` i `irregular`, ale jednoczesnie wymagac czytelnej wskazowki lokalizacyjnej.
+- Dla `rows` wymagac pelnej lokalizacji rzedowej juz na etapie create / edit.
+- W UI pokazywac guidance z `layout_type`, numeracja, planowana siatka i punktem odniesienia po wyborze dzialki.
 
 ## 8. Decyzja na obecnym etapie
 

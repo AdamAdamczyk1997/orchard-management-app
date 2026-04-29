@@ -48,7 +48,7 @@ app/
       new/
       batch/
         new/
-      bulk-deactivate/
+        deactivate/
     varieties/
       [varietyId]/
       [varietyId]/edit/
@@ -58,9 +58,9 @@ app/
       [activityId]/edit/
       new/
     reports/
+      harvest-locations/
       season-summary/
     settings/
-      export/
       orchard/
       members/
       profile/
@@ -119,10 +119,16 @@ Uwagi etapowe:
   - `/harvests/[harvestRecordId]`
   - `/harvests/[harvestRecordId]/edit`
   - `/reports/season-summary`
+- w Phase 6 aktywne sa dodatkowo:
+  - `/trees/batch/new`
+  - `/trees/batch/deactivate`
+  - `/reports/variety-locations`
+  - `/reports/harvest-locations`
 - detail pages `/plots/[plotId]`, `/varieties/[varietyId]`, `/trees/[treeId]` pozostaja swiadomie odlozone do kolejnych slice'ow,
 - sezonowe raportowanie prac jest osadzone na `/activities`, a `/reports/season-summary` pozostaje harvestowe,
 - `GET /auth/sync-active-orchard` sluzy do bezpiecznej synchronizacji cookie `ol_active_orchard`,
-- widoki `trees/batch/new`, `trees/bulk-deactivate`, `varieties/[varietyId]/locations` i `settings/export` pozostaja zakresem `0.2`, nawet jesli miejsce w strukturze jest juz przewidziane.
+- `exportAccountData` jest osadzone na `/settings/profile`, a nie jako osobna trasa `settings/export`,
+- `plots` maja juz explicit `layout_type`, schematy numeracji i notatki ukladu, a kolejny krok to wykorzystanie tych danych w bardziej plot-aware walidacjach drzew.
 
 ## 3. Podzial odpowiedzialnosci
 
@@ -179,13 +185,15 @@ Uwagi etapowe:
 - onboarding tworzenia pierwszego orchard
 - orchard switcher
 - lista i zarzadzanie membership
-- ustawienia orchard i eksport konta w etapie 0.2
+- ustawienia orchard
+- eksport konta z poziomu `profile settings`
 
 ### `features/plots`
 
 - formularz dzialki
 - lista dzialek
 - akcje archiwizacji i przywracania
+- ustawienia ukladu dzialki: `layout_type`, numeracja, punkt odniesienia i notatki
 - helpery mapujace dane dzialki
 
 ### `features/trees`
@@ -193,14 +201,15 @@ Uwagi etapowe:
 - formularz drzewa
 - lista drzew
 - helpery filtrowania i mapowania lokalizacji
-- batch create i bulk deactivate w etapie 0.2
+- batch create
+- bulk deactivate
 
 ### `features/varieties`
 
 - formularz odmiany
 - lista odmian
 - wyszukiwanie i mapowanie summary
-- raport lokalizacji w etapie 0.2
+- raport lokalizacji odmiany
 
 ### `features/activities`
 

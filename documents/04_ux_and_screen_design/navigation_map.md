@@ -56,6 +56,7 @@ Dodatkowo:
 - `/harvests/[harvestRecordId]/edit`
 - `/harvests/new`
 - `/reports/season-summary`
+- `/reports/harvest-locations`
 - `/settings/profile`
 - `/settings/orchard`
 - `/settings/members`
@@ -69,9 +70,9 @@ Dodatkowo:
 ### Etap 0.2
 
 - `/trees/batch/new`
-- `/trees/bulk-deactivate`
-- `/varieties/[varietyId]/locations`
-- `/settings/export`
+- `/trees/batch/deactivate`
+- `/reports/variety-locations`
+- eksport konta pozostaje osadzony na `/settings/profile`
 
 ## Glowne przejscia uzytkownika
 
@@ -84,8 +85,8 @@ Dodatkowo:
 
 - `dashboard -> settings/orchard`
 - `dashboard -> settings/members`
-- etap 0.2:
-  - `dashboard -> settings/export`
+- `dashboard -> settings/profile`
+- `settings/profile -> eksport konta`, jesli user ma aktywne membership `owner`
 - `orchard switcher -> dashboard w nowym kontekście orchard`
 
 ### Zarzadzanie dzialkami
@@ -100,6 +101,8 @@ Dodatkowo:
 - `dashboard -> trees`
 - `trees -> trees/new`
 - `trees -> trees/[treeId]/edit`
+- `trees -> trees/batch/new`
+- `trees -> trees/batch/deactivate`
 - `trees filtered -> activities w kolejnych slice'ach`
 
 ### Zarzadzanie odmianami
@@ -108,8 +111,8 @@ Dodatkowo:
 - `varieties -> varieties/new`
 - `varieties -> varieties/[varietyId]/edit`
 - `varieties -> trees z filtrem po `variety_id``
-- etap 0.2:
-  - `varieties details -> locations report`
+- `varieties -> /reports/variety-locations`
+- `varieties card -> /reports/variety-locations?variety_id=...`
 
 ### Dziennik prac
 
@@ -125,7 +128,10 @@ Dodatkowo:
 - `dashboard -> harvests`
 - `harvests -> harvest details`
 - `harvests -> /reports/season-summary`
+- `harvests -> /reports/harvest-locations`
 - `season summary -> filtered harvest list`
+- `season summary -> /reports/harvest-locations`
+- `harvest locations -> filtered harvest list`
 
 ## Szybkie akcje
 
@@ -160,6 +166,8 @@ Filtrowanie powinno byc utrzymywane w URL tam, gdzie to ma sens:
 - `/varieties?q=ligol`
 - `/harvests?season_year=2026&plot_id=...`
 - `/reports/season-summary?season_year=2026&plot_id=...&variety_id=...`
+- `/reports/harvest-locations?season_year=2026&plot_id=...&variety_id=...`
+- `/reports/variety-locations?variety_id=...`
 
 To pomaga:
 

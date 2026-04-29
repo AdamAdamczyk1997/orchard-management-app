@@ -1,9 +1,14 @@
 import { Suspense } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
 import { ListPageLoading } from "@/components/ui/list-page-loading";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
+import {
+  FEEDBACK_NOTICE_QUERY_PARAM,
+  resolveFeedbackNotice,
+} from "@/lib/domain/feedback-notices";
 import { ActivityList } from "@/features/activities/activity-list";
 import { ActivitySeasonSummary } from "@/features/activities/activity-season-summary";
 import {
@@ -26,6 +31,7 @@ import {
   buildPathWithSearchParams,
   getSingleSearchParam,
   type NextSearchParams,
+  toUrlSearchParams,
 } from "@/lib/utils/search-params";
 import {
   activityListFiltersSchema,
@@ -52,7 +58,9 @@ function HiddenInputs({
   ));
 }
 
-export default async function ActivitiesPage({ searchParams }: ActivitiesPageProps) {
+export default async function ActivitiesPage({
+  searchParams,
+}: ActivitiesPageProps) {
   const context = await requireActiveOrchard("/activities");
 
   return (
@@ -75,19 +83,24 @@ async function ActivitiesPageContent({
   orchardName: string;
   searchParams: Promise<NextSearchParams>;
 }) {
-  const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] = await Promise.all([
-    listPlotOptionsForOrchard(orchardId),
-    listTreeOptionsForOrchard(orchardId),
-    listActiveMemberOptionsForOrchard(orchardId),
-    searchParams,
-  ]);
+  const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] =
+    await Promise.all([
+      listPlotOptionsForOrchard(orchardId),
+      listTreeOptionsForOrchard(orchardId),
+      listActiveMemberOptionsForOrchard(orchardId),
+      searchParams,
+    ]);
+  const feedbackNotice = resolveFeedbackNotice(
+    getSingleSearchParam(resolvedSearchParams[FEEDBACK_NOTICE_QUERY_PARAM]),
+  );
 
   const parsedFilters = activityListFiltersSchema.safeParse({
     date_from: getSingleSearchParam(resolvedSearchParams.date_from),
     date_to: getSingleSearchParam(resolvedSearchParams.date_to),
     plot_id: getSingleSearchParam(resolvedSearchParams.plot_id),
     tree_id: getSingleSearchParam(resolvedSearchParams.tree_id),
-    activity_type: getSingleSearchParam(resolvedSearchParams.activity_type) ?? "all",
+    activity_type:
+      getSingleSearchParam(resolvedSearchParams.activity_type) ?? "all",
     status: getSingleSearchParam(resolvedSearchParams.status) ?? "all",
     performed_by_profile_id: getSingleSearchParam(
       resolvedSearchParams.performed_by_profile_id,
@@ -106,7 +119,9 @@ async function ActivitiesPageContent({
       summary_season_year: getSingleSearchParam(
         resolvedSearchParams.summary_season_year,
       ),
-      summary_plot_id: getSingleSearchParam(resolvedSearchParams.summary_plot_id),
+      summary_plot_id: getSingleSearchParam(
+        resolvedSearchParams.summary_plot_id,
+      ),
       summary_activity_type: getSingleSearchParam(
         resolvedSearchParams.summary_activity_type,
       ),
@@ -131,6 +146,12 @@ async function ActivitiesPageContent({
       : Promise.resolve([]),
   ]);
   const hasActiveFilters = hasActiveActivityListFilters(filters);
+  const dismissHref = buildPathWithSearchParams(
+    "/activities",
+    toUrlSearchParams(resolvedSearchParams, {
+      excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+    }),
+  );
   const listSearchParams = new URLSearchParams();
 
   if (filters.date_from) {
@@ -178,7 +199,10 @@ async function ActivitiesPageContent({
   }
 
   if (summaryFilters.activity_type !== "pruning") {
-    summarySearchParams.set("summary_activity_type", summaryFilters.activity_type);
+    summarySearchParams.set(
+      "summary_activity_type",
+      summaryFilters.activity_type,
+    );
   }
 
   if (summaryFilters.activity_subtype) {
@@ -201,9 +225,18 @@ async function ActivitiesPageContent({
     combinedSearchParams.set(name, value);
   }
 
-  const redirectTo = buildPathWithSearchParams("/activities", combinedSearchParams);
-  const clearListHref = buildPathWithSearchParams("/activities", summarySearchParams);
-  const clearSummaryHref = buildPathWithSearchParams("/activities", listSearchParams);
+  const redirectTo = buildPathWithSearchParams(
+    "/activities",
+    combinedSearchParams,
+  );
+  const clearListHref = buildPathWithSearchParams(
+    "/activities",
+    summarySearchParams,
+  );
+  const clearSummaryHref = buildPathWithSearchParams(
+    "/activities",
+    listSearchParams,
+  );
   const preservedSummaryEntries = [...summarySearchParams.entries()].map(
     ([name, value]) => ({
       name,
@@ -219,6 +252,9 @@ async function ActivitiesPageContent({
 
   return (
     <div className="grid gap-6">
+      {feedbackNotice ? (
+        <FeedbackBanner dismissHref={dismissHref} notice={feedbackNotice} />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
@@ -232,7 +268,9 @@ async function ActivitiesPageContent({
             dzienniku operacyjnym.
           </p>
         </div>
-        <LinkButton href="/activities/new">Nowa aktywnosc</LinkButton>
+        <div className="text-[#fffefe]">
+          <LinkButton href="/activities/new">Nowa aktywnosc</LinkButton>
+        </div>
       </div>
 
       <ActivitySeasonSummary
@@ -296,7 +334,9 @@ async function ActivitiesPageContent({
             </Select>
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Typ aktywnosci</span>
+            <span className="text-sm font-medium text-[#304335]">
+              Typ aktywnosci
+            </span>
             <Select
               defaultValue={filters.activity_type ?? "all"}
               name="activity_type"
@@ -321,7 +361,9 @@ async function ActivitiesPageContent({
             </Select>
           </label>
           <label className="grid gap-2 lg:col-span-2">
-            <span className="text-sm font-medium text-[#304335]">Wykonawca</span>
+            <span className="text-sm font-medium text-[#304335]">
+              Wykonawca
+            </span>
             <Select
               defaultValue={filters.performed_by_profile_id ?? ""}
               name="performed_by_profile_id"

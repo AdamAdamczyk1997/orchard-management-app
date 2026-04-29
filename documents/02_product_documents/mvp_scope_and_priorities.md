@@ -6,6 +6,11 @@ Ten dokument zamienia ogolny opis produktu na roboczy plan wdrozenia.
 Ma pomoc odpowiedziec na pytanie:
 co musi znalezc sie w pierwszej uzywalnej wersji aplikacji, a co mozna swiadomie przesunac na kolejny etap.
 
+Wazne:
+to jest dokument priorytetyzacji produktu, a nie live status implementacji repo.
+Aktualny stan wdrozenia jest utrzymywany w `session_handoff.md`,
+`implementation_master_plan.md` i `documentation_map.md`.
+
 ## Zalozenia robocze
 
 - Pierwsza wersja jest `web-first`, dostepna z przegladarki na telefonie i komputerze.

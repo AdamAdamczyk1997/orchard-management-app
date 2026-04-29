@@ -223,6 +223,20 @@ export async function createPlotAsUser(
     description?: string;
     locationName?: string;
     areaM2?: number;
+    soilType?: string;
+    irrigationType?: string;
+    layoutType?: "rows" | "mixed" | "irregular";
+    rowNumberingScheme?:
+      | "left_to_right_from_entrance"
+      | "right_to_left_from_entrance"
+      | "north_to_south"
+      | "south_to_north"
+      | "custom";
+    treeNumberingScheme?: "from_row_start" | "from_row_end" | "custom";
+    entranceDescription?: string;
+    layoutNotes?: string;
+    defaultRowCount?: number;
+    defaultTreesPerRow?: number;
   },
 ) {
   const { data, error } = await client
@@ -234,6 +248,15 @@ export async function createPlotAsUser(
       description: input.description ?? null,
       location_name: input.locationName ?? null,
       area_m2: input.areaM2 ?? null,
+      soil_type: input.soilType ?? null,
+      irrigation_type: input.irrigationType ?? null,
+      layout_type: input.layoutType ?? "rows",
+      row_numbering_scheme: input.rowNumberingScheme ?? null,
+      tree_numbering_scheme: input.treeNumberingScheme ?? null,
+      entrance_description: input.entranceDescription ?? null,
+      layout_notes: input.layoutNotes ?? null,
+      default_row_count: input.defaultRowCount ?? null,
+      default_trees_per_row: input.defaultTreesPerRow ?? null,
     })
     .select("*")
     .single();
@@ -250,6 +273,21 @@ export async function createPlotAsUser(
     description: string | null;
     location_name: string | null;
     area_m2: number | null;
+    soil_type: string | null;
+    irrigation_type: string | null;
+    layout_type: "rows" | "mixed" | "irregular";
+    row_numbering_scheme:
+      | "left_to_right_from_entrance"
+      | "right_to_left_from_entrance"
+      | "north_to_south"
+      | "south_to_north"
+      | "custom"
+      | null;
+    tree_numbering_scheme: "from_row_start" | "from_row_end" | "custom" | null;
+    entrance_description: string | null;
+    layout_notes: string | null;
+    default_row_count: number | null;
+    default_trees_per_row: number | null;
     status: "planned" | "active" | "archived";
     is_active: boolean;
   };
@@ -283,6 +321,21 @@ export async function updatePlotAsUser(
     description: string | null;
     location_name: string | null;
     area_m2: number | null;
+    soil_type: string | null;
+    irrigation_type: string | null;
+    layout_type: "rows" | "mixed" | "irregular";
+    row_numbering_scheme:
+      | "left_to_right_from_entrance"
+      | "right_to_left_from_entrance"
+      | "north_to_south"
+      | "south_to_north"
+      | "custom"
+      | null;
+    tree_numbering_scheme: "from_row_start" | "from_row_end" | "custom" | null;
+    entrance_description: string | null;
+    layout_notes: string | null;
+    default_row_count: number | null;
+    default_trees_per_row: number | null;
     status: "planned" | "active" | "archived";
     is_active: boolean;
   };
@@ -582,6 +635,69 @@ export async function cleanupTestUsers(userIds: string[]) {
   );
 
   if (orchardIds.length > 0) {
+    const { error: deleteHarvestsError } = await admin
+      .from("harvest_records")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteHarvestsError) {
+      throw deleteHarvestsError;
+    }
+
+    const { error: deleteActivitiesError } = await admin
+      .from("activities")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteActivitiesError) {
+      throw deleteActivitiesError;
+    }
+
+    const { error: deleteTreesError } = await admin
+      .from("trees")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteTreesError) {
+      throw deleteTreesError;
+    }
+
+    const { error: deleteTreeBatchesError } = await admin
+      .from("bulk_tree_import_batches")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteTreeBatchesError) {
+      throw deleteTreeBatchesError;
+    }
+
+    const { error: deletePlotsError } = await admin
+      .from("plots")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deletePlotsError) {
+      throw deletePlotsError;
+    }
+
+    const { error: deleteVarietiesError } = await admin
+      .from("varieties")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteVarietiesError) {
+      throw deleteVarietiesError;
+    }
+
+    const { error: deleteOrchardMembershipsError } = await admin
+      .from("orchard_memberships")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteOrchardMembershipsError) {
+      throw deleteOrchardMembershipsError;
+    }
+
     const { error: deleteOrchardsError } = await admin
       .from("orchards")
       .delete()

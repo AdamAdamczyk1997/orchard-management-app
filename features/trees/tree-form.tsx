@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { DatalistInput } from "@/components/ui/datalist-input";
 import { Field } from "@/components/ui/field";
@@ -10,10 +10,18 @@ import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  formatPlotDefaultGridLabel,
+  getPlotLayoutTypeLabel,
+  getPlotTreeLocationGuidance,
+  getRowNumberingSchemeLabel,
+  getTreeNumberingSchemeLabel,
+  isRowLocationRequiredForPlot,
+  type PlotTreeWorkflowOption,
+} from "@/lib/domain/plots";
 import { SPECIES_PRESETS } from "@/lib/domain/species";
 import type {
   ActionResult,
-  PlotOption,
   TreeSummary,
   VarietyOption,
 } from "@/types/contracts";
@@ -26,7 +34,7 @@ type TreeFormAction = (
 type TreeFormProps = {
   action: TreeFormAction;
   mode: "create" | "edit";
-  plotOptions: PlotOption[];
+  plotOptions: PlotTreeWorkflowOption[];
   plotHint?: string;
   tree?: TreeSummary;
   varietyOptions: VarietyOption[];
@@ -35,6 +43,50 @@ type TreeFormProps = {
 const initialTreeFormState: ActionResult<TreeSummary> = {
   success: false,
 };
+
+function getSectionHint(plot?: PlotTreeWorkflowOption) {
+  if (!plot) {
+    return "Opcjonalna sekcja lub cwiartka.";
+  }
+
+  if (plot.layout_type === "mixed" || plot.layout_type === "irregular") {
+    return "Dla tej dzialki sekcja jest dobrym glownym punktem odniesienia.";
+  }
+
+  return "Opcjonalna sekcja lub cwiartka.";
+}
+
+function getRowHint(plot?: PlotTreeWorkflowOption) {
+  if (!plot) {
+    return undefined;
+  }
+
+  if (isRowLocationRequiredForPlot(plot.layout_type)) {
+    return "Wymagane dla dzialki rzedowej.";
+  }
+
+  if (plot.layout_type === "mixed") {
+    return "Opcjonalne, ale zalecane tam, gdzie ta czesc dzialki ma uklad rzedowy.";
+  }
+
+  return "Opcjonalne, tylko jesli rzeczywiscie uzywasz numeracji rzedow.";
+}
+
+function getPositionHint(plot?: PlotTreeWorkflowOption) {
+  if (!plot) {
+    return undefined;
+  }
+
+  if (isRowLocationRequiredForPlot(plot.layout_type)) {
+    return "Wymagane dla dzialki rzedowej.";
+  }
+
+  if (plot.layout_type === "mixed") {
+    return "Opcjonalne, ale zalecane tam, gdzie ta czesc dzialki ma uklad rzedowy.";
+  }
+
+  return "Opcjonalne, tylko jesli rzeczywiscie uzywasz numeracji pozycji.";
+}
 
 export function TreeForm({
   action,
@@ -45,8 +97,10 @@ export function TreeForm({
   varietyOptions,
 }: TreeFormProps) {
   const [state, formAction] = useActionState(action, initialTreeFormState);
-  const selectedPlotId =
+  const initialPlotId =
     tree && plotOptions.some((plot) => plot.id === tree.plot_id) ? tree.plot_id : "";
+  const [selectedPlotId, setSelectedPlotId] = useState(initialPlotId);
+  const selectedPlot = plotOptions.find((plot) => plot.id === selectedPlotId);
 
   return (
     <form action={formAction} className="grid gap-6">
@@ -115,7 +169,12 @@ export function TreeForm({
           htmlFor="plot_id"
           label="Dzialka"
         >
-          <Select defaultValue={selectedPlotId} id="plot_id" name="plot_id">
+          <Select
+            id="plot_id"
+            name="plot_id"
+            onChange={(event) => setSelectedPlotId(event.target.value)}
+            value={selectedPlotId}
+          >
             <option value="">Wybierz dzialke</option>
             {plotOptions.map((plot) => (
               <option key={plot.id} value={plot.id}>
@@ -124,6 +183,41 @@ export function TreeForm({
             ))}
           </Select>
         </Field>
+        {selectedPlot ? (
+          <div className="grid gap-3 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-4 text-sm text-[#4f584e]">
+            <div className="grid gap-1">
+              <p className="font-medium text-[#304335]">
+                Uklad dzialki: {getPlotLayoutTypeLabel(selectedPlot.layout_type)}
+              </p>
+              <p>{getPlotTreeLocationGuidance(selectedPlot.layout_type)}</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
+                {selectedPlot.row_numbering_scheme
+                  ? getRowNumberingSchemeLabel(selectedPlot.row_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
+                {selectedPlot.tree_numbering_scheme
+                  ? getTreeNumberingSchemeLabel(selectedPlot.tree_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
+                {formatPlotDefaultGridLabel(selectedPlot)}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
+                {selectedPlot.entrance_description ?? "Brak"}
+              </p>
+            </div>
+            {selectedPlot.layout_notes ? (
+              <p>{selectedPlot.layout_notes}</p>
+            ) : null}
+          </div>
+        ) : null}
         <Field
           error={state.field_errors?.variety_id}
           htmlFor="variety_id"
@@ -145,6 +239,7 @@ export function TreeForm({
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
             error={state.field_errors?.section_name}
+            hint={getSectionHint(selectedPlot)}
             htmlFor="section_name"
             label="Sekcja"
           >
@@ -157,6 +252,7 @@ export function TreeForm({
           </Field>
           <Field
             error={state.field_errors?.row_number}
+            hint={getRowHint(selectedPlot)}
             htmlFor="row_number"
             label="Numer rzedu"
           >
@@ -173,6 +269,7 @@ export function TreeForm({
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
             error={state.field_errors?.position_in_row}
+            hint={getPositionHint(selectedPlot)}
             htmlFor="position_in_row"
             label="Pozycja w rzedzie"
           >

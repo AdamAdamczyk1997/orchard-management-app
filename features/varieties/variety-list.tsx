@@ -58,12 +58,20 @@ export function VarietyList({
                   : "Brak zapisanego okresu dojrzewania."}
               </CardDescription>
             </div>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
-              href={`/varieties/${variety.id}/edit`}
-            >
-              Edytuj
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+                href={`/reports/variety-locations?variety_id=${variety.id}`}
+              >
+                Raport lokalizacji
+              </Link>
+              <Link
+                className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+                href={`/varieties/${variety.id}/edit`}
+              >
+                Edytuj
+              </Link>
+            </div>
           </div>
           {variety.description ? (
             <CardDescription>{variety.description}</CardDescription>

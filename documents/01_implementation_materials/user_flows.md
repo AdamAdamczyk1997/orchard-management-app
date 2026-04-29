@@ -569,5 +569,5 @@ Uzytkownik chce odpowiedziec na pytanie: gdzie w sadzie znajduje sie dana odmian
 ## Wnioski implementacyjne
 
 - Najkrytyczniejsze flow dla wersji 0.1 to: rejestracja, onboarding orchard, dodanie dzialki, dodanie drzewa, dodanie aktywnosci, zapis zbioru.
-- Batch create, bulk deactivate i raport odmianowy sa bardzo wazne biznesowo, ale wchodza w etapie 0.2.
+- Batch create, bulk deactivate i raport odmianowy byly pierwotnie planowane na etap 0.2 i sa juz wdrozone w aktualnym repo.
 - Kazdy glowny flow powinien miec swoj scenariusz E2E.

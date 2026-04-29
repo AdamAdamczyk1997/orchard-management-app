@@ -36,6 +36,31 @@ export function loadLocalEnv(projectRoot = process.cwd()) {
   loadEnvFile(path.join(projectRoot, ".env.test.local"));
 }
 
+export function readLocalSupabaseProjectId(projectRoot = process.cwd()) {
+  const configPath = path.join(projectRoot, "supabase", "config.toml");
+
+  if (fs.existsSync(configPath)) {
+    const configContents = fs.readFileSync(configPath, "utf8");
+    const projectIdMatch = configContents.match(/^\s*project_id\s*=\s*"([^"]+)"/m);
+
+    if (projectIdMatch?.[1]) {
+      return projectIdMatch[1];
+    }
+  }
+
+  return path.basename(projectRoot);
+}
+
+export function resolveLocalSupabaseDbContainerName(projectRoot = process.cwd()) {
+  const override = process.env.SUPABASE_LOCAL_DB_CONTAINER_NAME?.trim();
+
+  if (override) {
+    return override;
+  }
+
+  return `supabase_db_${readLocalSupabaseProjectId(projectRoot)}`;
+}
+
 export function getRequiredEnv(name) {
   const value = process.env[name];
 

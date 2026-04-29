@@ -19,7 +19,8 @@ export default async function NewPlotPage() {
         <CardTitle>{context.orchard.name}</CardTitle>
         <CardDescription>
           Dodaj fizyczna dzialke do aktywnego sadu, aby uporzadkowac drzewa i
-          kolejne wpisy operacyjne w stabilnej strukturze.
+          kolejne wpisy operacyjne w stabilnej strukturze. Od razu mozesz tez
+          zapisac jej uklad, numeracje i punkt odniesienia dla pracy w terenie.
         </CardDescription>
       </Card>
       <Card className="grid gap-5">

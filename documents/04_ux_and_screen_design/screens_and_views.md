@@ -86,6 +86,7 @@ W aktualnym vertical slice zostaly wdrozone:
   - delete jako korekta pomylki
   - optional link do aktywnosci typu `harvest`
   - harvestowe `Season Summary` i timeline na `/reports/season-summary`
+  - location-aware raport na `/reports/harvest-locations`
 
 ### Aktualizacja Phase 5A
 
@@ -135,6 +136,103 @@ Swiadomie odlozone do kolejnego kroku:
 
 - seeded QA pass dla calosci MVP
 - reszta permission/error polish poza ekranami objetymi tym slicem
+
+### Aktualizacja Phase 5C1
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `plots`, `trees`, `varieties`, `activities` i `harvests`:
+  - redirect-based success feedback po create / edit
+- `plots`, `activities` i `harvests`:
+  - redirect-based success feedback po archive / restore / delete / status change tam, gdzie te akcje istnieja
+- `activities/[activityId]` i `harvests/[harvestRecordId]`:
+  - detail view pokazuje tez feedback po szybkich akcjach wykonanych bezposrednio z widoku szczegolow
+
+Swiadomie odlozone do kolejnego kroku:
+
+- reczny seeded QA pass dla calosci MVP
+- dalszy responsive polish dla mobilnych flow terenowych
+
+### Aktualizacja Phase 6A
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `profile settings`:
+  - account-wide eksport JSON na `/settings/profile`
+  - owner-only CTA do pobrania eksportu
+  - jawny stan zablokowany dla usera bez aktywnego membership `owner`
+  - pending state i komunikat sukcesu po pobraniu pliku
+
+### Aktualizacja Phase 6B
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `trees`:
+  - `/trees/batch/new` z preview konfliktow lokalizacji i potwierdzeniem zapisu
+  - `/trees/batch/deactivate` z preview zakresu, ostrzezeniami i osobnym krokiem potwierdzenia
+  - szybkie wejscia do obu flow bezposrednio z listy `/trees`
+  - redirect success feedback po poprawnym batch create i bulk deactivate
+
+### Aktualizacja Phase 6C
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `reports/variety-locations`:
+  - wybor jednej odmiany
+  - metryki aktywnych drzew, drzew z raportowalna lokalizacja i lokalizacji potwierdzonych
+  - grupy po dzialce, sekcji i rzedzie
+  - zakresy kolejnych pozycji w rzedzie
+  - informacja o aktywnych drzewach tej odmiany, ktore nie weszly do grup terenowych
+- `varieties`:
+  - wejscie do raportu lokalizacji z naglowka listy
+  - wejscie do raportu lokalizacji z poziomu pojedynczej karty odmiany
+
+### Aktualizacja Phase 6D
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `reports/harvest-locations`:
+  - filtry po `season_year`, `plot_id`, `variety_id`
+  - suma globalna
+  - rozdzielenie wpisow z precyzyjna lokalizacja od wpisow bez konkretnego rzedu i pozycji
+  - osobny licznik wpisow tylko na poziomie sadu
+  - breakdown per dzialka, sekcja, rzad i zakres pozycji
+- `harvests` i `reports/season-summary`:
+  - wejscia do nowego raportu lokalizacyjnego
+
+### Aktualizacja Phase 6E
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `plots`:
+  - create i edit zawieraja juz sekcje ustawien ukladu dzialki
+  - user moze zapisac `layout_type`, schemat numeracji rzedow i drzew, punkt odniesienia oraz notatki ukladu
+  - lista dzialek pokazuje teraz takze zapisany uklad, numeracje i planowana siatke rzedow / drzew
+
+### Aktualizacja Phase 6F
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `trees`:
+  - create i edit pokazuja guidance z ustawien wybranej dzialki
+  - dla `rows` wymagaja pelnej lokalizacji rzedowej
+  - dla `mixed` i `irregular` wymagaja co najmniej jednej praktycznej wskazowki lokalizacyjnej
+- `trees/batch/new` i `trees/batch/deactivate`:
+  - pokazuja guidance z ustawien wybranej dzialki
+  - sa wspierane dla dzialek `rows` i `mixed`
+  - dla dzialek `irregular` pokazuja jawny stan `unsupported` zamiast aktywnego preview
+
+### Aktualizacja Phase 6G
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `activities`:
+  - formularz pokazuje guidance z ustawien wybranej dzialki
+  - zakresy `row` i `location_range` sa blokowane dla dzialek `irregular`
+- `harvests`:
+  - formularz pokazuje guidance z ustawien wybranej dzialki
+  - `scope_level = location_range` jest blokowany dla dzialek `irregular`
+  - formularz pokazuje jawny stan `unsupported`, jesli user probuje zapisac zakres po rzedach na dzialce nieregularnej
 
 ### 1. Logowanie / rejestracja / reset hasla
 
@@ -197,6 +295,7 @@ Najwazniejsze elementy:
 - `locale`
 - `timezone`
 - email widoczny jako pole tylko do odczytu
+- account-wide eksport danych dla usera z aktywnym membership `owner`
 
 ### 4. Lista dzialek
 
@@ -246,7 +345,14 @@ Najwazniejsze elementy:
 - pole `code` z bezpieczna sugestia kolejnego numeru, jesli istniejace kody maja czytelny wspolny wzorzec
 - status
 - pola opcjonalne lokalizacji i gleby
-- w kolejnej iteracji sekcja ustawien ukladu dzialki
+- sekcja ustawien ukladu dzialki:
+  - `layout_type`
+  - `row_numbering_scheme`
+  - `tree_numbering_scheme`
+  - `entrance_description`
+  - `layout_notes`
+  - `default_row_count`
+  - `default_trees_per_row`
 
 ### 7. Lista drzew
 
@@ -521,6 +627,30 @@ Uwaga implementacyjna:
 
 - ten ekran pozostaje harvestowy; sezonowe raportowanie `activities` jest osadzone na `/activities`, a nie na `/reports/season-summary`
 
+### 17a. Raport lokalizacji zbiorow
+
+Cel:
+pokazac, gdzie w sadzie zostal odnotowany plon i ile wpisow pozostaje bez precyzyjnego przypisania do rzedu i zakresu pozycji.
+
+Najwazniejsze elementy:
+
+- wybor `season_year`
+- filtr po dzialce opcjonalny
+- filtr po odmianie opcjonalny
+- suma globalna
+- suma wpisow z precyzyjna lokalizacja
+- suma wpisow bez precyzyjnej lokalizacji
+- licznik wpisow tylko na poziomie sadu
+- breakdown per dzialka
+- breakdown per sekcja, rzad i zakres pozycji
+- link do listy wpisow zbioru
+
+Zasady agregacji:
+
+- wpis `tree` moze odziedziczyc lokalizacje z aktualnego rekordu drzewa
+- wpisy `orchard`, `plot` i `variety` bez rzedu pozostaja w raporcie, ale nie wchodza do grup terenowych
+- grupy terenowe agreguja po `plot`, `section_name`, `row_number`, `from_position`, `to_position`
+
 ### 18. Orchard members
 
 Cel:
@@ -578,12 +708,14 @@ szybkie zalozenie wielu drzew jednej odmiany w zakresie pozycji.
 Najwazniejsze elementy:
 
 - wybor dzialki
+- guidance z `layout_type`, numeracji i punktu odniesienia wybranej dzialki
 - sekcja
 - numer rzedu
 - zakres pozycji
 - odmiana
 - gatunek
 - podglad konfliktow
+- jawny stan `unsupported`, jesli wybrana dzialka ma `layout_type = irregular`
 
 ### 2. Raport lokalizacji odmiany
 
@@ -593,24 +725,13 @@ odpowiedziec na pytanie, gdzie w sadzie znajduje sie dana odmiana.
 Najwazniejsze elementy:
 
 - wybor odmiany
+- metryki: aktywne drzewa, drzewa w raporcie, lokalizacje potwierdzone
 - lista lokalizacji zgrupowanych po dzialce, sekcji i rzedzie
 - prezentacja zakresow pozycji
+- informacja o drzewach tej odmiany poza raportem, jesli nie maja kompletnego `row_number` i `position_in_row`
+- CTA do przejscia do filtrowanej listy `trees`
 
-### 3. Rozszerzone ustawienia ukladu dzialki
-
-Cel:
-zdefiniowac orientacje i numeracje dla dzialki typu `rows`.
-
-Najwazniejsze elementy:
-
-- `layout_type`
-- `row_numbering_scheme`
-- `tree_numbering_scheme`
-- opis wejscia / wjazdu
-- liczba rzedow
-- liczba drzew w rzedzie
-
-### 4. Bulk deactivate trees
+### 3. Bulk deactivate trees
 
 Cel:
 masowo oznaczyc zakres drzew jako `removed`.
@@ -618,12 +739,16 @@ masowo oznaczyc zakres drzew jako `removed`.
 Najwazniejsze elementy:
 
 - wybor dzialki
+- guidance z `layout_type`, numeracji i punktu odniesienia wybranej dzialki
 - rzad
 - zakres pozycji
 - podglad liczby rekordow
+- lista aktywnych drzew, ktore zostana zmienione
+- ostrzezenia o pustych lub juz nieaktywnych pozycjach
 - potwierdzenie operacji
+- jawny stan `unsupported`, jesli wybrana dzialka ma `layout_type = irregular`
 
-### 5. Account export
+### 4. Account export
 
 Cel:
 umozliwic `owner` pobranie account-wide eksportu danych z poziomu UI.

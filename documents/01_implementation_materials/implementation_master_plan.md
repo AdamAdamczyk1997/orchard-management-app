@@ -221,7 +221,7 @@ Auth UI, onboarding UI, and membership screens can proceed in parallel once the 
 
 - [x] Add unit tests for active orchard selection and onboarding decision logic.
 - [x] Add integration tests for auth profile creation, orchard creation, membership rules, and RLS isolation.
-- [ ] Add E2E coverage for first login, orchard creation, active orchard switching, and worker membership restrictions.
+- [x] Add E2E coverage for first login, orchard creation, active orchard switching, and worker membership restrictions.
 - [x] Add seed data with at least one orchard containing `owner` and `worker`.
 
 #### Documentation sync
@@ -327,7 +327,7 @@ Plot, variety, and tree frontend work can split after DTOs and server actions ar
 - [x] Add unit tests for core validation rules, tree write guards, and location label formatting.
 - [x] Add integration tests for plot, variety, and tree CRUD under RLS.
 - [x] Add integration tests for plot lifecycle, variety search/update, and tree filtering/update.
-- [ ] Add E2E flow for orchard creation -> plot creation -> variety creation -> tree creation.
+- [x] Add E2E flow for orchard creation -> plot creation -> variety creation -> tree creation.
 - [x] Extend seed data with multiple plots, multiple varieties, and trees with and without location data.
 
 #### Documentation sync
@@ -436,7 +436,7 @@ Activity form implementation, summaries, and test cases can progress in parallel
 
 - [x] Add unit tests for `season_year`, `season_phase`, scope validation, and activity summaries.
 - [x] Add integration tests for transactional writes of activities with scopes and materials.
-- [ ] Add E2E coverage for multi-scope spraying, pruning with subtype, and plot-wide mowing.
+- [x] Add E2E coverage for multi-scope spraying, pruning with subtype, and plot-wide mowing.
 - [x] Extend seed data with repeated activities performed by different profiles across one season.
 
 #### Documentation sync
@@ -544,7 +544,7 @@ Write flows, summary queries, and season summary UI can run in parallel after `H
 - [x] Add unit tests for summary aggregation logic.
 - [x] Add integration tests for harvest CRUD and read queries.
 - [x] Add integration tests for season summary queries.
-- [ ] Add E2E coverage for adding harvest records and reviewing season summary results.
+- [x] Add E2E coverage for adding harvest records and reviewing season summary results.
 - [x] Add security / RLS coverage for harvest reads and writes.
 - [x] Extend seed data with harvest records across plots, varieties, and units.
 
@@ -634,10 +634,11 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 - [x] Add loading skeletons plus `global empty state` / `filtered empty state` handling for the core list views: `plots`, `varieties`, `trees`, `activities`, and `harvests`.
 - [x] Replace silent `record not found` redirects on critical detail/edit/settings routes with explicit recovery cards.
 - [x] Reuse shared prerequisite cards for create/edit flows blocked by missing plot or active plot prerequisites.
+- [x] Add shared success feedback after redirect for core create/edit/archive/delete/status flows in `plots`, `trees`, `varieties`, `activities`, and `harvests`.
 - [ ] Integrate the remaining final navigation polish and route-guard edge cases across all MVP views.
 - [ ] Audit empty, loading, error, and permission-denied states across all MVP views.
 - [ ] Complete responsive QA for the key mobile field flows.
-- [ ] Polish the orchard switcher, filter UX, and success/error feedback patterns.
+- [ ] Polish the orchard switcher, filter UX, and the remaining non-redirect success/error feedback patterns.
 
 #### Authorization / RLS
 
@@ -650,24 +651,25 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 - [ ] Verify the error catalog covers real MVP flows and returned codes.
 - [x] Confirm UI messaging is consistent for the shipped `record not found` and prerequisite-blocked route states on critical MVP flows.
+- [x] Confirm redirect-based success feedback is consistent for the shipped core CRUD/status flows.
 - [ ] Confirm UI messaging is consistent for form validation, remaining permission issues, and missing active orchard context across every MVP view.
 - [ ] Audit naming consistency across DTOs, database fields, and screen copy.
 
 #### Testing / seed data
 
-- [ ] Complete regression coverage for the critical end-to-end flows.
+- [x] Complete regression coverage for the critical end-to-end flows.
 - [x] Finalize the local/demo seed dataset for onboarding, orchard structure, activities, and harvests.
 - [x] Add a local bootstrap command for seeded `auth.users` prerequisites used by manual QA.
 - [x] Add a local readiness-check command for the full baseline QA dataset after the SQL seed is applied.
 - [x] Add unit coverage for the shared recovery/prerequisite cards used by route-guarded MVP pages.
-- [ ] Run a focused security and isolation test pass for cross-orchard access.
+- [x] Run a focused security and isolation test pass for cross-orchard access.
 - [x] Confirm the minimal CI gate for merge and release readiness.
 
 #### Documentation sync
 
 - [ ] Reconcile the shipped MVP with [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md).
 - [ ] Reconcile implemented contracts with [api_and_system_operations.md](../06_backend_and_contracts/api_and_system_operations.md) and [data_contracts.md](../06_backend_and_contracts/data_contracts.md).
-- [ ] Reconcile test coverage with [test_plan.md](../07_security_and_quality/test_plan.md) and [mvp_acceptance_criteria.md](../07_security_and_quality/mvp_acceptance_criteria.md).
+- [x] Reconcile test coverage with [test_plan.md](../07_security_and_quality/test_plan.md) and [mvp_acceptance_criteria.md](../07_security_and_quality/mvp_acceptance_criteria.md).
 
 **Deliverables**
 
@@ -728,56 +730,72 @@ Batch tools, export flows, and reporting slices can be implemented independently
 
 #### Database and migrations
 
-- [ ] Create `bulk_tree_import_batches` and any required tree linkage fields.
-- [ ] Add the additional location/reporting indexes justified by batch and report use cases.
+- [x] Create `bulk_tree_import_batches` and any required tree linkage fields.
+- [x] Add the additional location/reporting indexes justified by batch and report use cases.
 - [ ] Add storage-related schema only if attachments are explicitly moved into scope.
 
 #### Backend / server actions
 
-- [ ] Implement the bulk tree creation capability exposed in the UI as bulk tree creation and backed by `previewBulkTreeBatch` and `createBulkTreeBatch` in the current source docs.
-- [ ] Implement `previewBulkDeactivateTrees` and `bulkDeactivateTrees`.
-- [ ] Implement `getVarietyLocationsReport` and richer location-aware harvest summaries where already planned.
-- [ ] Implement `exportAccountData` with account-wide export for owned orchards only.
+- [x] Implement the bulk tree creation capability exposed in the UI as bulk tree creation and backed by `previewBulkTreeBatch` and `createBulkTreeBatch` in the current source docs.
+- [x] Implement `previewBulkDeactivateTrees` and `bulkDeactivateTrees`.
+- [x] Implement `getVarietyLocationsReport`.
+- [x] Implement richer location-aware harvest summaries where already planned.
+- [x] Implement `exportAccountData` with account-wide export for owned orchards only.
+- [x] Extend `activities` and `harvests` with plot-aware location guards that reuse `plots.layout_type` in field flows.
 
 #### Frontend / UI
 
-- [ ] Build the bulk tree creation form and preview flow.
-- [ ] Build the bulk tree deactivation preview/confirmation flow.
-- [ ] Build the variety location report UI.
-- [ ] Build the export UI for eligible users and explicit forbidden state for `worker`.
+- [x] Build the bulk tree creation form and preview flow.
+- [x] Build the bulk tree deactivation preview/confirmation flow.
+- [x] Build the variety location report UI.
+- [x] Build the harvest location report UI.
+- [x] Build the export UI for eligible users and explicit forbidden state for `worker`.
+- [x] Extend `plots` create/edit with layout settings, numbering schemes, and field-facing orientation metadata.
+- [x] Make single-tree create/edit and both tree batch flows layout-aware, with plot guidance and explicit handling for `rows`, `mixed`, and `irregular`.
+- [x] Add plot-aware guidance and unsupported states to `activities` and `harvests` location authoring flows.
 - [ ] Build any richer season analytics screens only after confirming they still belong to `0.2`.
 
 #### Authorization / RLS
 
-- [ ] Add RLS for `bulk_tree_import_batches`.
+- [x] Add RLS for `bulk_tree_import_batches`.
 - [ ] Ensure export availability stays limited to eligible `owner` access and `super_admin`.
 - [ ] Keep worker access limited to operational data, not account-wide export.
 
 #### Validation / error handling
 
-- [ ] Validate preview-before-write behavior for bulk operations.
-- [ ] Validate that mass operations never cross orchard or plot boundaries.
-- [ ] Enforce logical removal instead of physical delete for bulk deactivation.
+- [x] Validate preview-before-write behavior for bulk operations.
+- [x] Validate that mass operations never cross orchard or plot boundaries.
+- [x] Enforce logical removal instead of physical delete for bulk deactivation.
+- [x] Validate `layout_type`, numbering schemes, and positive default grid counts for `plots`.
+- [x] Enforce plot-aware tree-location rules and block row-range batch flows for layouts that cannot support them.
+- [x] Enforce the same `irregular` vs row-range rules for `activity_scopes` and harvest `location_range` on both server and database layers.
 - [ ] Confirm export payload composition matches [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md).
 
 #### Testing / seed data
 
-- [ ] Add unit tests for batch range validation and location-range grouping.
-- [ ] Add integration tests for preview/write batch flows and export authorization.
-- [ ] Add E2E coverage for batch tree creation, bulk deactivation, and export denial for `worker`.
+- [x] Add unit tests for batch range validation and location-range grouping.
+- [x] Add unit and integration tests for `getVarietyLocationsReport`.
+- [x] Add integration tests for preview/write batch flows and export authorization.
+- [x] Add unit and integration tests for `getHarvestLocationSummary`.
+- [x] Add unit and integration tests for plot layout settings persistence and validation.
+- [x] Add unit tests for plot-aware tree workflow guards and layout-policy helpers.
+- [x] Add unit and integration coverage for plot-aware activity and harvest location restrictions.
+- [x] Add E2E coverage for batch tree creation, bulk deactivation, and export denial for `worker`.
 - [ ] Extend seed data to cover large row ranges, conflict scenarios, and export-worthy owner data.
 
 #### Documentation sync
 
-- [ ] Keep batch behavior aligned with [batch_tree_creation_rules.md](../06_backend_and_contracts/batch_tree_creation_rules.md).
+- [x] Keep batch behavior aligned with [batch_tree_creation_rules.md](../06_backend_and_contracts/batch_tree_creation_rules.md).
 - [ ] Keep export behavior aligned with [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md) and [backup_restore_and_export.md](../07_security_and_quality/backup_restore_and_export.md).
 - [ ] Update scope documents if any `0.2` item is promoted earlier.
 
 **Deliverables**
 
 - `bulk_tree_import_batches` migration and related indexes
+- `plots` layout settings migration and UI
 - bulk tree creation and deactivation flows
 - variety location report
+- harvest location report
 - `exportAccountData` backend and UI
 - post-MVP test coverage and documentation updates
 
@@ -859,6 +877,8 @@ Rationale:
 - Seed data must cover onboarding, ownership isolation, activities, and harvest summaries.
 - Local development should be able to reset schema and seed without manual database patching.
 - Seeded QA should have a documented bootstrap for required `auth.users`; current local command is `pnpm seed:baseline-users`.
+- Seeded QA should have an automated local command for running the reference SQL seed; current local command is `pnpm seed:baseline-sql`.
+- Seeded QA should have a one-command rebuild flow for the full local baseline; current local command is `pnpm seed:baseline-reset`.
 - Seeded QA should have a repeatable readiness check for the reference dataset; current local command is `pnpm qa:baseline-status`.
 
 ### Testing strategy
@@ -888,9 +908,9 @@ Rationale:
 
 ### Identity and orchard context ready
 
-- [ ] Auth works end to end.
-- [ ] A user without membership is routed to orchard onboarding.
-- [ ] The first orchard can be created and becomes the active context.
+- [x] Auth works end to end.
+- [x] A user without membership is routed to orchard onboarding.
+- [x] The first orchard can be created and becomes the active context.
 - [x] Membership rules and base RLS are covered by integration tests.
 
 ### Core orchard structure ready
@@ -909,7 +929,7 @@ Rationale:
 
 - [x] Harvest quantities normalize correctly from `kg` and `t`.
 - [x] Season summaries aggregate correctly by variety and plot.
-- [ ] Harvest write/read flows are covered by integration and E2E tests.
+- [x] Harvest write/read flows are covered by integration and E2E tests.
 
 ### MVP release ready
 

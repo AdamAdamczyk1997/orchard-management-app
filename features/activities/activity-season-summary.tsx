@@ -97,7 +97,7 @@ export function ActivitySeasonSummary({
   const coverageGroups = groupCoverageByActivity(coverage);
 
   return (
-    <Card className="grid gap-5">
+    <Card className="grid gap-5" data-testid="activity-season-summary">
       <div className="grid gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
           Podsumowanie sezonowe
@@ -110,7 +110,11 @@ export function ActivitySeasonSummary({
         </CardDescription>
       </div>
 
-      <form className="grid gap-4 lg:grid-cols-3" method="get">
+      <form
+        className="grid gap-4 lg:grid-cols-3"
+        data-testid="activity-season-summary-filters"
+        method="get"
+      >
         <HiddenInputs entries={preservedListParams} />
         <label className="grid gap-2">
           <span className="text-sm font-medium text-[#304335]">Sezon</span>
@@ -247,7 +251,10 @@ export function ActivitySeasonSummary({
         </Card>
       </div>
 
-      <Card className="grid gap-4 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none">
+      <Card
+        className="grid gap-4 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none"
+        data-testid="activity-season-coverage"
+      >
         <div className="grid gap-1">
           <CardTitle className="text-lg">Coverage po zapisanych zakresach</CardTitle>
           <CardDescription>

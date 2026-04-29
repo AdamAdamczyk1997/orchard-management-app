@@ -106,6 +106,7 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 - Glówne listy odrozniaja brak danych od braku wynikow po filtrowaniu i proponuja sensowne CTA.
 - Krytyczne trasy detail/edit nie koncza sie surowym bledem ani cichym redirectem, gdy rekord nie istnieje w aktywnym sadzie.
 - Flow zablokowany przez brak wymaganej dzialki pokazuje jasny kolejny krok zamiast bledu systemowego.
+- Po create / edit / delete / archive / restore / status change w glownych modulach user dostaje czytelne potwierdzenie sukcesu na ekranie docelowym.
 - Kluczowe widoki dzialaja na telefonie i desktopie.
 
 ## 8. Bezpieczenstwo i spojnosci danych
@@ -143,9 +144,19 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 ## 11. Raport lokalizacji odmiany - etap 0.2
 
 - User moze wybrac odmiane i zobaczyc, gdzie wystepuje.
+- Aktualny entry point raportu to `/reports/variety-locations`, z wejsciem rowniez z listy odmian.
 - Wynik jest grupowany po dzialce, sekcji i rzedzie.
 - Kolejne pozycje sa prezentowane jako zakresy.
 - Raport nie uwzglednia drzew nieaktywnych ani bez lokalizacji.
+- Widok jawnie pokazuje, ile aktywnych drzew tej odmiany nie weszlo do grup, bo nie ma kompletnego `row_number + position_in_row`.
+
+## 12. Raport lokalizacji zbiorow - etap 0.2
+
+- User moze otworzyc `/reports/harvest-locations` i zobaczyc raport dla wybranego `season_year`.
+- User moze filtrowac raport po `plot_id` i `variety_id`.
+- Raport pokazuje sume globalna, wpisy z precyzyjna lokalizacja i wpisy bez precyzyjnej lokalizacji.
+- Raport pokazuje breakdown per dzialka, sekcja, rzad i zakres pozycji.
+- Wpisy tylko na poziomie sadu nie sa gubione; sa komunikowane osobno poza grupami terenowymi.
 
 ## 12. Definicja `gotowe` dla pierwszego wdrozenia
 
@@ -156,3 +167,4 @@ Funkcjonalnosc uznajemy za gotowa, gdy:
 - zapisuje poprawne dane
 - nie przecieka danych miedzy kontami ani orchard
 - ma co najmniej podstawowy zestaw testow dla krytycznej logiki
+- krytyczne flow uzytkownika i granice dostepu sa pokryte przez integration tests oraz aktualny pakiet `Playwright`

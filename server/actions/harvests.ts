@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { buildRedirectTargetWithNotice } from "@/lib/domain/feedback-notices";
+import { validateHarvestScopeForPlotLayout } from "@/lib/domain/plots";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readActivityByIdForOrchard } from "@/lib/orchard-data/activities";
 import { readHarvestRecordByIdForOrchard } from "@/lib/orchard-data/harvests";
@@ -51,6 +53,7 @@ function mapHarvestMutationError<T>(error: PostgrestError): ActionResult<T> {
   }
 
   if (
+    error.message.includes("HARVEST_LOCATION_RANGE_UNSUPPORTED") ||
     error.message.includes("Harvest plot") ||
     error.message.includes("Harvest tree") ||
     error.message.includes("Harvest variety") ||
@@ -61,7 +64,16 @@ function mapHarvestMutationError<T>(error: PostgrestError): ActionResult<T> {
       "HARVEST_SCOPE_INVALID",
       "Zakres wpisu zbioru jest niepoprawny.",
       {
-        scope_level: "Sprawdz wybrany poziom szczegolowosci i powiazania rekordu.",
+        scope_level:
+          error.message.includes("HARVEST_LOCATION_RANGE_UNSUPPORTED")
+            ? "Dla dzialki nieregularnej wybierz inny poziom szczegolowosci niz zakres po rzedach."
+            : "Sprawdz wybrany poziom szczegolowosci i powiazania rekordu.",
+        ...(error.message.includes("HARVEST_LOCATION_RANGE_UNSUPPORTED")
+          ? {
+              plot_id:
+                "Dla tej dzialki uzyj calej dzialki, odmiany albo pojedynczych drzew zamiast zakresu po rzedach.",
+            }
+          : {}),
       },
     );
   }
@@ -117,6 +129,23 @@ async function validateHarvestRelations(
         },
       ),
     };
+  }
+
+  if (plot) {
+    const plotLayoutValidation = validateHarvestScopeForPlotLayout(
+      plot,
+      input.scope_level,
+    );
+
+    if (plotLayoutValidation) {
+      return {
+        error: createErrorResult<HarvestRecordDetails>(
+          "HARVEST_SCOPE_INVALID",
+          plotLayoutValidation.message,
+          plotLayoutValidation.field_errors,
+        ),
+      };
+    }
   }
 
   if (input.variety_id && !variety) {
@@ -298,7 +327,7 @@ export async function createHarvestRecord(
   revalidatePath("/harvests");
   revalidatePath(`/harvests/${harvestRecord.id}`);
   revalidatePath("/dashboard");
-  redirect("/harvests");
+  redirect(buildRedirectTargetWithNotice("/harvests", "harvest_created"));
 }
 
 export async function updateHarvestRecord(
@@ -363,7 +392,7 @@ export async function updateHarvestRecord(
   revalidatePath(`/harvests/${existingHarvest.id}`);
   revalidatePath(`/harvests/${existingHarvest.id}/edit`);
   revalidatePath("/dashboard");
-  redirect("/harvests");
+  redirect(buildRedirectTargetWithNotice("/harvests", "harvest_updated"));
 }
 
 export async function deleteHarvestRecord(formData: FormData) {
@@ -391,5 +420,11 @@ export async function deleteHarvestRecord(formData: FormData) {
   revalidatePath(`/harvests/${parsed.data.harvest_record_id}`);
   revalidatePath(`/harvests/${parsed.data.harvest_record_id}/edit`);
   revalidatePath("/dashboard");
-  redirect(buildHarvestRedirectTarget(parsed.data.redirect_to));
+  redirect(
+    buildRedirectTargetWithNotice(
+      parsed.data.redirect_to,
+      "harvest_deleted",
+      "/harvests",
+    ),
+  );
 }

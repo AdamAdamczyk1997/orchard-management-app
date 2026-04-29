@@ -64,6 +64,21 @@ function buildHarvestListHref(
   return buildPathWithSearchParams("/harvests", searchParams);
 }
 
+function buildHarvestLocationHref(filters: HarvestSeasonSummaryFilters) {
+  const searchParams = new URLSearchParams();
+  searchParams.set("season_year", String(filters.season_year));
+
+  if (filters.plot_id) {
+    searchParams.set("plot_id", filters.plot_id);
+  }
+
+  if (filters.variety_id) {
+    searchParams.set("variety_id", filters.variety_id);
+  }
+
+  return buildPathWithSearchParams("/reports/harvest-locations", searchParams);
+}
+
 export function HarvestSeasonSummaryView({
   summary,
   timeline,
@@ -89,6 +104,9 @@ export function HarvestSeasonSummaryView({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <LinkButton href={buildHarvestLocationHref(filters)} variant="secondary">
+            Zbiory po lokalizacji
+          </LinkButton>
           <LinkButton href={harvestListHref} variant="secondary">
             Pokaz wpisy zbioru
           </LinkButton>
@@ -96,7 +114,7 @@ export function HarvestSeasonSummaryView({
         </div>
       </div>
 
-      <Card className="grid gap-4">
+      <Card className="grid gap-4" data-testid="harvest-season-summary">
         <div className="grid gap-1">
           <CardTitle className="text-lg">Filtry raportu</CardTitle>
           <CardDescription>
@@ -104,7 +122,11 @@ export function HarvestSeasonSummaryView({
             dzialce albo odmianie.
           </CardDescription>
         </div>
-        <form className="grid gap-4 lg:grid-cols-3" method="get">
+        <form
+          className="grid gap-4 lg:grid-cols-3"
+          data-testid="harvest-season-summary-filters"
+          method="get"
+        >
           <label className="grid gap-2">
             <span className="text-sm font-medium text-[#304335]">Sezon</span>
             <Input

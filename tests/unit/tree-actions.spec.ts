@@ -4,6 +4,8 @@ const requireActiveOrchardMock = vi.fn();
 const readPlotByIdForOrchardMock = vi.fn();
 const readVarietyByIdForOrchardMock = vi.fn();
 const readTreeByIdForOrchardMock = vi.fn();
+const previewBulkTreeBatchForOrchardMock = vi.fn();
+const previewBulkDeactivateTreesForOrchardMock = vi.fn();
 const createSupabaseServerClientMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const redirectMock = vi.fn();
@@ -22,6 +24,11 @@ vi.mock("@/lib/orchard-data/varieties", () => ({
 
 vi.mock("@/lib/orchard-data/trees", () => ({
   readTreeByIdForOrchard: readTreeByIdForOrchardMock,
+}));
+
+vi.mock("@/lib/orchard-data/tree-batches", () => ({
+  previewBulkTreeBatchForOrchard: previewBulkTreeBatchForOrchardMock,
+  previewBulkDeactivateTreesForOrchard: previewBulkDeactivateTreesForOrchardMock,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -54,6 +61,7 @@ describe("tree server actions", () => {
       orchard_id: "orchard-1",
       name: "Archived plot",
       status: "archived",
+      layout_type: "rows",
     });
 
     const { createTree } = await import("@/server/actions/trees");
@@ -79,6 +87,7 @@ describe("tree server actions", () => {
       orchard_id: "orchard-1",
       name: "North plot",
       status: "active",
+      layout_type: "rows",
     });
     readVarietyByIdForOrchardMock.mockResolvedValue(null);
 
@@ -87,6 +96,8 @@ describe("tree server actions", () => {
     formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
     formData.set("variety_id", "22222222-2222-4222-8222-222222222222");
     formData.set("species", "apple");
+    formData.set("row_number", "4");
+    formData.set("position_in_row", "11");
     formData.set("condition_status", "good");
 
     const result = await createTree({ success: false }, formData);
@@ -97,5 +108,115 @@ describe("tree server actions", () => {
     expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
     expect(revalidatePathMock).not.toHaveBeenCalled();
     expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("requires row and position when the selected plot uses row layout", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Rows plot",
+      status: "active",
+      layout_type: "rows",
+    });
+
+    const { createTree } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("species", "apple");
+    formData.set("condition_status", "good");
+
+    const result = await createTree({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("VALIDATION_ERROR");
+    expect(result.field_errors?.row_number).toBe("Ta dzialka wymaga numeru rzedu.");
+    expect(result.field_errors?.position_in_row).toBe(
+      "Ta dzialka wymaga pozycji w rzedzie.",
+    );
+    expect(readVarietyByIdForOrchardMock).not.toHaveBeenCalled();
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
+  });
+
+  it("requires at least one practical location hint for irregular plots", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Irregular plot",
+      status: "active",
+      layout_type: "irregular",
+    });
+
+    const { createTree } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("species", "apple");
+    formData.set("condition_status", "good");
+
+    const result = await createTree({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("VALIDATION_ERROR");
+    expect(result.field_errors?.section_name).toBe(
+      "Podaj sekcje, etykiete albo kod terenowy dla tej dzialki.",
+    );
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks row-range batch create on irregular plots before preview", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Irregular plot",
+      status: "active",
+      layout_type: "irregular",
+    });
+
+    const { submitBulkTreeBatch } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("species", "apple");
+    formData.set("row_number", "4");
+    formData.set("from_position", "1");
+    formData.set("to_position", "10");
+    formData.set("default_condition_status", "new");
+    formData.set("intent", "preview");
+
+    const result = await submitBulkTreeBatch({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("PLOT_LAYOUT_UNSUPPORTED");
+    expect(result.field_errors?.plot_id).toBe(
+      "Wybierz dzialke typu rzedowego albo mieszanego.",
+    );
+    expect(previewBulkTreeBatchForOrchardMock).not.toHaveBeenCalled();
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks row-range bulk deactivate on irregular plots before preview", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Irregular plot",
+      status: "active",
+      layout_type: "irregular",
+    });
+
+    const { submitBulkDeactivateTrees } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("row_number", "4");
+    formData.set("from_position", "1");
+    formData.set("to_position", "10");
+    formData.set("intent", "preview");
+
+    const result = await submitBulkDeactivateTrees({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("PLOT_LAYOUT_UNSUPPORTED");
+    expect(result.field_errors?.plot_id).toBe(
+      "Wybierz dzialke typu rzedowego albo mieszanego.",
+    );
+    expect(previewBulkDeactivateTreesForOrchardMock).not.toHaveBeenCalled();
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
   });
 });

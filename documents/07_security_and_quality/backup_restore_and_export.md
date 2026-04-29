@@ -64,8 +64,9 @@ Utrata danych moze byc bardzo kosztowna, dlatego backup i eksport nie sa dodatki
 
 ## 5. Decyzja etapowa
 
-- w 0.1 najwazniejszy jest backup infrastrukturalny i techniczny eksport danych
-- w 0.2 eksport powinien byc dostepny takze dla `owner` z UI
+- w 0.1 najwazniejszy pozostaje backup infrastrukturalny
+- eksport danych jest juz dostepny dla `owner` z UI profilu
+- import i restore z eksportu pozostaja kontrolowanymi operacjami technicznymi, poza glownym MVP flow
 
 ## 6. Co warto przetestowac
 

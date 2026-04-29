@@ -3,15 +3,21 @@ import {
   DEFAULT_BASELINE_PASSWORD,
 } from "./shared/baseline-seed.mjs";
 import {
+  BASELINE_SQL_SEED_COMMAND,
+  BASELINE_USERS_COMMAND,
+} from "./shared/baseline-workflow.mjs";
+import {
   createLocalAdminClient,
   listAllAuthUsers,
 } from "./shared/local-supabase.mjs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 function resolveBaselinePassword() {
   return process.env.BASELINE_SEED_USER_PASSWORD || DEFAULT_BASELINE_PASSWORD;
 }
 
-async function upsertBaselineUsers() {
+export async function upsertBaselineUsers() {
   const password = resolveBaselinePassword();
   const adminClient = createLocalAdminClient();
   const existingUsers = await listAllAuthUsers(adminClient);
@@ -76,17 +82,24 @@ async function upsertBaselineUsers() {
   console.log(`Password: ${password}`);
   console.log("");
   console.log("Next step:");
-  console.log("- run supabase/seeds/001_baseline_reference_seed.sql");
+  console.log(`- run ${BASELINE_SQL_SEED_COMMAND}`);
   console.log("- then log in with one of the baseline accounts");
 }
 
-upsertBaselineUsers().catch((error) => {
-  console.error("");
-  console.error("Failed to bootstrap baseline seed users.");
-  console.error(
-    "Make sure local Supabase is running and .env.local contains NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.",
-  );
-  console.error("");
-  console.error(error);
-  process.exitCode = 1;
-});
+const currentFilePath = fileURLToPath(import.meta.url);
+const invokedFilePath = process.argv[1] ? path.resolve(process.argv[1]) : "";
+
+if (invokedFilePath === currentFilePath) {
+  upsertBaselineUsers().catch((error) => {
+    console.error("");
+    console.error("Failed to bootstrap baseline seed users.");
+    console.error(
+      "Make sure local Supabase is running and .env.local contains NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.",
+    );
+    console.error("");
+    console.error(`Retry with ${BASELINE_USERS_COMMAND} after fixing the local environment.`);
+    console.error("");
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { buildRedirectTargetWithNotice } from "@/lib/domain/feedback-notices";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { readPlotByIdForOrchard } from "@/lib/orchard-data/plots";
 import {
@@ -20,7 +21,7 @@ import {
 import type { ActionResult, PlotSummary } from "@/types/contracts";
 
 const plotSelect =
-  "id, orchard_id, name, code, description, location_name, area_m2, soil_type, irrigation_type, status, is_active, created_at, updated_at";
+  "id, orchard_id, name, code, description, location_name, area_m2, soil_type, irrigation_type, layout_type, row_numbering_scheme, tree_numbering_scheme, entrance_description, layout_notes, default_row_count, default_trees_per_row, status, is_active, created_at, updated_at";
 
 function mapPlotMutationError<T>(error: PostgrestError): ActionResult<T> {
   if (error.code === "23505") {
@@ -79,6 +80,13 @@ export async function createPlot(
     area_m2: parsed.data.area_m2 ?? null,
     soil_type: parsed.data.soil_type ?? null,
     irrigation_type: parsed.data.irrigation_type ?? null,
+    layout_type: parsed.data.layout_type,
+    row_numbering_scheme: parsed.data.row_numbering_scheme ?? null,
+    tree_numbering_scheme: parsed.data.tree_numbering_scheme ?? null,
+    entrance_description: parsed.data.entrance_description ?? null,
+    layout_notes: parsed.data.layout_notes ?? null,
+    default_row_count: parsed.data.default_row_count ?? null,
+    default_trees_per_row: parsed.data.default_trees_per_row ?? null,
     status: parsed.data.status,
     is_active: parsed.data.status !== "archived",
   };
@@ -91,7 +99,7 @@ export async function createPlot(
 
   revalidatePath("/plots");
   revalidatePath("/trees");
-  redirect("/plots");
+  redirect(buildRedirectTargetWithNotice("/plots", "plot_created"));
 }
 
 export async function updatePlot(
@@ -126,6 +134,13 @@ export async function updatePlot(
     area_m2: parsed.data.area_m2 ?? null,
     soil_type: parsed.data.soil_type ?? null,
     irrigation_type: parsed.data.irrigation_type ?? null,
+    layout_type: parsed.data.layout_type,
+    row_numbering_scheme: parsed.data.row_numbering_scheme ?? null,
+    tree_numbering_scheme: parsed.data.tree_numbering_scheme ?? null,
+    entrance_description: parsed.data.entrance_description ?? null,
+    layout_notes: parsed.data.layout_notes ?? null,
+    default_row_count: parsed.data.default_row_count ?? null,
+    default_trees_per_row: parsed.data.default_trees_per_row ?? null,
     status: parsed.data.status,
     is_active: parsed.data.status !== "archived",
   };
@@ -144,7 +159,7 @@ export async function updatePlot(
 
   revalidatePath("/plots");
   revalidatePath("/trees");
-  redirect("/plots");
+  redirect(buildRedirectTargetWithNotice("/plots", "plot_updated"));
 }
 
 export async function archivePlot(formData: FormData) {
@@ -173,7 +188,7 @@ export async function archivePlot(formData: FormData) {
 
   revalidatePath("/plots");
   revalidatePath("/trees");
-  redirect(buildPlotRedirectTarget(parsed.data.redirect_to));
+  redirect(buildRedirectTargetWithNotice(parsed.data.redirect_to, "plot_archived", "/plots"));
 }
 
 export async function restorePlot(formData: FormData) {
@@ -202,5 +217,5 @@ export async function restorePlot(formData: FormData) {
 
   revalidatePath("/plots");
   revalidatePath("/trees");
-  redirect(buildPlotRedirectTarget(parsed.data.redirect_to));
+  redirect(buildRedirectTargetWithNotice(parsed.data.redirect_to, "plot_restored", "/plots"));
 }

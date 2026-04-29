@@ -2,6 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import {
+  getPlotLayoutTypeLabel,
+  getRowNumberingSchemeLabel,
+  getTreeNumberingSchemeLabel,
+} from "@/lib/domain/plots";
 import { getPlotStatusLabel } from "@/lib/domain/labels";
 import type { PlotSummary } from "@/types/contracts";
 import { archivePlot, restorePlot } from "@/server/actions/plots";
@@ -13,6 +18,22 @@ type PlotListProps = {
   clearHref: string;
   createHref: string;
 };
+
+function formatPlotDefaultGrid(plot: PlotSummary) {
+  if (plot.default_row_count && plot.default_trees_per_row) {
+    return `${plot.default_row_count} rzedow x ${plot.default_trees_per_row} drzew`;
+  }
+
+  if (plot.default_row_count) {
+    return `${plot.default_row_count} rzedow`;
+  }
+
+  if (plot.default_trees_per_row) {
+    return `${plot.default_trees_per_row} drzew w rzedzie`;
+  }
+
+  return "Brak";
+}
 
 export function PlotList({
   plots,
@@ -96,9 +117,38 @@ export function PlotList({
               <span className="font-medium text-[#304335]">Aktywny rekord:</span>{" "}
               {plot.is_active ? "Tak" : "Nie"}
             </p>
+            <p>
+              <span className="font-medium text-[#304335]">Uklad:</span>{" "}
+              {getPlotLayoutTypeLabel(plot.layout_type)}
+            </p>
+            <p>
+              <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
+              {plot.row_numbering_scheme
+                ? getRowNumberingSchemeLabel(plot.row_numbering_scheme)
+                : "Brak"}
+            </p>
+            <p>
+              <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
+              {plot.tree_numbering_scheme
+                ? getTreeNumberingSchemeLabel(plot.tree_numbering_scheme)
+                : "Brak"}
+            </p>
+            <p>
+              <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
+              {formatPlotDefaultGrid(plot)}
+            </p>
           </div>
+          {plot.entrance_description ? (
+            <CardDescription>
+              <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
+              {plot.entrance_description}
+            </CardDescription>
+          ) : null}
           {plot.description ? (
             <CardDescription>{plot.description}</CardDescription>
+          ) : null}
+          {plot.layout_notes ? (
+            <CardDescription>{plot.layout_notes}</CardDescription>
           ) : null}
         </Card>
       ))}

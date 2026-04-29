@@ -393,6 +393,53 @@ describe("activity management flow", () => {
     );
   });
 
+  it("rejects row-based scopes on irregular plots at the RPC/database layer", async () => {
+    const owner = await createTestUser("activity-irregular-owner");
+
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("activity-irregular"),
+      code: "ACT-IRR",
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera nieregularna",
+      code: "IRR-01",
+      layoutType: "irregular",
+    });
+
+    const invalidRangeScope = await ownerClient
+      .rpc("create_activity_with_children", {
+        p_parent: {
+          orchard_id: orchard.orchard_id,
+          plot_id: plot.id,
+          activity_type: "mowing",
+          activity_date: "2026-05-10",
+          title: "Koszenie po skarpie",
+          status: "done",
+          performed_by_profile_id: owner.user.id,
+          performed_by: owner.profile.display_name,
+        },
+        p_scopes: [
+          {
+            scope_level: "row",
+            row_number: 3,
+            scope_order: 1,
+          },
+        ],
+        p_materials: [],
+      })
+      .single();
+
+    expect(invalidRangeScope.data).toBeNull();
+    expect(invalidRangeScope.error?.code).toBe("22023");
+    expect(invalidRangeScope.error?.message).toContain(
+      "ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED",
+    );
+  });
+
   it("keeps the write atomic when a scope tree belongs to another plot", async () => {
     const owner = await createTestUser("activity-atomic-owner");
 

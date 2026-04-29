@@ -84,8 +84,9 @@ Ten dokument rozwija logike biznesowa i zachowanie encji, ale nie nadpisuje skon
 
 ## 4. Lokalizacja drzew
 
-- W MVP model rzedowy moze byc wyrazony bez osobnego `plots.layout_type`, jesli user podaje `row_number` i `position_in_row`.
-- Po wprowadzeniu rozszerzonego modelu ukladu dzialki w etapie 0.2 dla dzialki typu `rows` lokalizacja drzewa powinna byc opisana przez:
+- `plots.layout_type` jest juz zapisywane na dzialce i porzadkuje dalsza interpretacje lokalizacji.
+- Tree form i batch flow korzystaja juz z `plots.layout_type`, zapisanych schematow numeracji i guidance dzialki.
+- Dla dzialki typu `rows` lokalizacja drzewa powinna byc opisana przez:
   - `row_number`
   - `position_in_row`
 - Dla dzialki typu `mixed` lub `irregular` dopuszczamy niepelna lokalizacje.
@@ -352,7 +353,7 @@ Ten dokument rozwija logike biznesowa i zachowanie encji, ale nie nadpisuje skon
 - Drzewo bez znanej odmiany moze byc zapisane.
 - `orchard` jest finalna jednostka ownership dla danych domenowych.
 - `plot_sections` nie jest osobna tabela w baseline SQL v1.
-- `plots.layout_type`, `row_numbering_scheme` i `tree_numbering_scheme` nie wchodza do baseline SQL v1 i pozostaja zakresem `0.2`.
+- `plots.layout_type`, `row_numbering_scheme` i `tree_numbering_scheme` sa juz wdrozone w aktualnym modelu operacyjnym i sluza jako source of truth dla orientacji dzialki.
 - W MVP UI blokuje standardowe usuniecie odmiany, jesli jest przypisana do drzew; techniczne usuniecie pozostaje tylko dla sytuacji administracyjnych albo oczywistych pomylek.
 - Batch create i raport odmianowy sa funkcjami etapu 0.2, ale model danych powinien je uwzgledniac od poczatku.
 - Rejestrowanie zbiorow i proste podsumowania sezonowe powinny wejsc jako praktyczny modul MVP.

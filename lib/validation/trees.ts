@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasTreeCodePatternToken } from "@/lib/domain/tree-batches";
 import { normalizeSpeciesInput } from "@/lib/domain/species";
 import {
   checkboxBoolean,
@@ -118,3 +119,110 @@ export const treeListFiltersSchema = z.object({
     .optional(),
   is_active: z.enum(["true", "false", "all"]).optional(),
 });
+
+const bulkTreeBatchConditionStatusSchema = z.enum([
+  "new",
+  "good",
+  "warning",
+  "critical",
+]);
+
+export const bulkTreeBatchFormSchema = z
+  .object({
+    plot_id: trimmedString().uuid("Wybierz poprawna dzialke."),
+    variety_id: optionalUuidString("Wybierz poprawna odmiane."),
+    species: z.preprocess(
+      normalizeSpeciesInput,
+      trimmedString()
+        .min(2, "Gatunek musi miec co najmniej 2 znaki.")
+        .max(120, "Gatunek moze miec maksymalnie 120 znakow."),
+    ),
+    section_name: optionalTrimmedString().refine(
+      (value) => !value || value.length <= 80,
+      "Sekcja moze miec maksymalnie 80 znakow.",
+    ),
+    row_number: optionalNumberInput("Numer rzedu musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Numer rzedu musi byc wiekszy od 0.",
+    ),
+    from_position: optionalNumberInput("Pozycja poczatkowa musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Pozycja poczatkowa musi byc wieksza od 0.",
+    ),
+    to_position: optionalNumberInput("Pozycja koncowa musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Pozycja koncowa musi byc wieksza od 0.",
+    ),
+    generated_tree_code_pattern: optionalTrimmedString().refine(
+      (value) => !value || value.length <= 120,
+      "Wzorzec kodu moze miec maksymalnie 120 znakow.",
+    ),
+    default_condition_status: bulkTreeBatchConditionStatusSchema,
+    default_planted_at: optionalDateInput(),
+    default_rootstock: optionalTrimmedString().refine(
+      (value) => !value || value.length <= 120,
+      "Podkladka moze miec maksymalnie 120 znakow.",
+    ),
+    default_notes: optionalTrimmedString().refine(
+      (value) => !value || value.length <= 1000,
+      "Notatki moga miec maksymalnie 1000 znakow.",
+    ),
+  })
+  .superRefine((value, context) => {
+    if (
+      typeof value.from_position === "number" &&
+      typeof value.to_position === "number" &&
+      value.from_position > value.to_position
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Pozycja poczatkowa nie moze byc wieksza od koncowej.",
+        path: ["to_position"],
+      });
+    }
+
+    if (
+      value.generated_tree_code_pattern &&
+      !hasTreeCodePatternToken(value.generated_tree_code_pattern)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Wzorzec kodu musi zawierac placeholder {{n}}.",
+        path: ["generated_tree_code_pattern"],
+      });
+    }
+  });
+
+export const bulkDeactivateTreesFormSchema = z
+  .object({
+    plot_id: trimmedString().uuid("Wybierz poprawna dzialke."),
+    row_number: optionalNumberInput("Numer rzedu musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Numer rzedu musi byc wiekszy od 0.",
+    ),
+    from_position: optionalNumberInput("Pozycja poczatkowa musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Pozycja poczatkowa musi byc wieksza od 0.",
+    ),
+    to_position: optionalNumberInput("Pozycja koncowa musi byc liczba.").refine(
+      (value) => typeof value === "number" && value > 0,
+      "Pozycja koncowa musi byc wieksza od 0.",
+    ),
+    reason: optionalTrimmedString().refine(
+      (value) => !value || value.length <= 400,
+      "Powod moze miec maksymalnie 400 znakow.",
+    ),
+  })
+  .superRefine((value, context) => {
+    if (
+      typeof value.from_position === "number" &&
+      typeof value.to_position === "number" &&
+      value.from_position > value.to_position
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Pozycja poczatkowa nie moze byc wieksza od koncowej.",
+        path: ["to_position"],
+      });
+    }
+  });

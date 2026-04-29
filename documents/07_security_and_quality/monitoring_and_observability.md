@@ -22,7 +22,7 @@ Monitoring ma pomagac szybko zauwazyc:
 - bledy pobierania list i detali
 - konflikty lokalizacji drzew
 - nieudane `setActiveOrchard`
-- nieudane `exportAccountData` po wlaczeniu tej funkcji w etapie 0.2
+- nieudane `exportAccountData`
 - nieudane batch create
 
 ### Domenowo
@@ -46,7 +46,7 @@ Monitoring ma pomagac szybko zauwazyc:
 - czas ladowania dashboardu
 - liczba konfliktow batch create
 - liczba bledow membership i orchard context
-- liczba eksportow konta po wlaczeniu funkcji eksportu w etapie 0.2
+- liczba eksportow konta
 - liczba utworzonych `harvest_records`
 
 ## 4. Co alertowac
@@ -76,7 +76,7 @@ Monitoring ma pomagac szybko zauwazyc:
 - monitorowanie najwazniejszych mutacji
 - logowanie konfliktow lokalizacji
 - logowanie bledow `createOrchard`, `setActiveOrchard`, `createHarvestRecord`
-- po wlaczeniu eksportu w etapie 0.2 logowanie bledow `exportAccountData`
+- logowanie bledow `exportAccountData`
 
 ## 8. Kierunek rozwoju
 

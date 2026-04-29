@@ -18,9 +18,14 @@ export function OrchardSwitcher({
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form action={setActiveOrchard} ref={formRef}>
+    <form
+      action={setActiveOrchard}
+      data-testid="orchard-switcher-form"
+      ref={formRef}
+    >
       <Select
         aria-label="Wybierz aktywny sad"
+        data-testid="orchard-switcher-select"
         defaultValue={activeOrchardId}
         disabled={orchards.length <= 1}
         name="orchard_id"

@@ -1,7 +1,9 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
+import { ProfileExportCard } from "@/features/auth/profile-export-card";
 import { ProfileForm } from "@/features/auth/profile-form";
 import { readCurrentProfile } from "@/lib/auth/get-current-profile";
+import { readExportAvailabilityForProfile } from "@/lib/orchard-data/export";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 
 export default async function ProfileSettingsPage() {
@@ -19,19 +21,25 @@ export default async function ProfileSettingsPage() {
     );
   }
 
+  const exportAvailability = await readExportAvailabilityForProfile(profile.id);
+
   return (
-    <Card className="grid gap-5">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
-          Ustawienia konta
-        </p>
-        <CardTitle>Profil</CardTitle>
-        <CardDescription>
-          Tutaj edytujesz dane konta uzytkownika. Kontekst pracy w sadzie i
-          czlonkostwa pozostaja oddzielone od ustawien profilu.
-        </CardDescription>
-      </div>
-      <ProfileForm profile={profile} />
-    </Card>
+    <div className="grid gap-6">
+      <Card className="grid gap-5">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
+            Ustawienia konta
+          </p>
+          <CardTitle>Profil</CardTitle>
+          <CardDescription>
+            Tutaj edytujesz dane konta uzytkownika. Kontekst pracy w sadzie i
+            czlonkostwa pozostaja oddzielone od ustawien profilu.
+          </CardDescription>
+        </div>
+        <ProfileForm profile={profile} />
+      </Card>
+
+      <ProfileExportCard availability={exportAvailability} />
+    </div>
   );
 }

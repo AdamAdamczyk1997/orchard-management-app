@@ -29,6 +29,9 @@ begin
 end;
 $$;
 
+alter table public.profiles
+disable trigger guard_profile_self_service_update_before_write;
+
 insert into public.profiles (
   id,
   email,
@@ -76,6 +79,9 @@ set
   locale = excluded.locale,
   timezone = excluded.timezone,
   orchard_onboarding_dismissed_at = excluded.orchard_onboarding_dismissed_at;
+
+alter table public.profiles
+enable trigger guard_profile_self_service_update_before_write;
 
 insert into public.orchards (
   id,
@@ -200,6 +206,13 @@ insert into public.plots (
   area_m2,
   soil_type,
   irrigation_type,
+  layout_type,
+  row_numbering_scheme,
+  tree_numbering_scheme,
+  entrance_description,
+  layout_notes,
+  default_row_count,
+  default_trees_per_row,
   status,
   is_active
 )
@@ -214,6 +227,13 @@ values
     4200.00,
     'loamy',
     'drip',
+    'rows',
+    'left_to_right_from_entrance',
+    'from_row_start',
+    'Wjazd od strony zachodniej',
+    'Glowne rzedy numerowane od lewej do prawej patrzac od bramy.',
+    8,
+    180,
     'active',
     true
   ),
@@ -227,6 +247,13 @@ values
     2600.00,
     'sandy_loam',
     'drip',
+    'mixed',
+    'custom',
+    null,
+    'Serwisowy wjazd od strony poludniowej',
+    'Czesc drzew stoi w pelnych rzedach, a czesc przy bocznej alejce.',
+    5,
+    120,
     'active',
     true
   ),
@@ -240,6 +267,13 @@ values
     3100.00,
     'loamy',
     'sprinkler',
+    'rows',
+    'north_to_south',
+    'from_row_end',
+    'Wejscie od gornego tarasu',
+    'Numeracja rzedow schodzi z gory na dol tarasu.',
+    6,
+    140,
     'active',
     true
   ),
@@ -253,6 +287,13 @@ values
     1800.00,
     'clay_loam',
     'none',
+    'irregular',
+    null,
+    null,
+    'Podejscie od dolnej sciezki',
+    'Pojedyncze drzewa i nieregularne nasadzenia przy skarpie.',
+    null,
+    null,
     'active',
     true
   )
@@ -266,6 +307,13 @@ set
   area_m2 = excluded.area_m2,
   soil_type = excluded.soil_type,
   irrigation_type = excluded.irrigation_type,
+  layout_type = excluded.layout_type,
+  row_numbering_scheme = excluded.row_numbering_scheme,
+  tree_numbering_scheme = excluded.tree_numbering_scheme,
+  entrance_description = excluded.entrance_description,
+  layout_notes = excluded.layout_notes,
+  default_row_count = excluded.default_row_count,
+  default_trees_per_row = excluded.default_trees_per_row,
   status = excluded.status,
   is_active = excluded.is_active;
 

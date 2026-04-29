@@ -1,6 +1,8 @@
 # Archive
 
-Ten katalog przechowuje dokumenty historyczne, szkice wczesnych zalozen i materialy referencyjne, ktore nie sa juz normatywna podstawa implementacji.
+Ten katalog przechowuje dokumenty historyczne, szkice wczesnych zalozen i
+zamkniete implementation notes, ktore nie sa juz normatywna podstawa
+implementacji.
 
 ## Zasady uzycia
 
@@ -8,6 +10,16 @@ Ten katalog przechowuje dokumenty historyczne, szkice wczesnych zalozen i materi
   - migracji SQL
   - API i server actions
   - polityk RLS
-  - ekranow i formularzy
-- Jesli archiwalny dokument przeczy dokumentowi aktywnemu, pierwszenstwo ma dokument aktywny wskazany w `documents/README.md`.
-- Archiwum zachowujemy tylko jako slad decyzji i kontekstu historycznego.
+  - ekranow, formularzy i testow
+- Jesli archiwalny dokument przeczy dokumentowi aktywnemu, pierwszenstwo ma
+  dokument aktywny wskazany w [documents/README.md](../README.md).
+- Archiwum zachowujemy jako slad decyzji i kontekst historyczny, nie jako
+  biezaca specyfikacje.
+
+## Zawartosc
+
+- `high_level_plan.md`
+- `technology_and_responsibilities.md`
+- `orchardlog_data_model_location_and_variety_reports_update.md`
+- `phase_1_auth_onboarding_vertical_slice.md`
+- `phase_2_core_orchard_structure_vertical_slice.md`

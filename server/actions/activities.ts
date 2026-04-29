@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { buildRedirectTargetWithNotice } from "@/lib/domain/feedback-notices";
+import { validateActivityScopesForPlotLayout } from "@/lib/domain/plots";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
   listActiveMemberOptionsForOrchard,
@@ -60,6 +62,7 @@ function mapActivityMutationError<T>(error: PostgrestError): ActionResult<T> {
   }
 
   if (
+    error.message.includes("ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED") ||
     error.message.includes("ACTIVITY_SCOPE_INVALID") ||
     error.message.includes("Activity scope") ||
     error.message.includes("activity_scopes")
@@ -68,7 +71,10 @@ function mapActivityMutationError<T>(error: PostgrestError): ActionResult<T> {
       "ACTIVITY_SCOPE_INVALID",
       "Zakres aktywnosci jest niepoprawny.",
       {
-        scopes: "Sprawdz zakresy i upewnij sie, ze naleza do tej samej dzialki.",
+        scopes:
+          error.message.includes("ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED")
+            ? "Dla dzialki nieregularnej uzyj calej dzialki, sekcji albo pojedynczych drzew."
+            : "Sprawdz zakresy i upewnij sie, ze naleza do tej samej dzialki.",
       },
     );
   }
@@ -124,6 +130,22 @@ async function validateActivityRelations(input: ReturnType<typeof normalizeActiv
         {
           plot_id: "Wybierz poprawna dzialke.",
         },
+      ),
+    };
+  }
+
+  const scopeLayoutValidation = validateActivityScopesForPlotLayout(
+    plot,
+    input.scopes,
+  );
+
+  if (scopeLayoutValidation) {
+    return {
+      context,
+      error: createErrorResult<ActivityDetails>(
+        "ACTIVITY_SCOPE_INVALID",
+        scopeLayoutValidation.message,
+        scopeLayoutValidation.field_errors,
       ),
     };
   }
@@ -271,7 +293,7 @@ export async function createActivity(
   revalidatePath("/activities");
   revalidatePath(`/activities/${mutationResult.activity_id}`);
   revalidatePath("/dashboard");
-  redirect("/activities");
+  redirect(buildRedirectTargetWithNotice("/activities", "activity_created"));
 }
 
 export async function updateActivity(
@@ -335,7 +357,7 @@ export async function updateActivity(
   revalidatePath(`/activities/${existingActivity.id}`);
   revalidatePath(`/activities/${existingActivity.id}/edit`);
   revalidatePath("/dashboard");
-  redirect("/activities");
+  redirect(buildRedirectTargetWithNotice("/activities", "activity_updated"));
 }
 
 export async function changeActivityStatus(formData: FormData) {
@@ -365,7 +387,13 @@ export async function changeActivityStatus(formData: FormData) {
   revalidatePath(`/activities/${parsed.data.activity_id}`);
   revalidatePath(`/activities/${parsed.data.activity_id}/edit`);
   revalidatePath("/dashboard");
-  redirect(buildActivityRedirectTarget(parsed.data.redirect_to));
+  redirect(
+    buildRedirectTargetWithNotice(
+      parsed.data.redirect_to,
+      "activity_status_changed",
+      "/activities",
+    ),
+  );
 }
 
 export async function deleteActivity(formData: FormData) {
@@ -392,5 +420,11 @@ export async function deleteActivity(formData: FormData) {
   revalidatePath("/activities");
   revalidatePath(`/activities/${parsed.data.activity_id}`);
   revalidatePath("/dashboard");
-  redirect(buildActivityRedirectTarget(parsed.data.redirect_to));
+  redirect(
+    buildRedirectTargetWithNotice(
+      parsed.data.redirect_to,
+      "activity_deleted",
+      "/activities",
+    ),
+  );
 }

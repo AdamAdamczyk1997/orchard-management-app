@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  getHarvestLocationSummaryForOrchard,
   getHarvestSeasonSummaryForOrchard,
   getHarvestTimelineForOrchard,
   listHarvestRecordsForOrchard,
@@ -306,6 +307,48 @@ describe("harvest management flow", () => {
     );
   });
 
+  it("rejects location-range harvests on irregular plots at the database layer", async () => {
+    const owner = await createTestUser("harvest-irregular-owner");
+
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("harvest-irregular"),
+      code: "HRV-IRR",
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera skarpowa",
+      code: "IRR-02",
+      layoutType: "irregular",
+    });
+
+    const invalidLocationRange = await ownerClient
+      .from("harvest_records")
+      .insert({
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        scope_level: "location_range",
+        harvest_date: "2026-09-12",
+        section_name: "Skarpa",
+        row_number: 2,
+        from_position: 1,
+        to_position: 4,
+        quantity_value: 80,
+        quantity_unit: "kg",
+        created_by_profile_id: owner.user.id,
+      })
+      .select("*")
+      .single();
+
+    expect(invalidLocationRange.data).toBeNull();
+    expect(invalidLocationRange.error?.code).toBe("22023");
+    expect(invalidLocationRange.error?.message).toContain(
+      "HARVEST_LOCATION_RANGE_UNSUPPORTED",
+    );
+  });
+
   it("builds season summary and timeline aggregates with optional plot and variety filters", async () => {
     const owner = await createTestUser("harvest-summary-owner");
 
@@ -515,6 +558,321 @@ describe("harvest management flow", () => {
           plot_name: "Kwatera M",
           total_quantity_kg: 250,
           record_count: 2,
+        },
+      ],
+    });
+  });
+
+  it("builds harvest location summary with precise ranges and derived tree plot fallback", async () => {
+    const owner = await createTestUser("harvest-location-owner");
+
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("harvest-location"),
+      code: "HRV-04",
+    });
+    const plotA = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera O",
+      code: "O-01",
+    });
+    const plotB = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera P",
+      code: "P-01",
+    });
+    const varietyA = await createVarietyAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Gala",
+    });
+    const varietyB = await createVarietyAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      species: "pear",
+      name: "Conference",
+    });
+    const plotATree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: plotA.id,
+      varietyId: varietyA.id,
+      species: "apple",
+      treeCode: "O-R1-P4",
+      sectionName: "North",
+      rowNumber: 1,
+      positionInRow: 4,
+      locationVerified: true,
+    });
+
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      scope_level: "orchard",
+      harvest_date: "2026-09-01",
+      quantity_value: 100,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plotA.id,
+      variety_id: varietyA.id,
+      scope_level: "location_range",
+      harvest_date: "2026-09-02",
+      section_name: "North",
+      row_number: 1,
+      from_position: 1,
+      to_position: 3,
+      quantity_value: 200,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plotA.id,
+      variety_id: varietyA.id,
+      scope_level: "plot",
+      harvest_date: "2026-09-02",
+      quantity_value: 50,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: null,
+      variety_id: varietyA.id,
+      tree_id: plotATree.id,
+      scope_level: "tree",
+      harvest_date: "2026-09-03",
+      quantity_value: 25,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plotB.id,
+      variety_id: varietyB.id,
+      scope_level: "variety",
+      harvest_date: "2026-09-03",
+      quantity_value: 300,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plotB.id,
+      variety_id: varietyB.id,
+      scope_level: "location_range",
+      harvest_date: "2026-09-04",
+      section_name: "South",
+      row_number: 2,
+      from_position: 10,
+      to_position: 12,
+      quantity_value: 1.1,
+      quantity_unit: "t",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plotA.id,
+      variety_id: varietyA.id,
+      scope_level: "location_range",
+      harvest_date: "2025-09-04",
+      section_name: "North",
+      row_number: 1,
+      from_position: 5,
+      to_position: 7,
+      quantity_value: 999,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+
+    const summary = await getHarvestLocationSummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+      },
+      ownerClient,
+    );
+    const plotSummary = await getHarvestLocationSummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        plot_id: plotA.id,
+      },
+      ownerClient,
+    );
+    const varietySummary = await getHarvestLocationSummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        variety_id: varietyA.id,
+      },
+      ownerClient,
+    );
+
+    expect(summary).toEqual({
+      season_year: 2026,
+      total_quantity_kg: 1775,
+      record_count: 6,
+      precisely_located_quantity_kg: 1325,
+      precisely_located_record_count: 3,
+      unresolved_quantity_kg: 450,
+      unresolved_record_count: 3,
+      orchard_level_quantity_kg: 100,
+      orchard_level_record_count: 1,
+      plots: [
+        {
+          plot_id: plotA.id,
+          plot_name: "Kwatera O",
+          plot_status: "active",
+          total_quantity_kg: 275,
+          record_count: 3,
+          precisely_located_quantity_kg: 225,
+          precisely_located_record_count: 2,
+          unresolved_quantity_kg: 50,
+          unresolved_record_count: 1,
+          rows: [
+            {
+              section_name: "North",
+              row_number: 1,
+              total_quantity_kg: 225,
+              record_count: 2,
+              ranges: [
+                {
+                  from_position: 1,
+                  to_position: 3,
+                  total_quantity_kg: 200,
+                  record_count: 1,
+                },
+                {
+                  from_position: 4,
+                  to_position: 4,
+                  total_quantity_kg: 25,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          plot_id: plotB.id,
+          plot_name: "Kwatera P",
+          plot_status: "active",
+          total_quantity_kg: 1400,
+          record_count: 2,
+          precisely_located_quantity_kg: 1100,
+          precisely_located_record_count: 1,
+          unresolved_quantity_kg: 300,
+          unresolved_record_count: 1,
+          rows: [
+            {
+              section_name: "South",
+              row_number: 2,
+              total_quantity_kg: 1100,
+              record_count: 1,
+              ranges: [
+                {
+                  from_position: 10,
+                  to_position: 12,
+                  total_quantity_kg: 1100,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(plotSummary).toEqual({
+      season_year: 2026,
+      total_quantity_kg: 275,
+      record_count: 3,
+      precisely_located_quantity_kg: 225,
+      precisely_located_record_count: 2,
+      unresolved_quantity_kg: 50,
+      unresolved_record_count: 1,
+      orchard_level_quantity_kg: 0,
+      orchard_level_record_count: 0,
+      plots: [
+        {
+          plot_id: plotA.id,
+          plot_name: "Kwatera O",
+          plot_status: "active",
+          total_quantity_kg: 275,
+          record_count: 3,
+          precisely_located_quantity_kg: 225,
+          precisely_located_record_count: 2,
+          unresolved_quantity_kg: 50,
+          unresolved_record_count: 1,
+          rows: [
+            {
+              section_name: "North",
+              row_number: 1,
+              total_quantity_kg: 225,
+              record_count: 2,
+              ranges: [
+                {
+                  from_position: 1,
+                  to_position: 3,
+                  total_quantity_kg: 200,
+                  record_count: 1,
+                },
+                {
+                  from_position: 4,
+                  to_position: 4,
+                  total_quantity_kg: 25,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(varietySummary).toEqual({
+      season_year: 2026,
+      total_quantity_kg: 275,
+      record_count: 3,
+      precisely_located_quantity_kg: 225,
+      precisely_located_record_count: 2,
+      unresolved_quantity_kg: 50,
+      unresolved_record_count: 1,
+      orchard_level_quantity_kg: 0,
+      orchard_level_record_count: 0,
+      plots: [
+        {
+          plot_id: plotA.id,
+          plot_name: "Kwatera O",
+          plot_status: "active",
+          total_quantity_kg: 275,
+          record_count: 3,
+          precisely_located_quantity_kg: 225,
+          precisely_located_record_count: 2,
+          unresolved_quantity_kg: 50,
+          unresolved_record_count: 1,
+          rows: [
+            {
+              section_name: "North",
+              row_number: 1,
+              total_quantity_kg: 225,
+              record_count: 2,
+              ranges: [
+                {
+                  from_position: 1,
+                  to_position: 3,
+                  total_quantity_kg: 200,
+                  record_count: 1,
+                },
+                {
+                  from_position: 4,
+                  to_position: 4,
+                  total_quantity_kg: 25,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
         },
       ],
     });

@@ -16,6 +16,7 @@ Ma zawierac:
 
 1. Przed startem nowego chatu podaj temu plikowi priorytet razem z:
    - `documents/README.md`
+   - `documents/00_overview_and_checklists/documentation_map.md`
    - `documents/01_implementation_materials/README.md`
    - `documents/01_implementation_materials/implementation_master_plan.md`
 2. Po kazdej wiekszej sesji uzupelnij sekcje `UZUPELNIJ SAM`.
@@ -31,7 +32,12 @@ Ma zawierac:
 - core orchard structure dla `plots`, `varieties`, `trees` jest wdrozona
 - baza, baseline migrations, seed i `v1_security` sa juz przygotowane
 - lokalny bootstrap seedowych kont `auth.users` jest zautomatyzowany komenda `pnpm seed:baseline-users`
+- lokalne uruchamianie referencyjnego SQL seedu jest zautomatyzowane komenda `pnpm seed:baseline-sql`
+- pelny lokalny rebuild baseline jest zautomatyzowany komenda `pnpm seed:baseline-reset`
 - lokalna walidacja gotowosci referencyjnego baseline do manual QA jest zautomatyzowana komenda `pnpm qa:baseline-status`
+- Supabase Studio SQL Editor nie jest wspieranym fallbackiem dla referencyjnego seedu, bo update `profiles.system_role` moze tam wpasc w `guard_profile_self_service_update()`
+- referencyjny seed tymczasowo wylacza tylko `guard_profile_self_service_update_before_write` na czas baseline upsertu `profiles`, a potem wlacza trigger z powrotem
+- historyczne szkice i zamkniete implementation notes sa trzymane w `documents/archive/` i nie powinny byc traktowane jako aktywne source of truth
 
 ### Aktualnie wdrozone vertical slice
 
@@ -108,28 +114,94 @@ Ma zawierac:
    - create/edit flows wymagajace dzialki albo aktywnej dzialki korzystaja ze wspolnego `prerequisite card`
    - `requireActiveOrchard` zwraca teraz zwezony kontekst po wszystkich redirect guards, co upraszcza strony chronione
    - w tym kroku nie zamknieto jeszcze seeded QA hardening; zostal jako osobny follow-up
- - `Phase 5B2b`
-   - dodana komenda `pnpm qa:baseline-status`, ktora sprawdza gotowosc referencyjnego baseline do manual QA
-   - narzedzie waliduje `auth.users`, profile, orchardy, membership matrix, liczby rekordow i harvest normalization
-   - manual testing docs prowadza teraz przez workflow `reset -> bootstrap users -> SQL seed -> baseline status -> smoke pass`
-   - seeded QA ma tez automatyczne unit tests dla evaluatora gotowosci baseline
+- `Phase 5B2b`
+  - dodana komenda `pnpm qa:baseline-status`, ktora sprawdza gotowosc referencyjnego baseline do manual QA
+  - narzedzie waliduje `auth.users`, profile, orchardy, membership matrix, liczby rekordow i harvest normalization
+  - dodane komendy `pnpm seed:baseline-sql` i `pnpm seed:baseline-reset` do automatyzacji referencyjnego SQL seedu
+  - manual testing docs prowadza teraz przez workflow `seed:baseline-reset -> baseline status -> smoke pass`
+  - seeded QA ma tez automatyczne unit tests dla evaluatora gotowosci baseline
+- `Phase 5C1`
+  - core redirect-based flows pokazuja teraz success feedback zamiast milczacego powrotu na liste albo detail
+  - `plots`, `trees`, `varieties`, `activities` i `harvests` maja wspolny wzorzec sukcesu po create / edit
+  - `plots`, `activities` i `harvests` pokazują tez success feedback po archive / restore / delete / status change tam, gdzie te akcje istnieja
+  - bannery sukcesu zachowuja biezacy kontekst listy i pozwalaja ukryc komunikat bez utraty filtrow
+- `Phase 5C2`
+  - reczny seeded smoke pass zostal wykonany na lokalnym baseline z `pnpm qa:baseline-status = READY`
+  - przejrzane zostaly konta `owner`, `worker` i outsider wedlug `manual_testing_quickstart.md`
+  - na tym przejsciu nie znaleziono blokujacych bledow aplikacji
+- `Phase 6A`
+  - `exportAccountData` jest wdrozone jako account-wide eksport JSON na `/settings/profile`
+  - eksport jest dostepny tylko dla usera z co najmniej jednym aktywnym membership `owner`
+  - payload obejmuje profil oraz tylko orchard z aktywnym membership `owner`, razem z `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`
+  - `worker` widzi jawny stan zablokowanego eksportu bez aktywnego CTA
+  - route download zwraca plik JSON z `Content-Disposition`, a UI ma pending state i komunikat sukcesu / bledu
+- `Phase 6B`
+  - `trees` maja teraz dwa operacyjne flow `0.2`:
+    - `/trees/batch/new` dla transakcyjnego batch create z preview konfliktow
+    - `/trees/batch/deactivate` dla preview i masowego oznaczania drzew jako `removed`
+  - zapis batcha jest wsparty tabela `bulk_tree_import_batches` i linkage `trees.planted_batch_id`
+  - batch create dziala w formule `all-or-nothing`, wykrywa konflikt lokalizacji przed zapisem i zapisuje historie batcha
+  - bulk deactivate nie kasuje rekordow fizycznie; ustawia `condition_status = removed` oraz `is_active = false`
+  - `worker` moze wykonywac oba flow w swoim orchard, outsider jest blokowany przez RPC auth/RLS
+  - flow maja unit, integration i security coverage
+- `Phase 6C`
+  - `/reports/variety-locations` jest wdrozone jako raport lokalizacji odmiany
+  - entry pointy do raportu sa dostepne z naglowka `/varieties` oraz z kart pojedynczych odmian
+  - raport wybiera jedna odmiane i pokazuje:
+    - liczbe aktywnych drzew tej odmiany
+    - liczbe drzew z raportowalna lokalizacja
+    - liczbe lokalizacji potwierdzonych i niepotwierdzonych
+    - grupy po `plot`, `section_name`, `row_number` z zakresami kolejnych pozycji
+  - grupy raportu pomijaja drzewa nieaktywne oraz rekordy bez kompletnego `row_number + position_in_row`, ale UI jawnie pokazuje licznik drzew poza raportem
+  - `worker` moze odczytac raport w swoim orchard, outsider jest blokowany przez RLS i nie odczyta wybranej odmiany
+  - raport ma unit i integration coverage dla scalania zakresow i read modelu
+- `Phase 6D`
+  - `/reports/harvest-locations` jest wdrozone jako location-aware raport wpisow zbioru
+  - raport korzysta z filtrow `season_year`, `plot_id`, `variety_id`, tak samo jak harvestowe `season-summary`
+  - pokazuje sume globalna, wpisy z precyzyjna lokalizacja, wpisy bez precyzyjnej lokalizacji oraz osobno rekordy tylko na poziomie sadu
+  - breakdown terenowy jest grupowany po dzialce, sekcji, rzedzie i zakresie pozycji
+  - wpis `tree` moze odziedziczyc lokalizacje z rekordu drzewa nawet wtedy, gdy sam harvest nie ma zapisanego `plot_id`
+  - z `/harvests` i `/reports/season-summary` mozna przejsc bezposrednio do nowego raportu
+  - raport ma unit i integration coverage dla agregacji i read modelu
+- `Phase 6E`
+  - `plots` maja teraz rozszerzone ustawienia ukladu dzialki bezposrednio w create / edit
+  - formularz i model obsluguja `layout_type`, `row_numbering_scheme`, `tree_numbering_scheme`, `entrance_description`, `layout_notes`, `default_row_count` i `default_trees_per_row`
+  - lista dzialek pokazuje zapisany uklad, numeracje oraz planowana siatke rzedow / drzew
+  - schema jest rozszerzona migracja `024_extend_plots_with_layout_settings.sql`
+  - slice ma unit i integration coverage dla walidacji oraz zapisu / aktualizacji tych pol
+- `Phase 6F`
+  - `trees` create / edit wykorzystuja juz zapisane ustawienia dzialki i pokazuja guidance po wyborze `plot_id`
+  - dla `layout_type = rows` zapis drzewa wymaga `row_number` i `position_in_row`
+  - dla `layout_type = mixed` i `layout_type = irregular` zapis wymaga co najmniej jednej praktycznej wskazowki lokalizacyjnej
+  - `/trees/batch/new` i `/trees/batch/deactivate` sa dostepne tylko dla dzialek `rows` i `mixed`
+  - dzialki `irregular` pokazuja jawny stan `unsupported` dla flow opartych o zakres rzedowy
+  - slice ma unit coverage dla polityki layoutu i server action guards dla create / edit / batch flows
+- `Phase 6G`
+  - `activities` i `harvests` pokazuja teraz guidance z ustawien wybranej dzialki po wyborze `plot_id`
+  - formularz aktywnosci blokuje zakresy `row` i `location_range` dla dzialek `irregular`
+  - formularz zbioru blokuje `scope_level = location_range` dla dzialek `irregular`
+  - server actions zwracaja czytelne field errors jeszcze przed zapisem, a baza pilnuje tych samych reguł triggerami dla `activity_scopes` i `harvest_records`
+  - slice ma unit coverage dla helperow layoutu oraz integration coverage dla odrzucenia niepoprawnych zapisow na poziomie RPC / DB
+- `Phase 6H`
+  - pierwszy oficjalny pakiet `Playwright` jest wdrozony i odpalany komenda `pnpm test:e2e`
+  - browser E2E pokrywa onboarding nowego usera, orchard switcher, ograniczenia `worker`, outsider onboarding, flow `plot -> variety -> tree`, aktywnosci sezonowe, raport zbiorow oraz batch create / bulk deactivate
+  - dodane sa stabilne helpery logowania, baseline fixture users i minimalne `data-testid` dla krytycznych flow terenowych
+  - skonczony jest tez ukierunkowany pass izolacji dostepu: orchard switch nie przecieka danych, `worker` nie ma eksportu ani membership management, outsider nie wchodzi w raporty operacyjne
+  - w trakcie wdrozenia naprawiony zostal realny bug batch create / confirm, w ktorym formularz po preview potrafil zgubic `plot_id` przy potwierdzeniu zapisu
 
 ### Swiadomie odlozone po obecnym etapie
 
 - detail pages dla `plots`, `varieties`, `trees`
 - delete UI dla `varieties` i `trees`
-- browser E2E
-- `batch create` / `bulk deactivate`
 - `upcoming_activities` i szerszy planning block na dashboardzie
-- reczny smoke pass na seedach
+- dalszy responsive polish dla mobilnych flow terenowych
 
 ### Najwazniejsze punkty wejscia do dokumentacji
 
 - [documents/README.md](../README.md)
+- [documentation_map.md](./documentation_map.md)
 - [documents/01_implementation_materials/README.md](../01_implementation_materials/README.md)
 - [implementation_master_plan.md](../01_implementation_materials/implementation_master_plan.md)
-- [phase_1_auth_onboarding_vertical_slice.md](../01_implementation_materials/phase_1_auth_onboarding_vertical_slice.md)
-- [phase_2_core_orchard_structure_vertical_slice.md](../01_implementation_materials/phase_2_core_orchard_structure_vertical_slice.md)
 - [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
 - [authorization_and_rls_strategy.md](../05_technical/authorization_and_rls_strategy.md)
 - [test_plan.md](../07_security_and_quality/test_plan.md)
@@ -150,27 +222,30 @@ Ma zawierac:
 
 Ostatnio potwierdzone jako przechodzace:
 
-- `supabase db reset`
-- `pnpm seed:baseline-users`
+- `pnpm seed:baseline-reset`
+- `pnpm qa:baseline-status`
+- `supabase db lint`
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
-- `pnpm build`
+- `pnpm test:e2e`
 
 ### Rekomendowany nastepny vertical slice
 
-- `Phase 5C - reczny seeded smoke pass + responsive QA polish`
+- `Phase 6I - migration and query hardening`, czyli przeglad MVP migracji pod spojnoscia nazw, forward-only safety i realnym pokryciem indeksami pod dashboard, harvest reporting oraz najczestsze query operacyjne
 
 ## UZUPELNIJ SAM - stan lokalny i reczna weryfikacja
 
 ### 1. Ostatnia reczna weryfikacja w przegladarce
 
 - Data:
-  - `19/04/2025`
+  - `2026-04-27`
 - Co sprawdziles:
-  - `register -> create orchard -> create plot -> create variety -> create tree`
+  - `pelny seeded smoke pass wedlug manual_testing_quickstart.md`
+  - `owner`, `worker`, outsider
+  - `activities`, `harvests`, dashboard, settings i raport sezonu
 - Wynik:
-  - większość wygląda dobrze, działa jak należy, mam tylko małe uwagi które wdrożymy z czasem
+  - baseline przeszedl bez blokujacych bledow; aplikacja reaguje stabilnie i nie wychwycono regresji krytycznych
 
 ### 2. Aktualny lokalny stan narzedzi
 
@@ -260,16 +335,21 @@ Ostatnio potwierdzone jako przechodzace:
   - Zamkniete w Phase 5B2b:
   - dodana komenda `pnpm qa:baseline-status` do walidacji baseline auth users i referencyjnych danych seedowych przed manual QA
   - narzedzie sprawdza profile, orchardy, membership matrix, liczby rekordow i normalizacje harvest w tonach
-  - przy zabrudzonej lokalnej bazie po testach narzedzie rekomenduje pelny `supabase db reset` zamiast samego rerunu SQL seedu
+  - przy zabrudzonej lokalnej bazie po testach narzedzie rekomenduje `pnpm seed:baseline-reset` zamiast samego rerunu SQL seedu
   - `manual_testing_quickstart`, `local_dev_tools_quickstart`, `schema_migration_plan`, `test_plan`, `README` i `implementation_master_plan` zostaly zaktualizowane pod nowy workflow
   - dodane unit tests dla evaluatora gotowosci seeded QA
   - automatycznie potwierdzone lokalnie: `pnpm lint`, `pnpm typecheck`, `pnpm test`
+  - Zamkniete w Phase 5C1:
+  - dodany wspolny helper `notice` dla redirect-based success feedback
+  - listy `plots`, `trees`, `varieties`, `activities` i `harvests` pokazuja zielony banner po create / edit
+  - `plots`, `activities` i `harvests` pokazuja tez banner po archive / restore / delete / status change
+  - `activities/[activityId]` i `harvests/[harvestRecordId]` renderuja success feedback po szybkich akcjach detail view
+  - dodane unit tests dla helperow feedback i zaktualizowane source-of-truth docs dla UI states i acceptance
+  - automatycznie potwierdzone lokalnie: `pnpm typecheck`, `pnpm lint`, `pnpm test`
   - Nadal odlozone albo wymagajace osobnej decyzji:
   - przelacznik jezyka PL / EN i pelne i18n
   - globalny admin / super user shell, podglad userow i remove user
-  - browser E2E
   - reczny smoke test nowych stron `activities` w przegladarce
-  - browser E2E dla harvests
   - reczny smoke test nowych stron `harvests` w przegladarce
   - planningowy blok `upcoming_activities` na dashboardzie
   - reczny smoke test na kontach seedowych
@@ -282,7 +362,7 @@ Ostatnio potwierdzone jako przechodzace:
 - Co chcesz zrobic jako nastepne:
   - `zrobic reczny seeded smoke pass w przegladarce na gotowym baseline`
 - Co ma byc zakresem nowego chatu:
-  - `bazujemy na zamknietym Phase 5B2b, nie ruszamy dashboard summary ani harvest reporting, tylko wykonujemy reczny smoke pass i zbieramy UX follow-upy`
+  - `bazujemy na zamknietym Phase 5C1, nie ruszamy dashboard summary ani harvest reporting, tylko wykonujemy reczny smoke pass i zbieramy responsive / UX follow-upy`
 
 ### 5. Kontekst organizacyjny
 

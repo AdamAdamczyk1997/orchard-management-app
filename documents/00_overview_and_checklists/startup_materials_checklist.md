@@ -30,7 +30,7 @@ dokumenty z `documents/archive/` zachowujemy jako kontekst historyczny, ale nie 
 
 - [x] `manual_testing_quickstart.md`
   Lokalizacja: [`documents/00_overview_and_checklists/manual_testing_quickstart.md`](./manual_testing_quickstart.md)
-  Praktyczna instrukcja dla testera i developera: kiedy robic szybki smoke test, kiedy seeded QA pass, jak przygotowac lokalne konta seedowe i jak korzystac z referencyjnych danych `supabase/seeds/001_baseline_reference_seed.sql`.
+  Praktyczna instrukcja dla testera i developera: kiedy robic szybki smoke test, kiedy seeded QA pass, jak przygotowac lokalne konta seedowe i jak korzystac z komend `pnpm seed:baseline-sql`, `pnpm seed:baseline-reset` oraz referencyjnych danych `supabase/seeds/001_baseline_reference_seed.sql`.
 
 - [x] `mvp_scope_and_priorities.md`
   Lokalizacja: [`documents/02_product_documents/mvp_scope_and_priorities.md`](../02_product_documents/mvp_scope_and_priorities.md)
@@ -221,7 +221,7 @@ dokumenty z `documents/archive/` zachowujemy jako kontekst historyczny, ale nie 
 - [x] Sekcje / kwatery sa na start zwyklym polem tekstowym `section_name`.
 - [x] W wersji 0.1 nie przewidujemy zdjec drzew ani zalacznikow do aktywnosci.
 - [x] Dziennik prac obsluguje wpisy historyczne i planowane.
-- [x] Export / import w 0.1 pozostaje glownie narzedziem technicznym, a w 0.2 moze trafic do UI uzytkownika.
+- [x] Export danych konta jest juz dostepny z UI profilu dla `owner`, a import pozostaje swiadomie poza obecnym MVP.
 
 ## 10. Rekomendowany minimalny komplet dokumentow przed startem implementacji
 
