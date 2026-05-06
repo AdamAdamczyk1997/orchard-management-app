@@ -24,7 +24,8 @@ export default function DashboardLoading() {
         </div>
         <DashboardLoadingCard />
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-3">
+        <DashboardLoadingCard />
         <DashboardLoadingCard />
         <DashboardLoadingCard />
       </div>

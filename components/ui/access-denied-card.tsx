@@ -23,8 +23,8 @@ export function AccessDeniedCard({
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </div>
-      <div className="flex flex-wrap gap-3">
-        <LinkButton href={backHref} variant="secondary">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <LinkButton className="w-full sm:w-auto" href={backHref} variant="secondary">
           {backLabel}
         </LinkButton>
       </div>

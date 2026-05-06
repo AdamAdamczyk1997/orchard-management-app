@@ -1,5 +1,5 @@
 import type { ZodError } from "zod";
-import type { ActionResult } from "@/types/contracts";
+import type { ActionErrorCode, ActionResult } from "@/types/contracts";
 
 export const INITIAL_ACTION_STATE: ActionResult<null> = {
   success: false,
@@ -17,7 +17,7 @@ export function createSuccessResult<T>(
 }
 
 export function createErrorResult<T>(
-  error_code: string,
+  error_code: ActionErrorCode,
   message: string,
   field_errors?: Record<string, string>,
 ): ActionResult<T> {
@@ -26,6 +26,31 @@ export function createErrorResult<T>(
     error_code,
     message,
     field_errors,
+  };
+}
+
+export function createDataErrorResult<T>(
+  error_code: ActionErrorCode,
+  message: string,
+  data: T,
+  field_errors?: Record<string, string>,
+): ActionResult<T> {
+  return {
+    success: false,
+    error_code,
+    message,
+    data,
+    field_errors,
+  };
+}
+
+export function withActionResultData<T>(
+  result: ActionResult<T>,
+  data: T,
+): ActionResult<T> {
+  return {
+    ...result,
+    data,
   };
 }
 

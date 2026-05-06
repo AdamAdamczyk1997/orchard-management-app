@@ -15,6 +15,18 @@ import {
   updateTreeAsUser,
 } from "../helpers/test-data";
 
+function isoDateFromToday(offsetDays: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offsetDays);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 describe("dashboard summary", () => {
   const createdUserIds: string[] = [];
 
@@ -270,5 +282,142 @@ describe("dashboard summary", () => {
     );
 
     expect(workerSummary).toEqual(ownerSummary);
+  });
+
+  it("returns only planned activities from today forward in ascending order with a dashboard limit", async () => {
+    const owner = await createTestUser("dashboard-upcoming-owner");
+
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("dashboard-upcoming"),
+      code: "DB-UP-01",
+    });
+    const secondOrchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("dashboard-upcoming-other"),
+      code: "DB-UP-02",
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Upcoming",
+      code: "UP-01",
+    });
+    const secondPlot = await createPlotAsUser(ownerClient, {
+      orchardId: secondOrchard.orchard_id,
+      name: "Kwatera Obca",
+      code: "UP-02",
+    });
+
+    await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        activity_type: "inspection",
+        activity_date: isoDateFromToday(-2),
+        title: "Planowana zalegla",
+        status: "planned",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+        season_phase: "wiosna",
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        activity_type: "watering",
+        activity_date: isoDateFromToday(2),
+        title: "Wykonany przyszly wpis",
+        status: "done",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+        season_phase: "wiosna",
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    const upcomingSpecs = [
+      { offsetDays: 0, title: "Plan na dzis", activityType: "inspection" as const },
+      { offsetDays: 1, title: "Plan na jutro", activityType: "watering" as const },
+      { offsetDays: 3, title: "Plan za 3 dni", activityType: "fertilizing" as const },
+      { offsetDays: 4, title: "Plan za 4 dni", activityType: "weeding" as const },
+      { offsetDays: 5, title: "Plan za 5 dni", activityType: "disease_observation" as const },
+      { offsetDays: 6, title: "Plan za 6 dni", activityType: "pest_observation" as const },
+    ];
+
+    const createdUpcomingActivityIds: string[] = [];
+
+    for (const spec of upcomingSpecs) {
+      const result = await createActivityAsUser(ownerClient, {
+        parent: {
+          orchard_id: orchard.orchard_id,
+          plot_id: plot.id,
+          activity_type: spec.activityType,
+          activity_date: isoDateFromToday(spec.offsetDays),
+          title: spec.title,
+          status: "planned",
+          performed_by_profile_id: owner.user.id,
+          performed_by: owner.profile.display_name,
+          season_phase: "wiosna",
+        },
+        scopes: [],
+        materials: [],
+      });
+
+      createdUpcomingActivityIds.push(result.activity_id);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+
+    await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: secondOrchard.orchard_id,
+        plot_id: secondPlot.id,
+        activity_type: "inspection",
+        activity_date: isoDateFromToday(1),
+        title: "Obcy plan",
+        status: "planned",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+        season_phase: "wiosna",
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    const summary = await getDashboardSummaryForOrchard(
+      orchard.orchard_id,
+      ownerClient,
+    );
+
+    expect(summary.upcoming_activities).toHaveLength(5);
+    expect(summary.upcoming_activities.map((activity) => activity.id)).toEqual([
+      createdUpcomingActivityIds[0],
+      createdUpcomingActivityIds[1],
+      createdUpcomingActivityIds[2],
+      createdUpcomingActivityIds[3],
+      createdUpcomingActivityIds[4],
+    ]);
+    expect(summary.upcoming_activities.map((activity) => activity.title)).toEqual([
+      "Plan na dzis",
+      "Plan na jutro",
+      "Plan za 3 dni",
+      "Plan za 4 dni",
+      "Plan za 5 dni",
+    ]);
+    expect(summary.upcoming_activities.map((activity) => activity.activity_type)).toEqual([
+      "inspection",
+      "watering",
+      "fertilizing",
+      "weeding",
+      "disease_observation",
+    ]);
+    expect(summary.upcoming_activities.every((activity) => activity.plot_name === "Kwatera Upcoming")).toBe(
+      true,
+    );
   });
 });

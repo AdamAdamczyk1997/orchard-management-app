@@ -17,11 +17,17 @@ Ten dokument opisuje robocze ksztalty danych przekazywanych miedzy formularzami,
 type ActionResult<T> = {
   success: boolean
   data?: T
-  error_code?: string
+  error_code?: ActionErrorCode
   message?: string
   field_errors?: Record<string, string>
 }
 ```
+
+Uwagi po `Phase 5G`:
+
+- `error_code` jest zamknietym katalogiem MVP, a nie dowolnym stringiem
+- `success = false` moze nadal zwracac `data`, jesli formularz powinien zachowac
+  preview albo dane naprawcze, np. w batch tree flows
 
 ## 2. Kontrakt auth i profilu
 
@@ -803,17 +809,32 @@ type DashboardSummary = {
     quantity_kg: number
     plot_name: string
   }>
+  upcoming_activities: Array<{
+    id: string
+    title: string
+    activity_date: string
+    activity_type: ActivityType
+    plot_name: string
+  }>
 }
 ```
 
-Uwaga Phase 5A:
+Uwaga Phase 5F:
 
-- `DashboardSummary` nie zawiera jeszcze `upcoming_activities`
-- osobny planning block dla dashboardu jest odlozony do kolejnego sub-slice
+- `upcoming_activities` zawiera tylko rekordy `activities.status = 'planned'`
+- feed pokazuje tylko wpisy z `activity_date >= today`
+- feed jest orchard-scoped, sortowany rosnaco po `activity_date`, potem po `created_at`
+- feed jest ograniczony do 5 rekordow
 
 ## 11. Kontrakt eksportu
 
 ```ts
+type ExportAvailabilitySummary = {
+  can_export: boolean
+  scope: "owned_orchards" | "all_orchards_admin"
+  orchards_count: number
+}
+
 type ExportAccountDataResult = {
   version: "1"
   exported_at: string
@@ -846,6 +867,13 @@ type ExportAccountDataResult = {
   }>
 }
 ```
+
+Uwagi `0.2`:
+
+- `scope = "owned_orchards"` oznacza eksport tylko orchard z aktywnym membership `owner`.
+- `scope = "all_orchards_admin"` oznacza administracyjny eksport wszystkich orchard widocznych dla `super_admin`.
+- `orchards_count` liczy orchard zgodnie z aktualnym `scope`.
+- `ExportAccountDataResult` nie zmienia shape; zmienia sie tylko zestaw `orchards` zalezne od `scope`.
 
 ## 12. Zasada dla mapowania danych
 

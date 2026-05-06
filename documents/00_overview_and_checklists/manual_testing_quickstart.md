@@ -47,6 +47,7 @@ Rekomendowany workflow:
 1. Uruchom `pnpm seed:baseline-reset`.
 2. Uruchom `pnpm qa:baseline-status` i upewnij sie, ze wynik to `READY`.
 3. Uruchom `pnpm test:e2e`.
+4. Jesli po automatyce chcesz od razu wejsc w reczny smoke, wykonaj ponownie `pnpm seed:baseline-reset` i jeszcze raz sprawdz `pnpm qa:baseline-status`, bo suite'y dopisuja dane scenariuszy do baseline.
 
 Aktualny pakiet `Playwright` pokrywa onboarding, orchard switcher, ograniczenia `worker`, outsider onboarding, glowne flow `plot -> variety -> tree`, aktywnosci sezonowe, raport zbiorow oraz batch create / bulk deactivate.
 

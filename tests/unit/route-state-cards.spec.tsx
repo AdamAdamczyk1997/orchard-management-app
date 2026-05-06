@@ -19,6 +19,8 @@ vi.mock("next/link", () => ({
 
 import { PrerequisiteCard } from "@/components/ui/prerequisite-card";
 import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
+import { AccessDeniedCard } from "@/components/ui/access-denied-card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 
 describe("route state cards", () => {
   it("renders a missing-record recovery card with a back action", () => {
@@ -57,5 +59,44 @@ describe("route state cards", () => {
     expect(markup).toContain("Wroc do drzew");
     expect(markup).toContain('href="/plots/new"');
     expect(markup).toContain('href="/trees"');
+    expect(markup).toContain("w-full sm:w-auto");
+  });
+
+  it("renders permission recovery with a single clear back action", () => {
+    const markup = renderToStaticMarkup(
+      <AccessDeniedCard
+        backHref="/dashboard"
+        backLabel="Wroc do panelu"
+        description="Tylko wlasciciel moze otworzyc ten ekran."
+      />,
+    );
+
+    expect(markup).toContain("Brak dostepu do tego obszaru");
+    expect(markup).toContain("Tylko wlasciciel moze otworzyc ten ekran.");
+    expect(markup).toContain("Wroc do panelu");
+    expect(markup).toContain('href="/dashboard"');
+    expect(markup).toContain("w-full sm:w-auto");
+  });
+
+  it("renders empty-state actions with the recovery action first on mobile-friendly buttons", () => {
+    const markup = renderToStaticMarkup(
+      <EmptyStateCard
+        actions={[
+          { href: "/trees", label: "Wyczysc filtry", variant: "secondary" },
+          { href: "/trees/new", label: "Utworz drzewo", variant: "ghost" },
+        ]}
+        description="Zmien filtr, aby zobaczyc pozostale drzewa."
+        title="Brak wynikow dla wybranych filtrow"
+      />,
+    );
+
+    expect(markup).toContain("Brak wynikow dla wybranych filtrow");
+    expect(markup).toContain("Zmien filtr, aby zobaczyc pozostale drzewa.");
+    expect(markup.indexOf("Wyczysc filtry")).toBeLessThan(
+      markup.indexOf("Utworz drzewo"),
+    );
+    expect(markup).toContain('href="/trees"');
+    expect(markup).toContain('href="/trees/new"');
+    expect(markup).toContain("w-full sm:w-auto");
   });
 });

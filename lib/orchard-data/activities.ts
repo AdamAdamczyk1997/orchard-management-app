@@ -337,8 +337,9 @@ function buildScopeActivityFilter(
 export async function listActivitiesForOrchard(
   orchardId: string,
   filters: ActivityListFilters = {},
+  supabaseClient?: SupabaseClient,
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await resolveSupabaseClient(supabaseClient);
   let query = supabase
     .from("activities")
     .select(activityListSelect)

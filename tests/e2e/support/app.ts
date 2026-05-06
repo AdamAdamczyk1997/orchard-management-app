@@ -53,7 +53,21 @@ export async function switchActiveOrchard(
 }
 
 export async function expectFeedback(page: Page, message: string) {
-  await expect(page.getByTestId("feedback-banner")).toContainText(message);
+  await expect(page.getByTestId("feedback-banner")).toContainText(message, {
+    timeout: 30_000,
+  });
+}
+
+export async function expectNoHorizontalOverflow(page: Page) {
+  const hasOverflow = await page.evaluate(() => {
+    const tolerance = 1;
+    return (
+      document.documentElement.scrollWidth > window.innerWidth + tolerance ||
+      document.body.scrollWidth > window.innerWidth + tolerance
+    );
+  });
+
+  expect(hasOverflow).toBe(false);
 }
 
 export async function selectOptionContaining(

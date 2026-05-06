@@ -19,8 +19,10 @@ Ten dokument porzadkuje formaty plikow i zakres danych dla importu i eksportu.
 
 - eksport jest `account-wide` w sensie konta usera
 - eksport moze wykonac tylko `owner` albo `super_admin`
-- eksport obejmuje wszystkie orchard, dla ktorych user ma aktywne membership `owner`
+- dla zwyklego usera eksport obejmuje wszystkie orchard, dla ktorych ma aktywne membership `owner`
+- dla `super_admin` eksport obejmuje wszystkie orchard dostepne administracyjnie
 - orchard, w ktorym user jest tylko `worker`, nie trafia do eksportu
+- entry point UI pozostaje na `/settings/profile`, ktore nie wymaga aktywnego orchard dla `super_admin`
 
 ### Przykladowa nazwa pliku
 

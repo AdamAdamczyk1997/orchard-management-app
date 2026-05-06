@@ -492,7 +492,7 @@ export function ActivityForm({
           <Field
             error={state.field_errors?.performed_by_profile_id}
             htmlFor="performed_by_profile_id"
-            label="Wykonawca z orchard"
+            label="Wykonawca z tego sadu"
           >
             <Select
               defaultValue={

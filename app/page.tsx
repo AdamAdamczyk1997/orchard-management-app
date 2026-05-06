@@ -15,6 +15,18 @@ export default async function HomePage() {
     redirect("/bootstrap-error");
   }
 
+  const isSuperAdminWithoutOrchard =
+    context.profile?.system_role === "super_admin" &&
+    (context.requires_onboarding || !context.orchard);
+
+  if (isSuperAdminWithoutOrchard) {
+    if (context.should_clear_cookie) {
+      redirect(buildActiveOrchardSyncPath({ next: "/settings/profile" }));
+    }
+
+    redirect("/settings/profile");
+  }
+
   if (context.requires_onboarding || !context.orchard) {
     if (context.should_clear_cookie) {
       redirect(buildActiveOrchardSyncPath({ next: "/orchards/new" }));

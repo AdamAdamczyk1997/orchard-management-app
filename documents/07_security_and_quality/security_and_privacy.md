@@ -59,8 +59,8 @@ Na obecnym etapie nie zakladamy przetwarzania szczegolnych kategorii danych osob
 
 ## 7. Prywatnosc usera
 
-- user powinien miec mozliwosc wykonania `exportAccountData`, jesli ma aktywne membership `owner` w co najmniej jednym orchard
-- eksport pozostaje account-wide, ale obejmuje tylko orchard, w ktorych user ma aktywne membership `owner`
+- user powinien miec mozliwosc wykonania `exportAccountData`, jesli ma aktywne membership `owner` w co najmniej jednym orchard albo role `super_admin`
+- eksport pozostaje account-wide; dla zwyklego usera obejmuje tylko orchard z aktywnym membership `owner`, a dla `super_admin` wszystkie orchard dostepne administracyjnie
 - `worker` nie moze eksportowac wspoldzielonych danych
 - w przyszlosci wart przewidziec proces usuniecia konta i danych
 - w MVP wazne jest co najmniej bezpieczne oddzielenie danych miedzy kontami i orchard

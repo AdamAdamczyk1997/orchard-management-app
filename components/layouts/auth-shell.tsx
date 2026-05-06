@@ -22,7 +22,7 @@ export function AuthShell({ children }: AuthShellProps) {
           </div>
           <div className="grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-[#d7e3d8]">
             <p>Logowanie i sesje obsluguje Supabase Auth.</p>
-            <p>Kontekst pracy jest rozwiazywany jako `active_orchard`.</p>
+            <p>Kontekst pracy jest rozwiazywany po stronie serwera jako aktywny sad.</p>
             <p>Dane operacyjne od poczatku pozostaja powiazane z konkretnym sadem.</p>
           </div>
         </section>

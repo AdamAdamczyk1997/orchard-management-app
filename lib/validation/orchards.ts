@@ -37,7 +37,7 @@ export const inviteOrchardMemberSchema = z.object({
 });
 
 export const deactivateOrchardMembershipSchema = z.object({
-  membership_id: trimmedString().uuid("Wybierz poprawne czlonkostwo orchard."),
+  membership_id: trimmedString().uuid("Wybierz poprawne czlonkostwo w sadzie."),
 });
 
 export const setActiveOrchardSchema = z.object({

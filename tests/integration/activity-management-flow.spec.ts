@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   getSeasonalActivityCoverageForOrchard,
   getSeasonalActivitySummaryForOrchard,
+  listActivitiesForOrchard,
   readActivityByIdForOrchard,
 } from "@/lib/orchard-data/activities";
 import { createAdminClient } from "../helpers/supabase";
@@ -438,6 +439,149 @@ describe("activity management flow", () => {
     expect(invalidRangeScope.error?.message).toContain(
       "ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED",
     );
+  });
+
+  it("filters activities by tree_id across direct and scoped tree links without orchard leakage", async () => {
+    const owner = await createTestUser("activity-tree-filter-owner");
+    const outsider = await createTestUser("activity-tree-filter-outsider");
+
+    createdUserIds.push(owner.user.id, outsider.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const outsiderClient = (await signInTestUser(outsider.email, outsider.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("activity-tree-filter"),
+      code: "ACT-TREE",
+    });
+    const outsiderOrchard = await createOrchardAsUser(outsiderClient, {
+      name: createTestOrchardName("activity-tree-filter-outsider"),
+      code: "ACT-OUT",
+    });
+
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera F",
+      code: "F-01",
+    });
+    const targetTree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: plot.id,
+      species: "apple",
+      treeCode: "F-01-01",
+      displayName: "Docelowe drzewo",
+      rowNumber: 1,
+      positionInRow: 1,
+    });
+    const otherTree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: plot.id,
+      species: "apple",
+      treeCode: "F-01-02",
+      displayName: "Inne drzewo",
+      rowNumber: 1,
+      positionInRow: 2,
+    });
+    const outsiderPlot = await createPlotAsUser(outsiderClient, {
+      orchardId: outsiderOrchard.orchard_id,
+      name: "Obca kwatera",
+      code: "OUT-01",
+    });
+    const outsiderTree = await createTreeAsUser(outsiderClient, {
+      orchardId: outsiderOrchard.orchard_id,
+      plotId: outsiderPlot.id,
+      species: "pear",
+      treeCode: "OUT-01-01",
+      displayName: "Obce drzewo",
+      rowNumber: 2,
+      positionInRow: 1,
+    });
+
+    const scopedActivity = await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        activity_type: "inspection",
+        activity_date: "2026-04-10",
+        title: "Inspekcja zakresu drzewa",
+        status: "done",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+      },
+      scopes: [
+        {
+          scope_level: "tree",
+          tree_id: targetTree.id,
+          scope_order: 1,
+        },
+      ],
+      materials: [],
+    });
+
+    const directActivity = await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        tree_id: targetTree.id,
+        activity_type: "spraying",
+        activity_date: "2026-04-12",
+        title: "Oprysk pojedynczego drzewa",
+        status: "done",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    await createActivityAsUser(ownerClient, {
+      parent: {
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        tree_id: otherTree.id,
+        activity_type: "watering",
+        activity_date: "2026-04-13",
+        title: "Podlewanie innego drzewa",
+        status: "done",
+        performed_by_profile_id: owner.user.id,
+        performed_by: owner.profile.display_name,
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    await createActivityAsUser(outsiderClient, {
+      parent: {
+        orchard_id: outsiderOrchard.orchard_id,
+        plot_id: outsiderPlot.id,
+        tree_id: outsiderTree.id,
+        activity_type: "inspection",
+        activity_date: "2026-04-14",
+        title: "Obca aktywnosc drzewa",
+        status: "done",
+        performed_by_profile_id: outsider.user.id,
+        performed_by: outsider.profile.display_name,
+      },
+      scopes: [],
+      materials: [],
+    });
+
+    const filteredActivities = await listActivitiesForOrchard(
+      orchard.orchard_id,
+      {
+        tree_id: targetTree.id,
+      },
+      ownerClient,
+    );
+
+    expect(filteredActivities.map((activity) => activity.id)).toEqual([
+      directActivity.activity_id,
+      scopedActivity.activity_id,
+    ]);
+    expect(filteredActivities.map((activity) => activity.title)).toEqual([
+      "Oprysk pojedynczego drzewa",
+      "Inspekcja zakresu drzewa",
+    ]);
+    expect(filteredActivities.every((activity) => activity.plot_name === "Kwatera F")).toBe(true);
   });
 
   it("keeps the write atomic when a scope tree belongs to another plot", async () => {

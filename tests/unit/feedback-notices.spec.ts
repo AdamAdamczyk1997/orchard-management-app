@@ -9,7 +9,18 @@ describe("feedback notice helpers", () => {
   it("resolves only supported notice codes", () => {
     expect(resolveFeedbackNotice("plot_created")).toEqual({
       code: "plot_created",
+      tone: "success",
+      eyebrow: "Gotowe",
+      title: "Zmiany zapisane",
       message: "Dzialka zostala utworzona.",
+    });
+    expect(resolveFeedbackNotice("orchard_switch_unavailable")).toEqual({
+      code: "orchard_switch_unavailable",
+      tone: "warning",
+      eyebrow: "Uwaga",
+      title: "Aktywny sad bez zmian",
+      message:
+        "Nie udalo sie przelaczyc aktywnego sadu. Odswiez widok i wybierz sad ponownie.",
     });
     expect(resolveFeedbackNotice("unknown")).toBeNull();
     expect(resolveFeedbackNotice(undefined)).toBeNull();

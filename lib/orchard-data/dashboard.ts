@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { ActivityStatus, DashboardSummary } from "@/types/contracts";
+import type { ActivityStatus, ActivityType, DashboardSummary } from "@/types/contracts";
+
+const DASHBOARD_FEED_LIMIT = 5;
 
 type JoinedPlotRow =
   | {
@@ -30,12 +32,30 @@ type RecentHarvestQueryRow = {
   plot: JoinedPlotRow;
 };
 
+type UpcomingActivityQueryRow = {
+  id: string;
+  title: string;
+  activity_date: string;
+  activity_type: ActivityType;
+  created_at: string;
+  plot: JoinedPlotRow;
+};
+
 function pickJoinedRecord<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
 async function resolveSupabaseClient(supabaseClient?: SupabaseClient) {
   return supabaseClient ?? createSupabaseServerClient();
+}
+
+function getTodayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function mapRecentActivity(
@@ -65,16 +85,32 @@ function mapRecentHarvest(
   };
 }
 
+function mapUpcomingActivity(
+  row: UpcomingActivityQueryRow,
+): DashboardSummary["upcoming_activities"][number] {
+  const plot = pickJoinedRecord(row.plot);
+
+  return {
+    id: row.id,
+    title: row.title,
+    activity_date: row.activity_date,
+    activity_type: row.activity_type,
+    plot_name: plot?.name ?? "Nieznana dzialka",
+  };
+}
+
 export async function getDashboardSummaryForOrchard(
   orchardId: string,
   supabaseClient?: SupabaseClient,
 ) {
   const supabase = await resolveSupabaseClient(supabaseClient);
+  const todayIsoDate = getTodayIsoDate();
   const [
     { count: activePlotsCount, error: activePlotsError },
     { count: activeTreesCount, error: activeTreesError },
     { data: recentActivitiesData, error: recentActivitiesError },
     { data: recentHarvestsData, error: recentHarvestsError },
+    { data: upcomingActivitiesData, error: upcomingActivitiesError },
   ] = await Promise.all([
     supabase
       .from("plots")
@@ -104,7 +140,7 @@ export async function getDashboardSummaryForOrchard(
       .eq("orchard_id", orchardId)
       .order("activity_date", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(5),
+      .limit(DASHBOARD_FEED_LIMIT),
     supabase
       .from("harvest_records")
       .select(
@@ -122,7 +158,28 @@ export async function getDashboardSummaryForOrchard(
       .eq("orchard_id", orchardId)
       .order("harvest_date", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(5),
+      .limit(DASHBOARD_FEED_LIMIT),
+    supabase
+      .from("activities")
+      .select(
+        `
+          id,
+          title,
+          activity_date,
+          activity_type,
+          created_at,
+          plot:plots (
+            id,
+            name
+          )
+        `,
+      )
+      .eq("orchard_id", orchardId)
+      .eq("status", "planned")
+      .gte("activity_date", todayIsoDate)
+      .order("activity_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(DASHBOARD_FEED_LIMIT),
   ]);
 
   if (activePlotsError) {
@@ -141,6 +198,10 @@ export async function getDashboardSummaryForOrchard(
     throw recentHarvestsError;
   }
 
+  if (upcomingActivitiesError) {
+    throw upcomingActivitiesError;
+  }
+
   return {
     active_plots_count: activePlotsCount ?? 0,
     active_trees_count: activeTreesCount ?? 0,
@@ -149,6 +210,9 @@ export async function getDashboardSummaryForOrchard(
     ),
     recent_harvests: ((recentHarvestsData ?? []) as RecentHarvestQueryRow[]).map(
       mapRecentHarvest,
+    ),
+    upcoming_activities: ((upcomingActivitiesData ?? []) as UpcomingActivityQueryRow[]).map(
+      mapUpcomingActivity,
     ),
   } satisfies DashboardSummary;
 }

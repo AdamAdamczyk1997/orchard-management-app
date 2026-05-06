@@ -32,7 +32,7 @@ export async function GET() {
         success: false,
         error_code: "EXPORT_NOT_ALLOWED_FOR_ROLE",
         message:
-          "Eksport danych konta jest dostepny tylko dla wlasciciela co najmniej jednego sadu.",
+          "Eksport danych konta jest dostepny tylko dla wlasciciela co najmniej jednego sadu albo administratora systemu.",
       },
       { status: 403 },
     );

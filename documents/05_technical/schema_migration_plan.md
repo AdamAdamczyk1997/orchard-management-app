@@ -84,6 +84,8 @@ Rekomendowana kolejnosc plikow:
 | `022` | `022_wrap_auth_uid_in_orchards_insert_policy.sql` | optymalizacja `auth.uid()` w polityce `INSERT` dla `orchards` | `014`, `021` |
 | `023` | `023_create_tree_batch_tools.sql` | `bulk_tree_import_batches`, `trees.planted_batch_id`, RPC dla batch create i bulk deactivate | `005`, `007`, `014`, `017` |
 | `024` | `024_extend_plots_with_layout_settings.sql` | `plots.layout_type`, schematy numeracji, punkt odniesienia i notatki ukladu | `005`, `014` |
+| `025` | `025_add_plot_layout_guards_for_activity_and_harvest_locations.sql` | trigger hardening dla `activity_scopes` i `harvest_records` z uwzglednieniem `plots.layout_type` | `009`, `011`, `012`, `024` |
+| `026` | `026_harden_operational_query_indexes.sql` | celowane indeksy pod dashboard, tree-filtered `activities` oraz listy i raporty `harvest_records` | `007`-`011`, `023`, `025` |
 
 ### Zaleznosci pakietu
 
@@ -155,6 +157,8 @@ Rekomendowana kolejnosc plikow:
 
 - `023_create_tree_batch_tools.sql`
 - `024_extend_plots_with_layout_settings.sql`
+- `025_add_plot_layout_guards_for_activity_and_harvest_locations.sql`
+- `026_harden_operational_query_indexes.sql`
 - `bulk_tree_import_batches`
 - `trees.planted_batch_id`
 - `plots.layout_type`
@@ -164,6 +168,8 @@ Rekomendowana kolejnosc plikow:
 - `layout_notes`
 - `default_row_count`
 - `default_trees_per_row`
+- triggerowe blokady `row` / `location_range` dla dzialek `irregular` w `activity_scopes` i `harvest_records`
+- indeksy operacyjne pod dashboard feeds, tree-filtered `activities` oraz harvest list/report queries
 
 ### Delivered in immediate `v1_security` and hardening package
 
@@ -274,12 +280,13 @@ Pokryte scenariusze:
 
 ### Validation status of the current package
 
-- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`024`
+- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`026`
 - lokalne `supabase db reset` przechodzi dla aktualnego pakietu
 - lokalne `pnpm seed:baseline-users` tworzy albo aktualizuje komplet 6 kont seedowych wymaganych przez `001_baseline_reference_seed.sql`
 - lokalne `pnpm seed:baseline-sql` odpala referencyjny seed SQL przez Supabase CLI bez recznego SQL Editor
 - lokalne `pnpm seed:baseline-reset` spina reset bazy, bootstrap `auth.users` i odpalanie referencyjnego seedu
 - lokalne `pnpm qa:baseline-status` pozwala potwierdzic, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
+- lokalne `supabase db lint` przechodzi po dodaniu `026_harden_operational_query_indexes.sql`
 - lokalne `supabase db lint --local -o json` nie zgłasza juz warningow `Function Search Path Mutable`, `Multiple Permissive Policies` ani `Auth RLS Initialization Plan`; obecnie pozostaje tylko niezwiązany warning o nieuzywanej zmiennej `v_membership_joined_at` w RPC `create_orchard_with_owner_membership(...)`
 - pakiet jest gotowy do uruchomienia lokalnie w srodowisku z PostgreSQL lub Supabase CLI
 

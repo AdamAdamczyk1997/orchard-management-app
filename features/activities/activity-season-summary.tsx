@@ -182,11 +182,11 @@ export function ActivitySeasonSummary({
           </Select>
         </label>
         <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
-          <Button type="submit" variant="secondary">
+          <Button className="w-full sm:w-auto" type="submit" variant="secondary">
             Pokaz podsumowanie
           </Button>
-          <LinkButton href={resetHref} variant="ghost">
-            Przywroc domyslne
+          <LinkButton className="w-full sm:w-auto" href={resetHref} variant="ghost">
+            Wyczysc filtry
           </LinkButton>
         </div>
       </form>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { readCurrentProfile } from "@/lib/auth/get-current-profile";
 import { requireSessionUser } from "@/lib/auth/require-session-user";
+import { buildRedirectTargetWithNotice } from "@/lib/domain/feedback-notices";
 import { persistActiveOrchardCookie } from "@/lib/orchard-context/active-orchard-cookie";
 import { listAccessibleOrchards } from "@/lib/orchard-context/list-accessible-orchards";
 import { resolveActiveOrchardContext } from "@/lib/orchard-context/resolve-active-orchard";
@@ -18,6 +19,7 @@ import {
   createValidationErrorResult,
 } from "@/lib/errors/action-result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeNextPath } from "@/lib/utils/navigation";
 import { formDataToObject } from "@/lib/validation/form-data";
 import {
   createOrchardSchema,
@@ -421,10 +423,18 @@ export async function inviteOrchardMember(
 }
 
 export async function setActiveOrchard(formData: FormData) {
+  const nextPath = normalizeNextPath(
+    String(formData.get("next_path") ?? ""),
+    "/dashboard",
+  );
+  const failureRedirectTarget = buildRedirectTargetWithNotice(
+    "/dashboard",
+    "orchard_switch_unavailable",
+  );
   const parsed = setActiveOrchardSchema.safeParse(formDataToObject(formData));
 
   if (!parsed.success) {
-    throw new Error("Wybrany sad jest niepoprawny.");
+    redirect(failureRedirectTarget);
   }
 
   const user = await requireSessionUser();
@@ -434,20 +444,28 @@ export async function setActiveOrchard(formData: FormData) {
   );
 
   if (!selectedOrchard) {
-    throw new Error("Wybrany sad nie jest dostepny dla tego konta.");
+    redirect(failureRedirectTarget);
   }
 
   await persistActiveOrchardCookie(selectedOrchard.orchard.id);
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect(nextPath);
 }
 
 export async function deactivateOrchardMembership(formData: FormData) {
   const parsed = deactivateOrchardMembershipSchema.safeParse(formDataToObject(formData));
   const redirectTarget = "/settings/members";
+  const blockedRedirectTarget = buildRedirectTargetWithNotice(
+    redirectTarget,
+    "member_revoke_blocked",
+  );
+  const successRedirectTarget = buildRedirectTargetWithNotice(
+    redirectTarget,
+    "member_revoked",
+  );
 
   if (!parsed.success) {
-    redirect(redirectTarget);
+    redirect(blockedRedirectTarget);
   }
 
   const context = await resolveActiveOrchardContext();
@@ -459,22 +477,22 @@ export async function deactivateOrchardMembership(formData: FormData) {
     !context.orchard ||
     !context.membership
   ) {
-    redirect(redirectTarget);
+    redirect(blockedRedirectTarget);
   }
 
   if (context.membership.role !== "owner") {
-    redirect("/dashboard");
+    redirect(blockedRedirectTarget);
   }
 
   const members = await listOrchardMembersForOrchard(context.orchard.id);
   const membership = members.find((member) => member.id === parsed.data.membership_id);
 
   if (!membership || membership.status !== "active" || membership.role === "owner") {
-    redirect(redirectTarget);
+    redirect(blockedRedirectTarget);
   }
 
   const supabase = await createSupabaseServerClient();
-  await supabase
+  const { error } = await supabase
     .from("orchard_memberships")
     .update({
       status: "revoked",
@@ -482,9 +500,13 @@ export async function deactivateOrchardMembership(formData: FormData) {
     .eq("id", membership.id)
     .eq("orchard_id", context.orchard.id);
 
+  if (error) {
+    redirect(blockedRedirectTarget);
+  }
+
   revalidatePath("/settings/members");
   revalidatePath("/", "layout");
-  redirect(redirectTarget);
+  redirect(successRedirectTarget);
 }
 
 export async function markOnboardingDismissed() {

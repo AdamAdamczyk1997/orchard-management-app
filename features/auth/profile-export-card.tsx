@@ -21,6 +21,16 @@ function getOwnedOrchardsLabel(count: number) {
   return `${count} sadow`;
 }
 
+function getExportScopeLabel(availability: ExportAvailabilitySummary) {
+  const orchardsLabel = getOwnedOrchardsLabel(availability.orchards_count);
+
+  if (availability.scope === "all_orchards_admin") {
+    return `${orchardsLabel} dostepne administracyjnie`;
+  }
+
+  return `${orchardsLabel}, w ktorych masz aktywna role wlasciciela`;
+}
+
 function getFilenameFromDisposition(disposition: string | null) {
   if (!disposition) {
     return null;
@@ -81,7 +91,7 @@ export function ProfileExportCard({ availability }: ProfileExportCardProps) {
 
       setMessageTone("success");
       setMessage(
-        `Plik eksportu jest gotowy do pobrania. Zakres: ${getOwnedOrchardsLabel(availability.owned_orchards_count)} z aktywnym membership owner.`,
+        `Plik eksportu jest gotowy do pobrania. Zakres: ${getExportScopeLabel(availability)}.`,
       );
     } catch {
       setMessageTone("error");
@@ -117,8 +127,9 @@ export function ProfileExportCard({ availability }: ProfileExportCardProps) {
         </p>
         <CardTitle>Eksport konta</CardTitle>
         <CardDescription>
-          Pobierz plik JSON z danymi profilu oraz orchard, w ktorych masz aktywne
-          membership `owner`. Aktualny zakres eksportu obejmuje {getOwnedOrchardsLabel(availability.owned_orchards_count)}.
+          {availability.scope === "all_orchards_admin"
+            ? `Pobierz plik JSON z danymi profilu oraz wszystkimi sadami dostepnymi administracyjnie. Aktualny zakres eksportu obejmuje ${getOwnedOrchardsLabel(availability.orchards_count)}.`
+            : `Pobierz plik JSON z danymi profilu oraz sadami, w ktorych masz aktywna role wlasciciela. Aktualny zakres eksportu obejmuje ${getOwnedOrchardsLabel(availability.orchards_count)}.`}
         </CardDescription>
       </div>
       <div className="flex flex-wrap items-center gap-3">

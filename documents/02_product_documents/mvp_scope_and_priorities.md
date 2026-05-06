@@ -192,7 +192,7 @@ Uwaga implementacyjna:
 
 ### 5. Import / export z poziomu aplikacji
 
-- export danych konta do pliku dla `owner`
+- export danych konta do pliku dla `owner`, a administracyjnie takze dla `super_admin`
 - import wybranych danych z kontrola walidacji
 
 ## Zakres `later`

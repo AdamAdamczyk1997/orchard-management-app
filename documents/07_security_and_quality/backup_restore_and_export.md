@@ -32,7 +32,8 @@ Utrata danych moze byc bardzo kosztowna, dlatego backup i eksport nie sa dodatki
 
 - eksport jest `account-wide`
 - eksport moze wykonac tylko `owner` albo `super_admin`
-- eksport obejmuje wszystkie orchard, dla ktorych user ma aktywne membership `owner`
+- dla zwyklego usera eksport obejmuje wszystkie orchard, dla ktorych ma aktywne membership `owner`
+- dla `super_admin` eksport obejmuje wszystkie orchard dostepne administracyjnie
 - orchard, w ktorym user jest tylko `worker`, nie jest eksportowany
 
 ### Zakres minimalny

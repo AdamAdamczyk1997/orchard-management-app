@@ -24,7 +24,7 @@ export function OnboardingIntro({ compact = false }: OnboardingIntroProps) {
         <p>1. Tworzysz rekord sadu.</p>
         <p>2. Aplikacja automatycznie nadaje Ci role `owner`.</p>
         <p>
-          3. `active_orchard` ustawia sie po stronie serwera i otwiera sie shell
+          3. Po stronie serwera ustawia sie aktywny sad i otwiera sie shell
           aplikacji.
         </p>
       </div>

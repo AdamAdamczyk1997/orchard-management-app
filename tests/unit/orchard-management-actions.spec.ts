@@ -160,6 +160,94 @@ describe("orchard management server actions", () => {
 
     await expect(deactivateOrchardMembership(formData)).rejects.toThrow("REDIRECT");
     expect(fromMock).not.toHaveBeenCalled();
-    expect(redirectMock).toHaveBeenCalledWith("/settings/members");
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/settings/members?notice=member_revoke_blocked",
+    );
+  });
+
+  it("keeps the current route when switching the active orchard", async () => {
+    requireSessionUserMock.mockResolvedValue({ id: "owner-profile" });
+    listAccessibleOrchardsMock.mockResolvedValue([
+      {
+        orchard: {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Sad glowny",
+        },
+      },
+      {
+        orchard: {
+          id: "22222222-2222-4222-8222-222222222222",
+          name: "Sad poludniowy",
+        },
+      },
+    ]);
+
+    const { setActiveOrchard } = await import("@/server/actions/orchards");
+    const formData = new FormData();
+    formData.set("orchard_id", "22222222-2222-4222-8222-222222222222");
+    formData.set("next_path", "/plots?status=active");
+
+    await expect(setActiveOrchard(formData)).rejects.toThrow("REDIRECT");
+    expect(persistActiveOrchardCookieMock).toHaveBeenCalledWith(
+      "22222222-2222-4222-8222-222222222222",
+    );
+    expect(redirectMock).toHaveBeenCalledWith("/plots?status=active");
+  });
+
+  it("redirects with a warning notice when the requested orchard is unavailable", async () => {
+    requireSessionUserMock.mockResolvedValue({ id: "owner-profile" });
+    listAccessibleOrchardsMock.mockResolvedValue([
+      {
+        orchard: {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Sad glowny",
+        },
+      },
+    ]);
+
+    const { setActiveOrchard } = await import("@/server/actions/orchards");
+    const formData = new FormData();
+    formData.set("orchard_id", "22222222-2222-4222-8222-222222222222");
+    formData.set("next_path", "/trees");
+
+    await expect(setActiveOrchard(formData)).rejects.toThrow("REDIRECT");
+    expect(persistActiveOrchardCookieMock).not.toHaveBeenCalled();
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/dashboard?notice=orchard_switch_unavailable",
+    );
+  });
+
+  it("shows a success notice after revoking an active non-owner membership", async () => {
+    listOrchardMembersForOrchardMock.mockResolvedValue([
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        orchard_id: "orchard-1",
+        profile_id: "worker-profile",
+        email: "worker@orchardlog.local",
+        display_name: "Worker",
+        role: "worker",
+        status: "active",
+        joined_at: "2026-04-19T08:00:00Z",
+      },
+    ]);
+
+    const eqSecondMock = vi.fn().mockResolvedValue({ error: null });
+    const eqFirstMock = vi.fn().mockReturnValue({ eq: eqSecondMock });
+    const updateMock = vi.fn().mockReturnValue({ eq: eqFirstMock });
+    const fromMock = vi.fn().mockReturnValue({ update: updateMock });
+    createSupabaseServerClientMock.mockResolvedValue({
+      from: fromMock,
+    });
+
+    const { deactivateOrchardMembership } = await import("@/server/actions/orchards");
+    const formData = new FormData();
+    formData.set("membership_id", "11111111-1111-4111-8111-111111111111");
+
+    await expect(deactivateOrchardMembership(formData)).rejects.toThrow("REDIRECT");
+    expect(fromMock).toHaveBeenCalledWith("orchard_memberships");
+    expect(updateMock).toHaveBeenCalledWith({ status: "revoked" });
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/settings/members?notice=member_revoked",
+    );
   });
 });

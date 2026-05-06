@@ -35,11 +35,11 @@ export function HarvestList({
     return hasActiveFilters ? (
       <EmptyStateCard
         actions={[
-          { href: clearHref, label: "Przywroc domyslne", variant: "secondary" },
+          { href: clearHref, label: "Wyczysc filtry", variant: "secondary" },
           { href: createHref, label: "Nowy wpis zbioru", variant: "ghost" },
         ]}
         description="Zmien sezon, zakres dat, dzialke albo odmiane, aby zobaczyc inne rekordy zbioru."
-        title="Brak wpisow zbioru dla wybranych filtrow"
+        title="Brak wynikow dla wybranych filtrow"
       />
     ) : (
       <EmptyStateCard

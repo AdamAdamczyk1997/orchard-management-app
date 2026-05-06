@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
@@ -87,13 +88,17 @@ async function VarietiesPageContent({
             w kolejnych etapach pracy.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 text-[#eff2ed]">
-          <div className="text-[#0c0c0c]">
-            <LinkButton href="/reports/variety-locations" variant="secondary">
-              Raport lokalizacji
-            </LinkButton>
-          </div>
-          <LinkButton href="/varieties/new">Utworz odmiane</LinkButton>
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href="/reports/variety-locations"
+            variant="secondary"
+          >
+            Raport lokalizacji
+          </LinkButton>
+          <LinkButton className="w-full sm:w-auto" href="/varieties/new">
+            Utworz odmiane
+          </LinkButton>
         </div>
       </div>
 
@@ -113,14 +118,11 @@ async function VarietiesPageContent({
               placeholder="np. Ligol lub apple"
             />
           </label>
-          <button
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#efe6d3] px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#e5d9bf]"
-            type="submit"
-          >
+          <Button className="w-full sm:w-auto" type="submit" variant="secondary">
             Zastosuj
-          </button>
-          <LinkButton href="/varieties" variant="ghost">
-            Wyczyść
+          </Button>
+          <LinkButton className="w-full sm:w-auto" href="/varieties" variant="ghost">
+            Wyczysc filtry
           </LinkButton>
         </form>
       </Card>

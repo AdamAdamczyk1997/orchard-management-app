@@ -52,6 +52,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
       activeRole={context.membership.role}
       availableOrchards={context.available_orchards}
       canManageOrchard={context.membership.role === "owner"}
+      currentPath={currentPath}
       profile={context.profile}
     >
       {children}

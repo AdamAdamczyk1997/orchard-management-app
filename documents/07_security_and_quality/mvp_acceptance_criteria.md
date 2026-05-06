@@ -123,8 +123,10 @@ Ten dokument zbiera minimalne kryteria, po ktorych uznamy, ze pierwsza wersja ap
 ## 9. Export konta - etap 0.2
 
 - `owner` moze wykonac `exportAccountData`.
+- `super_admin` moze wykonac administracyjny eksport danych bez aktywnego orchard.
 - `worker` nie moze eksportowac danych konta.
-- Eksport obejmuje tylko orchard, gdzie user ma aktywne membership `owner`.
+- Eksport ownera obejmuje tylko orchard, gdzie user ma aktywne membership `owner`.
+- Eksport `super_admin` obejmuje wszystkie orchard dostepne administracyjnie.
 
 ## 10. Batch create drzew - etap 0.2
 

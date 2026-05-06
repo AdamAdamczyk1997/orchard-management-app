@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { LinkButton } from "@/components/ui/link-button";
@@ -89,8 +90,10 @@ async function PlotsPageContent({
             do nich beda pozniej przypiete drzewa, aktywnosci i wpisy zbioru.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 text-[#eff2ed]">
-          <LinkButton href="/plots/new">Utworz dzialke</LinkButton>
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <LinkButton className="w-full sm:w-auto" href="/plots/new">
+            Utworz dzialke
+          </LinkButton>
         </div>
       </div>
 
@@ -113,14 +116,11 @@ async function PlotsPageContent({
               <option value="all">Wszystkie dzialki</option>
             </Select>
           </label>
-          <button
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#efe6d3] px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#e5d9bf]"
-            type="submit"
-          >
+          <Button className="w-full sm:w-auto" type="submit" variant="secondary">
             Zastosuj
-          </button>
-          <LinkButton href="/plots" variant="ghost">
-            Wyczyść
+          </Button>
+          <LinkButton className="w-full sm:w-auto" href="/plots" variant="ghost">
+            Wyczysc filtry
           </LinkButton>
         </form>
       </Card>

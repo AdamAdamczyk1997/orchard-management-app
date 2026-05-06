@@ -301,15 +301,18 @@ To nie jest klasyczny formularz zapisu, tylko akcja pobrania pliku JSON z danymi
 
 | Element | Wymagane | Domyslna wartosc | Walidacja / uwagi |
 |---|---:|---|---|
-| `Pobierz eksport konta` | tak | aktywny dla ownera | dostepne tylko, jesli user ma co najmniej jedno aktywne membership `owner` |
+| `Pobierz eksport konta` | tak | aktywny dla eligible ownera albo `super_admin` | dla zwyklego usera wymaga co najmniej jednego aktywnego membership `owner`; dla `super_admin` pozostaje dostepne takze bez aktywnego orchard |
 | `pending state` | techniczne | ukryty | podczas pobierania blokuje ponowne klikniecie i pokazuje stan przygotowywania eksportu |
-| `success message` | techniczne | ukryty | potwierdza pobranie i zakres liczby owned orchards |
+| `success message` | techniczne | ukryty | potwierdza pobranie i zakres liczby orchard zgodny z aktualnym `scope` eksportu |
 | `error message` | techniczne | ukryty | pokazuje blad route `/settings/profile/export` lub brak uprawnien |
 
 Uwagi:
 
-- Eksport jest account-wide, ale obejmuje tylko orchards, dla ktorych user ma aktywne membership `owner`.
+- Eksport jest account-wide.
+- Dla zwyklego usera obejmuje tylko orchards, dla ktorych ma aktywne membership `owner`.
+- Dla `super_admin` obejmuje wszystkie orchard dostepne administracyjnie.
 - User pracujacy wylacznie jako `worker` widzi zablokowany stan informacyjny, bez CTA do pobrania.
+- `/settings/profile` jest authenticated account screen i pozostaje dostepne dla `super_admin` takze bez aktywnego orchard.
 - Plik pobiera sie jako JSON z route `GET /settings/profile/export`.
 
 ## 11. Formularz ustawien orchard

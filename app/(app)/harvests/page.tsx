@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Input } from "@/components/ui/input";
@@ -150,16 +151,24 @@ async function HarvestsPageContent({
             zakresu lokalizacji albo pojedynczego drzewa.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <LinkButton href={locationSummaryHref} variant="secondary">
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={locationSummaryHref}
+            variant="secondary"
+          >
             Zbiory po lokalizacji
           </LinkButton>
-          <LinkButton href={seasonSummaryHref} variant="secondary">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={seasonSummaryHref}
+            variant="secondary"
+          >
             Podsumowanie sezonu
           </LinkButton>
-          <div className="text-[#fffefe]">
-            <LinkButton href="/harvests/new">Nowy wpis zbioru</LinkButton>
-          </div>
+          <LinkButton className="w-full sm:w-auto" href="/harvests/new">
+            Nowy wpis zbioru
+          </LinkButton>
         </div>
       </div>
 
@@ -222,14 +231,11 @@ async function HarvestsPageContent({
             </Select>
           </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
-            <button
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#efe6d3] px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#e5d9bf]"
-              type="submit"
-            >
+            <Button className="w-full sm:w-auto" type="submit" variant="secondary">
               Zastosuj
-            </button>
-            <LinkButton href="/harvests" variant="ghost">
-              Przywroc domyslne
+            </Button>
+            <LinkButton className="w-full sm:w-auto" href="/harvests" variant="ghost">
+              Wyczysc filtry
             </LinkButton>
           </div>
         </form>

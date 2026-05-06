@@ -3,30 +3,138 @@ import { buildPathWithSearchParams } from "@/lib/utils/search-params";
 
 export const FEEDBACK_NOTICE_QUERY_PARAM = "notice";
 
-const FEEDBACK_NOTICE_MESSAGES = {
-  plot_created: "Dzialka zostala utworzona.",
-  plot_updated: "Dzialka zostala zapisana.",
-  plot_archived: "Dzialka zostala zarchiwizowana.",
-  plot_restored: "Dzialka zostala przywrocona.",
-  tree_created: "Drzewo zostalo utworzone.",
-  tree_updated: "Drzewo zostalo zapisane.",
-  tree_batch_created: "Zakres drzew zostal utworzony.",
-  trees_bulk_deactivated: "Wybrane drzewa zostaly oznaczone jako usuniete.",
-  variety_created: "Odmiana zostala utworzona.",
-  variety_updated: "Odmiana zostala zapisana.",
-  activity_created: "Aktywnosc zostala utworzona.",
-  activity_updated: "Aktywnosc zostala zapisana.",
-  activity_status_changed: "Status aktywnosci zostal zaktualizowany.",
-  activity_deleted: "Aktywnosc zostala usunieta.",
-  harvest_created: "Wpis zbioru zostal utworzony.",
-  harvest_updated: "Wpis zbioru zostal zapisany.",
-  harvest_deleted: "Wpis zbioru zostal usuniety.",
+const FEEDBACK_NOTICE_DEFINITIONS = {
+  plot_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Dzialka zostala utworzona.",
+  },
+  plot_updated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Dzialka zostala zapisana.",
+  },
+  plot_archived: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Dzialka zostala zarchiwizowana.",
+  },
+  plot_restored: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Dzialka zostala przywrocona.",
+  },
+  tree_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Drzewo zostalo utworzone.",
+  },
+  tree_updated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Drzewo zostalo zapisane.",
+  },
+  tree_batch_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Zakres drzew zostal utworzony.",
+  },
+  trees_bulk_deactivated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Wybrane drzewa zostaly oznaczone jako usuniete.",
+  },
+  variety_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Odmiana zostala utworzona.",
+  },
+  variety_updated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Odmiana zostala zapisana.",
+  },
+  activity_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Aktywnosc zostala utworzona.",
+  },
+  activity_updated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Aktywnosc zostala zapisana.",
+  },
+  activity_status_changed: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Status aktywnosci zostal zaktualizowany.",
+  },
+  activity_deleted: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Aktywnosc zostala usunieta.",
+  },
+  harvest_created: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Wpis zbioru zostal utworzony.",
+  },
+  harvest_updated: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Wpis zbioru zostal zapisany.",
+  },
+  harvest_deleted: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Wpis zbioru zostal usuniety.",
+  },
+  orchard_switch_unavailable: {
+    tone: "warning",
+    eyebrow: "Uwaga",
+    title: "Aktywny sad bez zmian",
+    message:
+      "Nie udalo sie przelaczyc aktywnego sadu. Odswiez widok i wybierz sad ponownie.",
+  },
+  member_revoked: {
+    tone: "success",
+    eyebrow: "Gotowe",
+    title: "Zmiany zapisane",
+    message: "Aktywny dostep czlonka do sadu zostal odebrany.",
+  },
+  member_revoke_blocked: {
+    tone: "warning",
+    eyebrow: "Uwaga",
+    title: "Nie zapisano zmian",
+    message:
+      "Nie udalo sie odebrac dostepu dla wskazanego czlonka. Odswiez widok i sprobuj ponownie.",
+  },
 } as const;
 
-export type FeedbackNoticeCode = keyof typeof FEEDBACK_NOTICE_MESSAGES;
+export type FeedbackNoticeCode = keyof typeof FEEDBACK_NOTICE_DEFINITIONS;
 
 export type FeedbackNotice = {
   code: FeedbackNoticeCode;
+  tone: "success" | "warning";
+  eyebrow: string;
+  title: string;
   message: string;
 };
 
@@ -37,7 +145,7 @@ export function isFeedbackNoticeCode(
     return false;
   }
 
-  return value in FEEDBACK_NOTICE_MESSAGES;
+  return value in FEEDBACK_NOTICE_DEFINITIONS;
 }
 
 export function resolveFeedbackNotice(
@@ -49,7 +157,7 @@ export function resolveFeedbackNotice(
 
   return {
     code: value,
-    message: FEEDBACK_NOTICE_MESSAGES[value],
+    ...FEEDBACK_NOTICE_DEFINITIONS[value],
   };
 }
 

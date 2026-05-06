@@ -16,6 +16,7 @@ type ProtectedAppShellProps = {
   activeRole: OrchardMembershipRole;
   availableOrchards: OrchardSummary[];
   canManageOrchard: boolean;
+  currentPath: string;
   children: ReactNode;
 };
 
@@ -25,13 +26,14 @@ export function ProtectedAppShell({
   activeRole,
   availableOrchards,
   canManageOrchard,
+  currentPath,
   children,
 }: ProtectedAppShellProps) {
   return (
     <div className="min-h-screen">
       <header className="border-b border-[#e4dac6] bg-[#fbfaf7]/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9d7e4e]">
               Aktywny sad
             </p>
@@ -44,12 +46,13 @@ export function ProtectedAppShell({
               </span>
             </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-3 lg:w-auto lg:max-w-[44rem] lg:flex-row lg:items-start xl:items-center">
             <OrchardSwitcher
               activeOrchardId={activeOrchard.id}
+              nextPath={currentPath}
               orchards={availableOrchards}
             />
-            <div className="flex items-center gap-2 rounded-2xl border border-[#dfd3bb] bg-white px-3 py-2">
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#dfd3bb] bg-white px-3 py-3 sm:flex-row sm:items-center">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-[#1f2a1f]">
                   {profile.display_name ?? profile.email}
@@ -57,13 +60,13 @@ export function ProtectedAppShell({
                 <p className="truncate text-xs text-[#6d7269]">{profile.email}</p>
               </div>
               <Link
-                className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3] sm:w-auto"
                 href="/settings/profile"
               >
                 Profil
               </Link>
               <form action={signOut}>
-                <Button type="submit" variant="secondary">
+                <Button className="w-full sm:w-auto" type="submit" variant="secondary">
                   Wyloguj sie
                 </Button>
               </form>

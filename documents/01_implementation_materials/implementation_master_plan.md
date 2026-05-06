@@ -617,15 +617,15 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 #### Database and migrations
 
-- [ ] Review all MVP migrations for naming consistency, reversibility, and index coverage.
-- [ ] Add reporting and performance indexes that are already justified by real MVP queries.
+- [x] Review all MVP migrations for naming consistency, reversibility, and index coverage.
+- [x] Add reporting and performance indexes that are already justified by real MVP queries.
 - [x] Confirm no MVP table is left without required constraints or RLS.
 
 #### Backend / server actions
 
 - [x] Implement dashboard-level read `getDashboardSummary` with `active_plots_count`, `active_trees_count`, `recent_activities`, and `recent_harvests`.
-- [ ] Add `upcoming_activities` or a separate planning read only after the dashboard snapshot and empty states are stable.
-- [ ] Review server-action responses for consistent `ActionResult<T>` behavior.
+- [x] Add `upcoming_activities` as a dashboard planning read after the dashboard snapshot and empty states are stable.
+- [x] Review server-action responses for consistent `ActionResult<T>` behavior.
 - [x] Confirm `exportAccountData` stays deferred to Phase 6 and is not accidentally exposed in MVP.
 
 #### Frontend / UI
@@ -635,10 +635,10 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 - [x] Replace silent `record not found` redirects on critical detail/edit/settings routes with explicit recovery cards.
 - [x] Reuse shared prerequisite cards for create/edit flows blocked by missing plot or active plot prerequisites.
 - [x] Add shared success feedback after redirect for core create/edit/archive/delete/status flows in `plots`, `trees`, `varieties`, `activities`, and `harvests`.
-- [ ] Integrate the remaining final navigation polish and route-guard edge cases across all MVP views.
-- [ ] Audit empty, loading, error, and permission-denied states across all MVP views.
-- [ ] Complete responsive QA for the key mobile field flows.
-- [ ] Polish the orchard switcher, filter UX, and the remaining non-redirect success/error feedback patterns.
+- [x] Integrate the remaining final navigation polish and route-guard edge cases across all MVP views.
+- [x] Audit empty, loading, error, and permission-denied states across all MVP views.
+- [x] Complete responsive QA for the key mobile field flows.
+- [x] Polish the orchard switcher, filter UX, and the remaining non-redirect success/error feedback patterns.
 
 #### Authorization / RLS
 
@@ -649,11 +649,11 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 #### Validation / error handling
 
-- [ ] Verify the error catalog covers real MVP flows and returned codes.
+- [x] Verify the error catalog covers real MVP flows and returned codes.
 - [x] Confirm UI messaging is consistent for the shipped `record not found` and prerequisite-blocked route states on critical MVP flows.
 - [x] Confirm redirect-based success feedback is consistent for the shipped core CRUD/status flows.
-- [ ] Confirm UI messaging is consistent for form validation, remaining permission issues, and missing active orchard context across every MVP view.
-- [ ] Audit naming consistency across DTOs, database fields, and screen copy.
+- [x] Confirm UI messaging is consistent for form validation, remaining permission issues, and missing active orchard context across every MVP view.
+- [x] Audit naming consistency across DTOs, database fields, and screen copy.
 
 #### Testing / seed data
 
@@ -667,8 +667,8 @@ Late-stage QA, observability wiring, final doc sync, and UX polish can overlap o
 
 #### Documentation sync
 
-- [ ] Reconcile the shipped MVP with [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md).
-- [ ] Reconcile implemented contracts with [api_and_system_operations.md](../06_backend_and_contracts/api_and_system_operations.md) and [data_contracts.md](../06_backend_and_contracts/data_contracts.md).
+- [x] Reconcile the shipped MVP with [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md).
+- [x] Reconcile implemented contracts with [api_and_system_operations.md](../06_backend_and_contracts/api_and_system_operations.md) and [data_contracts.md](../06_backend_and_contracts/data_contracts.md).
 - [x] Reconcile test coverage with [test_plan.md](../07_security_and_quality/test_plan.md) and [mvp_acceptance_criteria.md](../07_security_and_quality/mvp_acceptance_criteria.md).
 
 **Deliverables**
@@ -732,6 +732,7 @@ Batch tools, export flows, and reporting slices can be implemented independently
 
 - [x] Create `bulk_tree_import_batches` and any required tree linkage fields.
 - [x] Add the additional location/reporting indexes justified by batch and report use cases.
+- [x] Add targeted hardening indexes for dashboard feeds, tree-filtered activity lookups, and harvest list/report queries through forward-only follow-up migrations.
 - [ ] Add storage-related schema only if attachments are explicitly moved into scope.
 
 #### Backend / server actions
@@ -740,7 +741,7 @@ Batch tools, export flows, and reporting slices can be implemented independently
 - [x] Implement `previewBulkDeactivateTrees` and `bulkDeactivateTrees`.
 - [x] Implement `getVarietyLocationsReport`.
 - [x] Implement richer location-aware harvest summaries where already planned.
-- [x] Implement `exportAccountData` with account-wide export for owned orchards only.
+- [x] Implement `exportAccountData` with account-wide export for eligible owners and admin-wide export for `super_admin`.
 - [x] Extend `activities` and `harvests` with plot-aware location guards that reuse `plots.layout_type` in field flows.
 
 #### Frontend / UI
@@ -758,8 +759,8 @@ Batch tools, export flows, and reporting slices can be implemented independently
 #### Authorization / RLS
 
 - [x] Add RLS for `bulk_tree_import_batches`.
-- [ ] Ensure export availability stays limited to eligible `owner` access and `super_admin`.
-- [ ] Keep worker access limited to operational data, not account-wide export.
+- [x] Ensure export availability stays limited to eligible `owner` access and `super_admin`.
+- [x] Keep worker access limited to operational data, not account-wide export.
 
 #### Validation / error handling
 
@@ -769,7 +770,7 @@ Batch tools, export flows, and reporting slices can be implemented independently
 - [x] Validate `layout_type`, numbering schemes, and positive default grid counts for `plots`.
 - [x] Enforce plot-aware tree-location rules and block row-range batch flows for layouts that cannot support them.
 - [x] Enforce the same `irregular` vs row-range rules for `activity_scopes` and harvest `location_range` on both server and database layers.
-- [ ] Confirm export payload composition matches [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md).
+- [x] Confirm export payload composition matches [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md).
 
 #### Testing / seed data
 
@@ -780,13 +781,15 @@ Batch tools, export flows, and reporting slices can be implemented independently
 - [x] Add unit and integration tests for plot layout settings persistence and validation.
 - [x] Add unit tests for plot-aware tree workflow guards and layout-policy helpers.
 - [x] Add unit and integration coverage for plot-aware activity and harvest location restrictions.
+- [x] Add integration regression for `listActivities` with `tree_id` covering direct and scoped tree links.
 - [x] Add E2E coverage for batch tree creation, bulk deactivation, and export denial for `worker`.
 - [ ] Extend seed data to cover large row ranges, conflict scenarios, and export-worthy owner data.
 
 #### Documentation sync
 
 - [x] Keep batch behavior aligned with [batch_tree_creation_rules.md](../06_backend_and_contracts/batch_tree_creation_rules.md).
-- [ ] Keep export behavior aligned with [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md) and [backup_restore_and_export.md](../07_security_and_quality/backup_restore_and_export.md).
+- [x] Keep migration inventory and data-model index notes aligned with the actual package state through `025` and `026`.
+- [x] Keep export behavior aligned with [import_export_spec.md](../06_backend_and_contracts/import_export_spec.md) and [backup_restore_and_export.md](../07_security_and_quality/backup_restore_and_export.md).
 - [ ] Update scope documents if any `0.2` item is promoted earlier.
 
 **Deliverables**
@@ -852,6 +855,7 @@ Rationale:
 - Validate orchard ownership across all foreign-key combinations.
 - Keep unique indexes, partial unique constraints, and range checks close to the schema.
 - Do not rely on UI-only validation for location, membership, or scope rules.
+- Treat final release closeout as a fresh-baseline workflow; after the full automated gate mutates seeded data, rerun `pnpm seed:baseline-reset` before manual QA.
 
 ### RLS and security
 
@@ -933,11 +937,11 @@ Rationale:
 
 ### MVP release ready
 
-- [ ] All MVP tables have reviewed migrations, constraints, indexes, and RLS.
-- [ ] DTOs and server actions are aligned with contract documents.
-- [ ] Empty/loading/error states are implemented for critical screens.
-- [ ] Seed/demo data works for realistic QA.
-- [ ] Documentation reflects the shipped MVP scope.
+- [x] All MVP tables have reviewed migrations, constraints, indexes, and RLS.
+- [x] DTOs and server actions are aligned with contract documents.
+- [x] Empty/loading/error states are implemented for critical screens.
+- [x] Seed/demo data works for realistic QA.
+- [x] Documentation reflects the shipped MVP scope.
 
 ## Open questions and deferred decisions
 
@@ -945,7 +949,7 @@ Rationale:
 
 - UI works in one `active_orchard`; database and RLS remain multi-orchard-ready.
 - `worker` can mutate `plots`, `varieties`, `trees`, `activities`, and `harvest_records`, but cannot manage membership or export.
-- `exportAccountData` is account-wide and includes only orchards where the user has active `owner` access.
+- `exportAccountData` is account-wide; zwykly user eksportuje tylko orchard z aktywnym `owner`, a `super_admin` eksportuje wszystkie orchard dostepne administracyjnie.
 - Import is documented for future expansion and is not a blocking MVP deliverable.
 
 ### Needs clarification later

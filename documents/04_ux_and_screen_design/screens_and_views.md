@@ -95,6 +95,7 @@ W aktualnym vertical slice zostaly wdrozone:
 - `dashboard`:
   - realny snapshot aktywnego sadu zamiast placeholdera
   - liczniki aktywnych dzialek i aktywnych drzew
+  - `upcoming_activities` jako planningowy blok najblizszych prac `planned`
   - ostatnie aktywnosci
   - ostatnie zbiory
   - szybkie akcje do tworzenia rekordow
@@ -104,7 +105,7 @@ W aktualnym vertical slice zostaly wdrozone:
 
 Swiadomie odlozone do kolejnego kroku:
 
-- `upcoming_activities` i planningowy blok prac na dashboardzie
+- szerszy planningowy blok prac wykraczajacy poza prosty feed `upcoming_activities`
 - globalny audit empty/loading/error states poza dashboardem
 
 ### Aktualizacja Phase 5B1
@@ -153,14 +154,60 @@ Swiadomie odlozone do kolejnego kroku:
 - reczny seeded QA pass dla calosci MVP
 - dalszy responsive polish dla mobilnych flow terenowych
 
+### Aktualizacja Phase 5E
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `dashboard`, listy i raporty:
+  - spójny reset filtrow oparty o akcje `Wyczysc filtry`
+  - `reports/season-summary` ma wlasny route-level loading skeleton jak pozostale krytyczne raporty
+- shared recovery UI:
+  - `EmptyStateCard`, `PrerequisiteCard`, `RecordNotFoundCard`, `AccessDeniedCard` i `FeedbackBanner` ukladaja CTA pionowo na mobile i utrzymuja czytelne hit-area
+- `orchard switcher`:
+  - pozostaje auto-submit
+  - pokazuje helper text dla jednego orchard i pending copy podczas przelaczania
+  - po udanym switchu wraca na biezaca trase w nowym kontekscie orchard zamiast zrzucac usera zawsze na `/dashboard`
+- mobilne flow terenowe:
+  - naglowki akcji, filtry i krytyczne CTA nie lamia sie w mylace uklady na waskich viewportach
+
+Swiadomie odlozone do kolejnego kroku:
+
+- szerszy planningowy blok prac wykraczajacy poza prosty feed `upcoming_activities`
+- detail pages dla `plots`, `varieties` i `trees`
+
+### Aktualizacja Phase 5F
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `dashboard`:
+  - osobny blok `Nadchodzace aktywnosci`
+  - lista najblizszych wpisow `planned` od dzis wzwyz
+  - empty state z CTA do tworzenia planowanej pracy i przejscia do listy aktywnosci
+- route-level UX:
+  - loading skeleton dashboardu uwzglednia tez planningowy blok
+
+### Aktualizacja Phase 5G
+
+W aktualnym vertical slice zostaly wdrozone:
+
+- `orchard switcher` i nawigacja shell:
+  - przelaczanie aktywnego orchard zachowuje biezaca trase i jej query params
+  - nieudane przelaczenie nie konczy sie juz surowym wyjatkiem; user trafia do bezpiecznego recovery na dashboardzie z warning bannerem
+- `settings/members`:
+  - revoke aktywnego dostepu pracownika konczy sie jawnym success bannerem
+  - zablokowany revoke ownera albo nieaktualnego membership pokazuje warning banner zamiast cichego redirectu
+- feedback contract:
+  - `FeedbackBanner` obsluguje juz nie tylko success notices, ale tez warning notices dla final navigation polish i recovery flows
+
 ### Aktualizacja Phase 6A
 
 W aktualnym vertical slice zostaly wdrozone:
 
 - `profile settings`:
   - account-wide eksport JSON na `/settings/profile`
-  - owner-only CTA do pobrania eksportu
+  - CTA do pobrania eksportu dla eligible `owner` i `super_admin`
   - jawny stan zablokowany dla usera bez aktywnego membership `owner`
+  - `/settings/profile` jest osobnym authenticated account screen, wiec `super_admin` bez aktywnego orchard nie wpada w onboarding
   - pending state i komunikat sukcesu po pobraniu pliku
 
 ### Aktualizacja Phase 6B
@@ -282,7 +329,7 @@ Najwazniejsze elementy:
 
 Uwaga Phase 5A:
 
-- dashboard nie jest juz placeholderem, ale nadal nie pokazuje osobnego bloku planowanych prac
+- dashboard nie jest juz placeholderem i pokazuje tez osobny blok planowanych prac `upcoming_activities`
 
 ### 3a. Profile settings
 
@@ -295,7 +342,7 @@ Najwazniejsze elementy:
 - `locale`
 - `timezone`
 - email widoczny jako pole tylko do odczytu
-- account-wide eksport danych dla usera z aktywnym membership `owner`
+- account-wide eksport danych dla eligible `owner` albo `super_admin`
 
 ### 4. Lista dzialek
 
@@ -751,12 +798,12 @@ Najwazniejsze elementy:
 ### 4. Account export
 
 Cel:
-umozliwic `owner` pobranie account-wide eksportu danych z poziomu UI.
+umozliwic eligible `owner` albo `super_admin` pobranie account-wide eksportu danych z poziomu UI.
 
 Najwazniejsze elementy:
 
 - krotkie wyjasnienie zakresu eksportu
-- informacja, ze eksport obejmuje tylko orchard z aktywnym membership `owner`
+- informacja, ze zakres eksportu zalezy od `scope`: `owned_orchards` albo `all_orchards_admin`
 - akcja `Export account data`
 - status generowania i pobrania pliku
 - stan zabroniony dla `worker`

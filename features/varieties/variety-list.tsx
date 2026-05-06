@@ -20,11 +20,11 @@ export function VarietyList({
     return hasActiveFilters ? (
       <EmptyStateCard
         actions={[
-          { href: clearHref, label: "Wyczysc wyszukiwanie", variant: "secondary" },
+          { href: clearHref, label: "Wyczysc filtry", variant: "secondary" },
           { href: createHref, label: "Utworz odmiane", variant: "ghost" },
         ]}
-        description="Zmien zapytanie albo wyczysc wyszukiwanie, aby zobaczyc pozostale odmiany z aktywnego sadu."
-        title="Brak wynikow dla tego wyszukiwania"
+        description="Zmien zapytanie albo wyczysc filtry, aby zobaczyc pozostale odmiany z aktywnego sadu."
+        title="Brak wynikow dla wybranych filtrow"
       />
     ) : (
       <EmptyStateCard

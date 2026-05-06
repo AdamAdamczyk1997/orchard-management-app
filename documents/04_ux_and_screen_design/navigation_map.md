@@ -72,13 +72,14 @@ Dodatkowo:
 - `/trees/batch/new`
 - `/trees/batch/deactivate`
 - `/reports/variety-locations`
-- eksport konta pozostaje osadzony na `/settings/profile`
+- eksport konta pozostaje osadzony na `/settings/profile` jako authenticated account screen
 
 ## Glowne przejscia uzytkownika
 
 ### Start po zalogowaniu
 
 - `login -> orchards/new`, jesli brak aktywnego membership
+- `login -> settings/profile`, jesli user jest `super_admin` i nie ma aktywnego orchard
 - `login -> dashboard`, jesli `active_orchard` jest ustawiony lub mozliwy do automatycznego wyboru
 
 ### Zarzadzanie orchard
@@ -86,8 +87,8 @@ Dodatkowo:
 - `dashboard -> settings/orchard`
 - `dashboard -> settings/members`
 - `dashboard -> settings/profile`
-- `settings/profile -> eksport konta`, jesli user ma aktywne membership `owner`
-- `orchard switcher -> dashboard w nowym kontekście orchard`
+- `settings/profile -> eksport konta`, jesli user ma aktywne membership `owner` albo role `super_admin`
+- `orchard switcher -> biezaca trasa w nowym kontekscie orchard`, a przy nieudanym przelaczeniu user wraca do dashboardu z warning bannerem
 
 ### Zarzadzanie dzialkami
 

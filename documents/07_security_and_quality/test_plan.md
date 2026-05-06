@@ -26,11 +26,13 @@ Aktualnie wdrozone:
 - `unit tests` dla parsera filtrow `summary_*` w `activities`
 - `unit tests` dla helperow wykrywania aktywnych filtrow list
 - `unit tests` dla helperow redirect success feedback i parsera notice codes
+- `unit tests` dla zamknietego katalogu `ActionResult.error_code` i zgodnosci dokumentacji bledow z kodem
 - `unit tests` dla walidacji batch create / bulk deactivate drzew
 - `unit tests` dla helperow scalania zakresow w raporcie lokalizacji odmiany
 - `unit tests` dla plot-aware ograniczen `activities` i `harvests`
 - `integration tests` dla detail read model `activities`
 - `integration tests` dla sezonowego `summary + coverage` w `activities`
+- `integration tests` dla `listActivities` z filtrem `tree_id`, obejmujacym direct i scoped tree links bez przecieku orchard
 - `unit tests` dla walidacji i normalizacji `harvest_records`
 - `unit tests` dla agregacji sezonowego summary i timeline dla harvests
 - `integration tests` dla harvest CRUD, read modeli i sezonowego summary
@@ -59,6 +61,11 @@ pnpm seed:baseline-reset
 pnpm qa:baseline-status
 pnpm test
 ```
+
+Wazna uwaga operacyjna:
+
+- `pnpm test` i `pnpm test:e2e` dopisuja dane scenariuszy do lokalnej bazy
+- jesli po pelnym gate chcesz przejsc od razu do recznego smoke passa na referencyjnym baseline, uruchom ponownie `pnpm seed:baseline-reset`, a potem `pnpm qa:baseline-status`
 
 Wymagania lokalne:
 
@@ -147,6 +154,7 @@ Na dzis realnie pokryte automatycznie:
 - walidacja `activity_scopes` i `materials` z JSON payloadow
 - sezonowe `summary` dla `activities` liczone tylko z rekordow `done`
 - sezonowe `coverage` dla `activities` oparte tylko na zapisanych `activity_scopes`
+- filtrowanie `activities` po `tree_id` zwraca wpisy z parent `tree_id` oraz z `activity_scopes.tree_id`, bez przecieku orchard
 - create / edit / filter / delete `harvest_records`
 - detail read model `harvest_records`
 - triggerowa normalizacja `quantity_kg` i `season_year` dla harvests
@@ -209,6 +217,7 @@ Co testujemy:
 - materialy aktywnosci zapisuja sie i odczytuja razem z wpisem
 - zakresy aktywnosci zapisuja sie i odczytuja razem z wpisem
 - nie da sie zapisac `activity_scopes.tree_id` dla drzewa z innej dzialki niz `activities.plot_id`
+- filtr `activities` po `tree_id` zwraca zarowno wpisy z parent `tree_id`, jak i wpisy z `activity_scopes.tree_id`, bez rekordu z innego orchard
 - detail aktywnosci pokazuje uporzadkowane `activity_scopes` i `activity_materials`
 - sezonowe `summary` dla aktywnosci nie liczy rekordow `planned`, `skipped` ani `cancelled`
 - sezonowe `coverage` dla aktywnosci nie inferuje zakresow z samych danych drzew lub dzialek
@@ -217,9 +226,13 @@ Co testujemy:
 - timeline harvestow poprawnie grupuje rekordy po `harvest_date`
 - dashboard liczy aktywne dzialki i aktywne drzewa zgodnie z kontraktem
 - dashboardowe feedy aktywnosci i zbiorow sa orchard-scoped, ograniczone do 5 wpisow i poprawnie posortowane
+- `dashboard.upcoming_activities` zwraca tylko `planned`, tylko od dzis wzwyz, rosnaco po dacie i bez przecieku z innych orchard
 - shared `record not found` cards pokazuja opis problemu oraz CTA powrotu do bezpiecznej listy
 - shared `prerequisite` cards pokazuja dalszy krok, gdy create/edit flow jest zablokowany przez brak dzialki
+- shared state cards i feedback banner zachowuja mobilny uklad CTA bez utraty recovery akcji
 - redirect success feedback zachowuje biezaca liste albo detail jako cel powrotu i nie gubi filtrow
+- `orchard switcher` zachowuje biezaca trase po zmianie aktywnego orchard i nie wraca juz wymuszenie na `/dashboard`
+- nieudany orchard switch oraz zablokowany revoke membership koncza sie jawnym warning bannerem zamiast surowego bledu albo cichego redirectu
 
 ## 4. Rekomendowane narzedzia
 
@@ -237,13 +250,18 @@ Jesli zespol wybierze inny zestaw narzedzi, logika planu testow pozostaje taka s
 - testy integracyjne dla CRUD glownych encji
 - stabilny pakiet `Playwright` dla krytycznych flow:
   - rejestracja nowego usera, onboarding i utworzenie pierwszego orchard
+  - rozroznienie `global empty` vs `filtered empty` oraz akcja `Wyczysc filtry`
   - przelaczanie `active_orchard` bez przecieku danych miedzy sadami
+  - zachowanie biezacej trasy przy `active_orchard` switch, gdy kontekst orchard zmienia sie w top shellu
+  - single-orchard disabled state dla `orchard switcher`
   - ograniczenia `worker` dla membership i eksportu konta
   - blokada outsidera na raportach i danych operacyjnych
+  - recovery `record not found` dla reprezentatywnych tras detail view
   - flow `plot -> variety -> tree`
   - `pruning`, `spraying` multi-scope i `mowing`
   - dodanie `harvest_record` i weryfikacja `/reports/season-summary`
   - `batch create`, `bulk deactivate` i jawny `export forbidden` dla `worker`
+  - przynajmniej jeden mobilny smoke pass bez poziomego scrolla na krytycznym formularzu terenowym
 
 ## 5a. Aktualny workflow Playwright
 
@@ -260,6 +278,11 @@ Dodatkowe warianty:
 
 - `pnpm test:e2e -- tests/e2e/<nazwa-pliku>.spec.ts`
 - `pnpm test:e2e:headed`
+
+Po browser E2E:
+
+- jesli kolejnym krokiem ma byc reczny seeded smoke, wykonaj znowu `pnpm seed:baseline-reset`
+- potwierdz ponownie `pnpm qa:baseline-status`, bo suite'y E2E mutuja liczby rekordow baseline
 
 ## 6. Scenariusze testowe wedlug modulu
 
@@ -297,6 +320,7 @@ Dodatkowe warianty:
 - dashboard pokazuje aktywne dzialki i aktywne drzewa zgodnie z kontraktem
 - dashboard pokazuje ostatnie aktywnosci z linkami do detail view
 - dashboard pokazuje ostatnie zbiory z linkami do detail view
+- dashboard pokazuje pusty albo niepusty blok `upcoming_activities` zgodnie z danymi aktywnego orchard
 - pusty sad pokazuje onboardingowy empty state zamiast martwych list
 
 ### Dzialki
@@ -375,10 +399,13 @@ Dodatkowe warianty:
 ### Export - etap 0.2
 
 - `owner` moze wykonac `exportAccountData`
+- `super_admin` moze wykonac administracyjny eksport bez aktywnego orchard
 - `worker` nie moze wykonac eksportu
-- eksport zawiera tylko orchard, w ktorych user ma aktywne membership `owner`
+- eksport ownera zawiera tylko orchard, w ktorych user ma aktywne membership `owner`
+- eksport `super_admin` obejmuje wszystkie orchard dostepne administracyjnie
 - eksport zachowuje `orchard_memberships`, `activity_scopes`, `activity_materials` i `harvest_records`
 - integracyjnie pokryte jest, ze eksport pomija orchard, w ktorych user ma tylko aktywne membership `worker`
+- integracyjnie pokryte jest tez, ze seeded `super_admin` eksportuje dane z wielu orchard bez wlasnego membership
 
 ## 7. Dane testowe
 
@@ -454,6 +481,7 @@ Minimalny zestaw:
 
 Aktualnie uruchamiane lokalnie:
 
+- `supabase db lint`
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`

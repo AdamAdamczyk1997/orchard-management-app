@@ -1,7 +1,48 @@
+export const ACTION_ERROR_CODES = [
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "PROFILE_BOOTSTRAP_REQUIRED",
+  "NO_ACTIVE_ORCHARD",
+  "ORCHARD_ONBOARDING_REQUIRED",
+  "EXPORT_NOT_ALLOWED_FOR_ROLE",
+  "VALIDATION_ERROR",
+  "NOT_FOUND",
+  "AUTH_SIGN_UP_FAILED",
+  "AUTH_RESET_PASSWORD_FAILED",
+  "ORCHARD_LIST_FAILED",
+  "ORCHARD_CREATE_FAILED",
+  "ORCHARD_UPDATE_FAILED",
+  "ORCHARD_MEMBER_INVITE_FAILED",
+  "PROFILE_UPDATE_FAILED",
+  "DUPLICATE_PLOT_NAME",
+  "PLOT_MUTATION_FAILED",
+  "DUPLICATE_VARIETY",
+  "VARIETY_MUTATION_FAILED",
+  "LOCATION_CONFLICT",
+  "TREE_MUTATION_FAILED",
+  "TREE_BATCH_MUTATION_FAILED",
+  "TREE_CODE_PATTERN_INVALID",
+  "PLOT_ARCHIVED",
+  "PLOT_LAYOUT_UNSUPPORTED",
+  "NO_MATCHING_TREES",
+  "PREVIEW_REQUIRED",
+  "ACTIVITY_MUTATION_FAILED",
+  "ACTIVITY_SCOPE_INVALID",
+  "ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED",
+  "TREE_NOT_IN_PLOT",
+  "PRUNING_SUBTYPE_REQUIRED",
+  "HARVEST_MUTATION_FAILED",
+  "HARVEST_SCOPE_INVALID",
+  "HARVEST_LOCATION_RANGE_UNSUPPORTED",
+  "HARVEST_UNIT_INVALID",
+] as const;
+
+export type ActionErrorCode = typeof ACTION_ERROR_CODES[number];
+
 export type ActionResult<T> = {
   success: boolean;
   data?: T;
-  error_code?: string;
+  error_code?: ActionErrorCode;
   message?: string;
   field_errors?: Record<string, string>;
 };
@@ -498,6 +539,13 @@ export type DashboardSummary = {
     quantity_kg: number;
     plot_name: string;
   }>;
+  upcoming_activities: Array<{
+    id: string;
+    title: string;
+    activity_date: string;
+    activity_type: ActivityType;
+    plot_name: string;
+  }>;
 };
 
 export type ActivityScopeInput = {
@@ -782,9 +830,12 @@ export type HarvestLocationSummary = {
   plots: HarvestLocationPlotSummary[];
 };
 
+export type ExportScope = "owned_orchards" | "all_orchards_admin";
+
 export type ExportAvailabilitySummary = {
   can_export: boolean;
-  owned_orchards_count: number;
+  scope: ExportScope;
+  orchards_count: number;
 };
 
 export type ExportAccountDataResult = {

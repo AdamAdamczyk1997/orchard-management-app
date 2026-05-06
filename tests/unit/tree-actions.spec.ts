@@ -219,4 +219,86 @@ describe("tree server actions", () => {
     expect(previewBulkDeactivateTreesForOrchardMock).not.toHaveBeenCalled();
     expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
   });
+
+  it("returns preview data together with a conflict error for bulk tree batch preview", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Rows plot",
+      status: "active",
+      layout_type: "rows",
+    });
+    previewBulkTreeBatchForOrchardMock.mockResolvedValue({
+      plot_id: "plot-1",
+      plot_name: "Rows plot",
+      species: "apple",
+      row_number: 4,
+      from_position: 1,
+      to_position: 3,
+      requested_positions_count: 3,
+      planned_trees: [],
+      conflicts: [
+        {
+          tree_id: "tree-1",
+          position_in_row: 2,
+          condition_status: "good",
+          location_label: "Rzad 4, pozycja 2",
+        },
+      ],
+    });
+
+    const { submitBulkTreeBatch } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("species", "apple");
+    formData.set("row_number", "4");
+    formData.set("from_position", "1");
+    formData.set("to_position", "3");
+    formData.set("default_condition_status", "new");
+    formData.set("intent", "preview");
+
+    const result = await submitBulkTreeBatch({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("LOCATION_CONFLICT");
+    expect(result.data?.requested_positions_count).toBe(3);
+    expect(result.data?.conflicts).toHaveLength(1);
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
+  });
+
+  it("returns preview data when bulk deactivate finds no matching trees", async () => {
+    readPlotByIdForOrchardMock.mockResolvedValue({
+      id: "plot-1",
+      orchard_id: "orchard-1",
+      name: "Rows plot",
+      status: "active",
+      layout_type: "rows",
+    });
+    previewBulkDeactivateTreesForOrchardMock.mockResolvedValue({
+      plot_id: "plot-1",
+      plot_name: "Rows plot",
+      row_number: 4,
+      from_position: 1,
+      to_position: 3,
+      requested_positions_count: 3,
+      matched_trees: [],
+      missing_positions: [1, 2, 3],
+      warnings: [],
+    });
+
+    const { submitBulkDeactivateTrees } = await import("@/server/actions/trees");
+    const formData = new FormData();
+    formData.set("plot_id", "11111111-1111-4111-8111-111111111111");
+    formData.set("row_number", "4");
+    formData.set("from_position", "1");
+    formData.set("to_position", "3");
+    formData.set("intent", "preview");
+
+    const result = await submitBulkDeactivateTrees({ success: false }, formData);
+
+    expect(result.success).toBe(false);
+    expect(result.error_code).toBe("NO_MATCHING_TREES");
+    expect(result.data?.missing_positions).toEqual([1, 2, 3]);
+    expect(createSupabaseServerClientMock).not.toHaveBeenCalled();
+  });
 });

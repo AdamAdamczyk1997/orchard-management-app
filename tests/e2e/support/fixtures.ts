@@ -1,4 +1,8 @@
 export const SEEDED_USERS = {
+  superAdmin: {
+    email: "admin@orchardlog.local",
+    password: process.env.BASELINE_SEED_USER_PASSWORD ?? "Orchard123!",
+  },
   owner: {
     email: "jan.owner@orchardlog.local",
     password: process.env.BASELINE_SEED_USER_PASSWORD ?? "Orchard123!",

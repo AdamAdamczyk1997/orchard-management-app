@@ -81,14 +81,24 @@ export function HarvestLocationSummaryView({
             sadu, dzialki albo odmiany.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <LinkButton href={seasonSummaryHref} variant="secondary">
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={seasonSummaryHref}
+            variant="secondary"
+          >
             Podsumowanie sezonu
           </LinkButton>
-          <LinkButton href={harvestListHref} variant="secondary">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={harvestListHref}
+            variant="secondary"
+          >
             Pokaz wpisy zbioru
           </LinkButton>
-          <LinkButton href="/harvests/new">Nowy wpis zbioru</LinkButton>
+          <LinkButton className="w-full sm:w-auto" href="/harvests/new">
+            Nowy wpis zbioru
+          </LinkButton>
         </div>
       </div>
 
@@ -135,13 +145,13 @@ export function HarvestLocationSummaryView({
             </Select>
           </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
-            <Button type="submit" variant="secondary">
+            <Button className="w-full sm:w-auto" type="submit" variant="secondary">
               Pokaz raport
             </Button>
-            <LinkButton href={resetHref} variant="ghost">
-              Przywroc domyslne
+            <LinkButton className="w-full sm:w-auto" href={resetHref} variant="ghost">
+              Wyczysc filtry
             </LinkButton>
-            <LinkButton href="/harvests" variant="ghost">
+            <LinkButton className="w-full sm:w-auto" href="/harvests" variant="ghost">
               Wroc do listy zbiorow
             </LinkButton>
           </div>
@@ -183,8 +193,8 @@ export function HarvestLocationSummaryView({
       {summary.record_count === 0 ? (
         <EmptyStateCard
           actions={[
-            { href: "/harvests/new", label: "Dodaj wpis zbioru" },
-            { href: resetHref, label: "Przywroc domyslne filtry", variant: "ghost" },
+            { href: resetHref, label: "Wyczysc filtry", variant: "secondary" },
+            { href: "/harvests/new", label: "Dodaj wpis zbioru", variant: "ghost" },
           ]}
           description="Zmien sezon lub aktywne filtry, albo dodaj pierwszy wpis zbioru w aktywnym sadzie."
           title="Brak danych dla tej kombinacji filtrow"

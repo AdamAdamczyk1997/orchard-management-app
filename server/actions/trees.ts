@@ -17,9 +17,11 @@ import {
 import { readTreeByIdForOrchard } from "@/lib/orchard-data/trees";
 import { readVarietyByIdForOrchard } from "@/lib/orchard-data/varieties";
 import {
+  createDataErrorResult,
   createErrorResult,
   createSuccessResult,
   createValidationErrorResult,
+  withActionResultData,
 } from "@/lib/errors/action-result";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formDataToObject } from "@/lib/validation/form-data";
@@ -393,13 +395,11 @@ export async function submitBulkTreeBatch(
 
   if (intent !== "create") {
     if (preview.conflicts.length > 0) {
-      return {
-        success: false,
-        error_code: "LOCATION_CONFLICT",
-        message:
-          "Zakres zawiera aktywne drzewa w tych samych lokalizacjach. Popraw zakres zanim zapiszesz batch.",
-        data: preview,
-      };
+      return createDataErrorResult(
+        "LOCATION_CONFLICT",
+        "Zakres zawiera aktywne drzewa w tych samych lokalizacjach. Popraw zakres zanim zapiszesz batch.",
+        preview,
+      );
     }
 
     return createSuccessResult(
@@ -416,13 +416,11 @@ export async function submitBulkTreeBatch(
   }
 
   if (preview.conflicts.length > 0) {
-    return {
-      success: false,
-      error_code: "LOCATION_CONFLICT",
-      message:
-        "Podczas zapisu nadal wykryto konflikt lokalizacji. Odswiez podglad i popraw zakres.",
-      data: preview,
-    };
+    return createDataErrorResult(
+      "LOCATION_CONFLICT",
+      "Podczas zapisu nadal wykryto konflikt lokalizacji. Odswiez podglad i popraw zakres.",
+      preview,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -447,10 +445,7 @@ export async function submitBulkTreeBatch(
     const mappedError = mapBulkTreeBatchError<BulkTreeBatchPreviewResult>(error);
 
     if (mappedError.error_code === "LOCATION_CONFLICT") {
-      return {
-        ...mappedError,
-        data: preview,
-      };
+      return withActionResultData(mappedError, preview);
     }
 
     return mappedError;
@@ -527,12 +522,11 @@ export async function submitBulkDeactivateTrees(
 
   if (intent !== "create") {
     if (preview.matched_trees.length === 0) {
-      return {
-        success: false,
-        error_code: "NO_MATCHING_TREES",
-        message: "W wybranym zakresie nie ma aktywnych drzew do wycofania.",
-        data: preview,
-      };
+      return createDataErrorResult(
+        "NO_MATCHING_TREES",
+        "W wybranym zakresie nie ma aktywnych drzew do wycofania.",
+        preview,
+      );
     }
 
     return createSuccessResult(
@@ -549,13 +543,11 @@ export async function submitBulkDeactivateTrees(
   }
 
   if (preview.matched_trees.length === 0) {
-    return {
-      success: false,
-      error_code: "NO_MATCHING_TREES",
-      message:
-        "Podczas zapisu nie znaleziono aktywnych drzew w tym zakresie. Odswiez podglad i sprawdz filtry.",
-      data: preview,
-    };
+    return createDataErrorResult(
+      "NO_MATCHING_TREES",
+      "Podczas zapisu nie znaleziono aktywnych drzew w tym zakresie. Odswiez podglad i sprawdz filtry.",
+      preview,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -573,10 +565,7 @@ export async function submitBulkDeactivateTrees(
     const mappedError = mapBulkTreeBatchError<BulkDeactivateTreesPreviewResult>(error);
 
     if (mappedError.error_code === "NO_MATCHING_TREES") {
-      return {
-        ...mappedError,
-        data: preview,
-      };
+      return withActionResultData(mappedError, preview);
     }
 
     return mappedError;

@@ -52,7 +52,9 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 - `setActiveOrchard` wymaga aktywnego membership w docelowym orchard
 - `worker` nie moze wykonywac mutacji na `orchard_memberships`
 - w MVP jeden `orchard` ma dokladnie jednego aktywnego `owner`
-- w Phase 1 nie ma osobnego admin shell dla `super_admin` bez membership
+- w Phase 1 i `0.2` nie ma osobnego global admin shell dla `super_admin`
+  bez membership; wyjatkiem pozostaje account-level `/settings/profile` i route
+  `GET /settings/profile/export`
 - obecny UI MVP dla `inviteOrchardMember` wspiera tylko dodanie istniejacego konta
   jako `worker`; pelny flow `invited -> acceptance` pozostaje odlozony
 - przy probie ponownego dodania tego samego usera aktywny duplikat jest blokowany, a `revoked` membership jest reaktywowany
@@ -195,7 +197,7 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 
 | Operacja | Cel | Wejscie | Wynik | Priorytet |
 |---|---|---|---|---|
-| `getDashboardSummary` | dane do dashboardu | brak | liczniki aktywnych dzialek i drzew oraz feed `recent_activities` i `recent_harvests` | 0.1 |
+| `getDashboardSummary` | dane do dashboardu | brak | liczniki aktywnych dzialek i drzew oraz feedy `recent_activities`, `recent_harvests` i `upcoming_activities` | 0.1 |
 | `listHarvestRecords` | lista wpisow zbioru | filtry po sezonie, odmianie, dzialce, dacie | lista rekordow `harvest_records` | 0.1 |
 | `getHarvestRecordDetails` | szczegoly wpisu zbioru | `harvest_record_id` | rekord zbioru + powiazania | 0.1 |
 | `createHarvestRecord` | zapis ilosci zebranego plonu | dane formularza zbioru | nowy rekord `harvest_records` | 0.1 |
@@ -204,10 +206,10 @@ Opisuje natomiast zestaw operacji, ktore backend i warstwa serwerowa musza obslu
 | `getHarvestSeasonSummary` | podsumowanie sezonu | `season_year`, `plot_id` opcjonalnie, `variety_id` opcjonalnie | suma zbiorow per odmiana, per dzialka i globalnie | 0.1 |
 | `getHarvestTimeline` | historia zbiorow w czasie | `season_year`, `plot_id` opcjonalnie, `variety_id` opcjonalnie | lista dni z suma `quantity_kg` i liczba wpisow | 0.1 |
 
-Uwaga Phase 5A:
+Uwaga Phase 5F:
 
-- dashboardowy blok `upcoming_activities` zostaje odlozony do kolejnego sub-slice
-- w obecnym MVP nie ma osobnej operacji `getRecentActivities`; feed aktywnosci jest czescia `getDashboardSummary`
+- nie ma osobnej operacji `getUpcomingActivities`; planningowy feed pozostaje czescia `getDashboardSummary`
+- `upcoming_activities` korzysta z istniejacej tabeli `activities` i nie dodaje nowego modelu planowania
 
 ### Zalecana walidacja dla zbiorow
 
@@ -226,6 +228,8 @@ Uwaga Phase 5A:
 - `getDashboardSummary` liczy `active_plots_count` tylko z `plots.status = 'active'`
 - `getDashboardSummary` liczy `active_trees_count` tylko z `trees.is_active = true`
 - `getDashboardSummary` ogranicza oba feedy do 5 ostatnich rekordow po dacie malejaco, potem po `created_at`
+- `getDashboardSummary` zwraca `upcoming_activities` tylko dla `status = 'planned'` i `activity_date >= today`
+- `getDashboardSummary` sortuje `upcoming_activities` rosnaco po `activity_date`, potem po `created_at`, i ogranicza feed do 5 rekordow
 
 ## 8. Operacje etapu 0.2 - batch create i raport lokalizacji
 
@@ -284,15 +288,17 @@ Uwaga Phase 5A:
 
 | Operacja | Cel | Wejscie | Wynik | Priorytet |
 |---|---|---|---|---|
-| `exportAccountData` | eksport danych konta | format eksportu | plik z danymi profilu i owned orchards | 0.2 |
+| `exportAccountData` | eksport danych konta | format eksportu | plik z danymi profilu i orchard w zakresie owner albo admin | 0.2 |
 | `importVarieties` | import odmian | plik | raport walidacji + zapis | 0.2 |
 | `importTrees` | import drzew | plik | raport walidacji + zapis | 0.2 |
 
 ### Zasady eksportu
 
 - `exportAccountData` jest account-wide w sensie konta uzytkownika
-- eksport obejmuje `profile` oraz wszystkie orchard, dla ktorych user ma aktywne membership `owner`
-- aktualny entry point UI znajduje sie na `/settings/profile`
+- dla zwyklego usera eksport obejmuje `profile` oraz wszystkie orchard, dla ktorych ma aktywne membership `owner`
+- dla `super_admin` eksport obejmuje `profile` oraz wszystkie orchard dostepne administracyjnie w biezacym systemie
+- aktualny entry point UI znajduje sie na `/settings/profile`, ktore jest authenticated account screen, a nie orchard-scoped page
+- po zalogowaniu `super_admin` bez aktywnego orchard `/` przekierowuje na `/settings/profile`
 - aktualna odpowiedz jest plikiem JSON do pobrania
 - eksport zawiera:
   - `orchards`
@@ -303,8 +309,8 @@ Uwaga Phase 5A:
   - `activities`
   - `activity_scopes`
   - `activity_materials`
-  - `harvest_records`
-- orchard, w ktorym user jest tylko `worker`, nie trafia do eksportu
+- `harvest_records`
+- orchard, w ktorym zwykly user jest tylko `worker`, nie trafia do eksportu
 
 ## 10. Rekomendowane typy odpowiedzi operacji
 
@@ -322,33 +328,64 @@ Przyklad logiczny:
 type ActionResult<T> = {
   success: boolean
   data?: T
-  error_code?: string
+  error_code?: ActionErrorCode
   message?: string
   field_errors?: Record<string, string>
 }
 ```
 
+Wazne doprecyzowania po `Phase 5G`:
+
+- `error_code` jest teraz zamknietym katalogiem kodow MVP, a nie dowolnym stringiem
+- server actions moga zwrocic `success = false` razem z `data`, jesli UI powinno zachowac
+  przydatny preview lub kontekst naprawczy
+- dotyczy to obecnie glownie batch tree flows, gdzie konflikt albo pusty wynik preview nie
+  kasuje danych potrzebnych do poprawy zakresu
+- redirect-based bannery UX, np. po revoke membership albo przy nieudanym switchu orchard,
+  nie sa `error_code`; korzystaja z osobnego mechanizmu `notice`
+
 ## 11. Kody bledow, ktore warto z gory przewidziec
 
 - `UNAUTHORIZED`
 - `FORBIDDEN`
+- `PROFILE_BOOTSTRAP_REQUIRED`
 - `NO_ACTIVE_ORCHARD`
-- `ORCHARD_MEMBERSHIP_REQUIRED`
 - `ORCHARD_ONBOARDING_REQUIRED`
 - `EXPORT_NOT_ALLOWED_FOR_ROLE`
 - `NOT_FOUND`
 - `VALIDATION_ERROR`
+- `AUTH_SIGN_UP_FAILED`
+- `AUTH_RESET_PASSWORD_FAILED`
+- `ORCHARD_LIST_FAILED`
+- `ORCHARD_CREATE_FAILED`
+- `ORCHARD_UPDATE_FAILED`
+- `ORCHARD_MEMBER_INVITE_FAILED`
+- `PROFILE_UPDATE_FAILED`
 - `LOCATION_CONFLICT`
 - `DUPLICATE_VARIETY`
 - `DUPLICATE_PLOT_NAME`
+- `PLOT_MUTATION_FAILED`
+- `VARIETY_MUTATION_FAILED`
 - `PLOT_ARCHIVED`
+- `PLOT_LAYOUT_UNSUPPORTED`
+- `NO_MATCHING_TREES`
+- `PREVIEW_REQUIRED`
+- `TREE_MUTATION_FAILED`
+- `TREE_BATCH_MUTATION_FAILED`
+- `TREE_CODE_PATTERN_INVALID`
 - `TREE_NOT_IN_PLOT`
-- `BATCH_CONFLICT`
+- `ACTIVITY_MUTATION_FAILED`
 - `ACTIVITY_SCOPE_INVALID`
+- `ACTIVITY_SCOPE_LAYOUT_UNSUPPORTED`
 - `PRUNING_SUBTYPE_REQUIRED`
+- `HARVEST_MUTATION_FAILED`
 - `HARVEST_SCOPE_INVALID`
+- `HARVEST_LOCATION_RANGE_UNSUPPORTED`
 - `HARVEST_UNIT_INVALID`
-- `UNKNOWN_ERROR`
+
+Aktualnym source of truth dla opisow kodow i ich pokrycia jest
+`errors_and_system_messages.md`, a zgodnosc dokumentacji z kodem jest pilnowana
+testem jednostkowym.
 
 ## 12. Decyzje zamkniete
 

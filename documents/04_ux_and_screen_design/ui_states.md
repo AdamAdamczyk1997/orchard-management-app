@@ -51,6 +51,7 @@ Kazdy glowny widok powinien miec obsluge:
 
 - krotki pending state po zmianie `active_orchard`
 - blokada powtarzania klikniec
+- gdy user ma tylko jeden orchard, select pozostaje zablokowany i pokazuje helper text zamiast mylacej interakcji
 
 ## 3. Dashboard
 
@@ -58,6 +59,7 @@ Kazdy glowny widok powinien miec obsluge:
 
 - skeleton dla kart podsumowan
 - skeleton dla karty szybkich akcji
+- placeholder dla `upcoming_activities`
 - placeholder dla ostatnich aktywnosci
 - placeholder dla kart zbiorow
 
@@ -76,6 +78,8 @@ Kazdy glowny widok powinien miec obsluge:
 - sa dane strukturalne, ale brak aktywnosci
 - sa dane orchard, ale brak rekordow zbioru
 - dashboard nadal pokazuje karty summary i szybkie akcje mimo pustych feedow
+- blok `upcoming_activities` moze miec w tym stanie osobny komunikat o braku zaplanowanych prac od dzis wzwyz
+- dashboard moze tez pokazac warning banner, jesli nie udalo sie przelaczyc aktywnego orchard i system wrocil do bezpiecznego recovery flow
 
 ## 4. Listy dzialek, drzew, odmian, aktywnosci i zbiorow
 
@@ -91,7 +95,7 @@ Kazdy glowny widok powinien miec obsluge:
 ### Empty state po filtrowaniu
 
 - komunikat typu `brak wynikow dla wybranych filtrow`
-- akcja czyszczenia filtrow
+- priorytetowa akcja `wyczysc filtry`
 - opcjonalne drugie CTA do utworzenia rekordu pozostaje dostepne, ale akcja czyszczenia filtrow jest priorytetowa
 
 ### Error state
@@ -104,6 +108,8 @@ Kazdy glowny widok powinien miec obsluge:
 - jesli rekord nie istnieje w aktywnym `orchard` albo zostal usuniety, ekran nie robi cichego redirectu
 - user widzi czytelny komunikat i jednoznaczne CTA powrotu do listy modulu
 - ten wzorzec dotyczy krytycznych tras `activities`, `harvests`, `plots`, `trees`, `varieties` oraz wybranych ekranow `settings`
+- shared recovery cards oraz empty states ukladaja CTA pionowo na mobile i wracaja do ukladu inline od `sm`
+- `settings/members` pokazuje success albo warning banner po revoke membership, zamiast cichego redirectu bez wyjasnienia
 
 ## 5. Formularze
 
@@ -232,6 +238,7 @@ Przyklady:
 
 - placeholder kart sumarycznych
 - placeholder wykresu lub listy timeline
+- `season summary` ma route-level loading na poziomie calego raportu
 
 ### Raport lokalizacji zbiorow
 
@@ -244,7 +251,7 @@ Przyklady:
 
 ### `Export forbidden for worker`
 
-- komunikat, ze tylko user z aktywnym membership `owner` moze eksportowac dane konta
+- komunikat, ze eksport danych konta wymaga aktywnego `owner` albo roli `super_admin`
 - brak aktywnego CTA eksportu
 
 ### `Export generating`
@@ -255,7 +262,7 @@ Przyklady:
 ### `Export success`
 
 - informacja, ze plik eksportu jest gotowy do pobrania
-- jasne wskazanie zakresu: tylko orchard z aktywnym membership `owner`
+- jasne wskazanie zakresu: `owned_orchards` dla ownera albo `all_orchards_admin` dla `super_admin`
 
 ### `Members loading`
 

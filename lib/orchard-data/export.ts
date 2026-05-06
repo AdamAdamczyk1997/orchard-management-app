@@ -5,6 +5,7 @@ import type {
   ExportAvailabilitySummary,
   OrchardMembershipSummary,
   OrchardStatus,
+  SystemRole,
 } from "@/types/contracts";
 
 type QueryClient = SupabaseClient;
@@ -15,6 +16,10 @@ type ExportProfileRow = {
   display_name: string | null;
   locale: string | null;
   timezone: string | null;
+};
+
+type ExportProfileWithRoleRow = ExportProfileRow & {
+  system_role: SystemRole;
 };
 
 type OwnedMembershipRow = {
@@ -77,14 +82,30 @@ async function getQueryClient(supabaseClient?: QueryClient) {
   return supabaseClient ?? createSupabaseServerClient();
 }
 
-export async function readExportAvailabilityForProfile(
+async function readProfileForExport(
   profileId: string,
-  supabaseClient?: QueryClient,
-): Promise<ExportAvailabilitySummary> {
-  const supabase = await getQueryClient(supabaseClient);
-  const { count, error } = await supabase
+  supabase: QueryClient,
+): Promise<ExportProfileWithRoleRow | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, email, display_name, locale, timezone, system_role")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as ExportProfileWithRoleRow | null;
+}
+
+async function listOwnedOrchardIdsForProfile(
+  profileId: string,
+  supabase: QueryClient,
+) {
+  const { data, error } = await supabase
     .from("orchard_memberships")
-    .select("orchard_id", { count: "exact", head: true })
+    .select("orchard_id")
     .eq("profile_id", profileId)
     .eq("role", "owner")
     .eq("status", "active");
@@ -93,12 +114,83 @@ export async function readExportAvailabilityForProfile(
     throw error;
   }
 
-  const ownedOrchardsCount = count ?? 0;
+  return Array.from(
+    new Set(
+      ((data ?? []) as OwnedMembershipRow[]).map((row) => row.orchard_id),
+    ),
+  );
+}
+
+async function listAdminVisibleOrchardIds(supabase: QueryClient) {
+  const { data, error } = await supabase.from("orchards").select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.from(
+    new Set(
+      ((data ?? []) as Array<{ id: string }>).map((row) => row.id),
+    ),
+  );
+}
+
+async function resolveExportContextForProfile(
+  profileId: string,
+  supabase: QueryClient,
+): Promise<{
+  availability: ExportAvailabilitySummary;
+  orchardIds: string[];
+  profile: ExportProfileWithRoleRow | null;
+}> {
+  const profile = await readProfileForExport(profileId, supabase);
+
+  if (!profile) {
+    return {
+      availability: {
+        can_export: false,
+        scope: "owned_orchards",
+        orchards_count: 0,
+      },
+      orchardIds: [],
+      profile: null,
+    };
+  }
+
+  if (profile.system_role === "super_admin") {
+    const orchardIds = await listAdminVisibleOrchardIds(supabase);
+
+    return {
+      availability: {
+        can_export: true,
+        scope: "all_orchards_admin",
+        orchards_count: orchardIds.length,
+      },
+      orchardIds,
+      profile,
+    };
+  }
+
+  const orchardIds = await listOwnedOrchardIdsForProfile(profileId, supabase);
 
   return {
-    can_export: ownedOrchardsCount > 0,
-    owned_orchards_count: ownedOrchardsCount,
+    availability: {
+      can_export: orchardIds.length > 0,
+      scope: "owned_orchards",
+      orchards_count: orchardIds.length,
+    },
+    orchardIds,
+    profile,
   };
+}
+
+export async function readExportAvailabilityForProfile(
+  profileId: string,
+  supabaseClient?: QueryClient,
+): Promise<ExportAvailabilitySummary> {
+  const supabase = await getQueryClient(supabaseClient);
+  const { availability } = await resolveExportContextForProfile(profileId, supabase);
+  return availability;
 }
 
 export async function getExportAccountDataForProfile(
@@ -106,45 +198,32 @@ export async function getExportAccountDataForProfile(
   supabaseClient?: QueryClient,
 ): Promise<ExportAccountDataResult | null> {
   const supabase = await getQueryClient(supabaseClient);
-  const availability = await readExportAvailabilityForProfile(profileId, supabase);
+  const { availability, orchardIds, profile } = await resolveExportContextForProfile(
+    profileId,
+    supabase,
+  );
 
   if (!availability.can_export) {
     return null;
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, email, display_name, locale, timezone")
-    .eq("id", profileId)
-    .maybeSingle();
-
-  if (profileError) {
-    throw profileError;
   }
 
   if (!profile) {
     return null;
   }
 
-  const { data: ownedMemberships, error: membershipError } = await supabase
-    .from("orchard_memberships")
-    .select("orchard_id")
-    .eq("profile_id", profileId)
-    .eq("role", "owner")
-    .eq("status", "active");
-
-  if (membershipError) {
-    throw membershipError;
-  }
-
-  const ownedOrchardIds = Array.from(
-    new Set(
-      ((ownedMemberships ?? []) as OwnedMembershipRow[]).map((row) => row.orchard_id),
-    ),
-  );
-
-  if (ownedOrchardIds.length === 0) {
-    return null;
+  if (orchardIds.length === 0) {
+    return {
+      version: "1",
+      exported_at: new Date().toISOString(),
+      profile: {
+        id: profile.id,
+        email: profile.email,
+        display_name: profile.display_name,
+        locale: profile.locale,
+        timezone: profile.timezone,
+      },
+      orchards: [],
+    };
   }
 
   const [
@@ -156,13 +235,13 @@ export async function getExportAccountDataForProfile(
     activitiesResult,
     harvestsResult,
   ] = await Promise.all([
-    supabase.from("orchards").select("*").in("id", ownedOrchardIds),
-    supabase.from("orchard_memberships").select("*").in("orchard_id", ownedOrchardIds),
-    supabase.from("plots").select("*").in("orchard_id", ownedOrchardIds),
-    supabase.from("varieties").select("*").in("orchard_id", ownedOrchardIds),
-    supabase.from("trees").select("*").in("orchard_id", ownedOrchardIds),
-    supabase.from("activities").select("*").in("orchard_id", ownedOrchardIds),
-    supabase.from("harvest_records").select("*").in("orchard_id", ownedOrchardIds),
+    supabase.from("orchards").select("*").in("id", orchardIds),
+    supabase.from("orchard_memberships").select("*").in("orchard_id", orchardIds),
+    supabase.from("plots").select("*").in("orchard_id", orchardIds),
+    supabase.from("varieties").select("*").in("orchard_id", orchardIds),
+    supabase.from("trees").select("*").in("orchard_id", orchardIds),
+    supabase.from("activities").select("*").in("orchard_id", orchardIds),
+    supabase.from("harvest_records").select("*").in("orchard_id", orchardIds),
   ]);
 
   if (orchardsResult.error) throw orchardsResult.error;
@@ -245,7 +324,13 @@ export async function getExportAccountDataForProfile(
   return {
     version: "1",
     exported_at: new Date().toISOString(),
-    profile: profile as ExportProfileRow,
+    profile: {
+      id: profile.id,
+      email: profile.email,
+      display_name: profile.display_name,
+      locale: profile.locale,
+      timezone: profile.timezone,
+    },
     orchards: orchards.map((orchard) => {
       const orchardActivities = activitiesByOrchard[orchard.id] ?? [];
 

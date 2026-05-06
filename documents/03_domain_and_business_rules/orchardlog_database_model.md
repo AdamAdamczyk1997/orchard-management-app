@@ -562,6 +562,7 @@ Jeden rekord = jedno fizyczne drzewo.
   - `(plot_id, row_number, position_in_row)`
   - tylko gdy `is_active = true` i `row_number is not null` i `position_in_row is not null`
 - index on `orchard_id`
+- partial index on `orchard_id` where `is_active = true`
 - index on `(plot_id, condition_status)`
 - index on `(orchard_id, variety_id)`
 - `planted_batch_id` jest juz aktywna czescia aktualnego modelu operacyjnego i linkuje rekordy `trees` z `bulk_tree_import_batches`
@@ -608,6 +609,8 @@ create unique index uq_trees_active_logical_location
     and position_in_row is not null;
 
 create index idx_trees_orchard_id on trees(orchard_id);
+create index idx_trees_orchard_active on trees(orchard_id)
+  where is_active = true;
 create index idx_trees_plot_condition on trees(plot_id, condition_status);
 create index idx_trees_orchard_variety on trees(orchard_id, variety_id);
 ```
@@ -660,6 +663,7 @@ Naglowek wpisu dziennika prac.
 - index on `(orchard_id, activity_type, status, activity_date desc)`
 - index on `(performed_by_profile_id, activity_date desc)`
 - index on `(orchard_id, season_year, activity_date desc)`
+- index on `(orchard_id, activity_date desc, created_at desc)` for recent dashboard and list reads
 
 ```sql
 create table activities (
@@ -716,6 +720,8 @@ create index idx_activities_performed_by_date
   on activities(performed_by_profile_id, activity_date desc);
 create index idx_activities_orchard_season_date
   on activities(orchard_id, season_year, activity_date desc);
+create index idx_activities_orchard_recent
+  on activities(orchard_id, activity_date desc, created_at desc);
 ```
 
 ### `activity_scopes`
@@ -749,6 +755,7 @@ Dokladny zakres wykonania aktywnosci sezonowej.
 - CHECK: `to_position >= from_position` gdy oba ustawione
 - index on `activity_id`
 - index on `(scope_level, row_number)`
+- partial index on `(tree_id, activity_id)` where `tree_id is not null`
 
 ```sql
 create table activity_scopes (
@@ -805,6 +812,9 @@ create table activity_scopes (
 
 create index idx_activity_scopes_activity_id on activity_scopes(activity_id);
 create index idx_activity_scopes_scope_level_row on activity_scopes(scope_level, row_number);
+create index idx_activity_scopes_tree_activity
+  on activity_scopes(tree_id, activity_id)
+  where tree_id is not null;
 ```
 
 ### `activity_materials`
@@ -893,6 +903,10 @@ Ilosciowy zapis zbioru. Nie zastępuje `activities`, tylko uzupelnia je o dane r
 - index on `(season_year, harvest_date desc)`
 - index on `(orchard_id, variety_id, season_year)`
 - index on `(orchard_id, plot_id, season_year)`
+- index on `(orchard_id, harvest_date desc, created_at desc)` for recent dashboard reads
+- index on `(orchard_id, season_year, harvest_date desc, created_at desc)` for harvest list reads
+- partial index on `(orchard_id, season_year, plot_id, harvest_date desc, created_at desc)` where `plot_id is not null`
+- partial index on `(orchard_id, season_year, variety_id, harvest_date desc, created_at desc)` where `variety_id is not null`
 
 ```sql
 create table harvest_records (
@@ -929,6 +943,16 @@ create index idx_harvest_records_orchard_variety_season
   on harvest_records(orchard_id, variety_id, season_year);
 create index idx_harvest_records_orchard_plot_season
   on harvest_records(orchard_id, plot_id, season_year);
+create index idx_harvest_records_orchard_recent
+  on harvest_records(orchard_id, harvest_date desc, created_at desc);
+create index idx_harvest_records_orchard_season_recent
+  on harvest_records(orchard_id, season_year, harvest_date desc, created_at desc);
+create index idx_harvest_records_orchard_season_plot_recent
+  on harvest_records(orchard_id, season_year, plot_id, harvest_date desc, created_at desc)
+  where plot_id is not null;
+create index idx_harvest_records_orchard_season_variety_recent
+  on harvest_records(orchard_id, season_year, variety_id, harvest_date desc, created_at desc)
+  where variety_id is not null;
 ```
 
 ## 5. Rozszerzenia etapu 0.2

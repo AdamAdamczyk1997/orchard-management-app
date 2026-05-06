@@ -67,13 +67,17 @@ export function VarietyLocationsReportView({
             dzialce, sekcji i rzedzie oraz scala kolejne pozycje w czytelne zakresy.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
           {report ? (
-            <LinkButton href={buildTreesHref(report.variety_id)} variant="secondary">
+            <LinkButton
+              className="w-full sm:w-auto"
+              href={buildTreesHref(report.variety_id)}
+              variant="secondary"
+            >
               Pokaz drzewa tej odmiany
             </LinkButton>
           ) : null}
-          <LinkButton href="/varieties" variant="ghost">
+          <LinkButton className="w-full sm:w-auto" href="/varieties" variant="ghost">
             Wroc do odmian
           </LinkButton>
         </div>
@@ -112,11 +116,11 @@ export function VarietyLocationsReportView({
                 </Select>
               </label>
               <div className="flex flex-wrap items-end gap-3">
-                <Button type="submit" variant="secondary">
+                <Button className="w-full sm:w-auto" type="submit" variant="secondary">
                   Pokaz raport
                 </Button>
-                <LinkButton href={resetHref} variant="ghost">
-                  Wyczysc
+                <LinkButton className="w-full sm:w-auto" href={resetHref} variant="ghost">
+                  Wyczysc filtry
                 </LinkButton>
               </div>
             </form>

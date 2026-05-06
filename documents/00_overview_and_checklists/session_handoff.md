@@ -101,6 +101,7 @@ Ma zawierac:
   - `/dashboard` nie jest juz placeholderem i pokazuje realny snapshot aktywnego sadu
   - dashboard ma liczniki aktywnych dzialek i aktywnych drzew
   - dashboard pokazuje ostatnie aktywnosci i ostatnie zbiory z linkami do detail pages
+  - dashboard pokazuje tez blok `upcoming_activities` dla najblizszych wpisow `planned`
   - dashboard ma szybkie akcje do tworzenia rekordow i wejscie do harvestowego raportu sezonu
   - dodany jest route-level loading skeleton oraz empty / partial empty states dla dashboardu
 - `Phase 5B1`
@@ -131,8 +132,9 @@ Ma zawierac:
   - na tym przejsciu nie znaleziono blokujacych bledow aplikacji
 - `Phase 6A`
   - `exportAccountData` jest wdrozone jako account-wide eksport JSON na `/settings/profile`
-  - eksport jest dostepny tylko dla usera z co najmniej jednym aktywnym membership `owner`
-  - payload obejmuje profil oraz tylko orchard z aktywnym membership `owner`, razem z `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`
+  - eksport jest dostepny dla usera z co najmniej jednym aktywnym membership `owner`, a administracyjnie takze dla `super_admin`
+  - zwykly user eksportuje tylko orchard z aktywnym membership `owner`, a `super_admin` moze pobrac wszystkie orchard dostepne administracyjnie
+  - payload obejmuje profil oraz eksportowany zestaw `orchards` razem z `orchard_memberships`, `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`
   - `worker` widzi jawny stan zablokowanego eksportu bez aktywnego CTA
   - route download zwraca plik JSON z `Content-Disposition`, a UI ma pending state i komunikat sukcesu / bledu
 - `Phase 6B`
@@ -188,13 +190,44 @@ Ma zawierac:
   - dodane sa stabilne helpery logowania, baseline fixture users i minimalne `data-testid` dla krytycznych flow terenowych
   - skonczony jest tez ukierunkowany pass izolacji dostepu: orchard switch nie przecieka danych, `worker` nie ma eksportu ani membership management, outsider nie wchodzi w raporty operacyjne
   - w trakcie wdrozenia naprawiony zostal realny bug batch create / confirm, w ktorym formularz po preview potrafil zgubic `plot_id` przy potwierdzeniu zapisu
+- `Phase 6I`
+  - pakiet migracji jest rozszerzony o `026_harden_operational_query_indexes.sql` jako forward-only follow-up bez ruszania historycznych migracji `001`-`025`
+  - dodane sa celowane indeksy pod dashboard feeds, tree-filtered `activities` oraz harvest list/report queries
+  - `getHarvestLocationSummary` zawęza teraz dane po `plot_id` juz na poziomie SQL i cache kluczuje pelny zestaw filtrow `season_year + plot_id + variety_id`
+  - `listActivities(..., { tree_id })` zachowuje obecny model `activities.tree_id OR activity_scopes.tree_id`, ale ma teraz integration regression dla direct i scoped tree links bez przecieku orchard
+- `Phase 5D / 6J`
+  - `/settings/profile` i `GET /settings/profile/export` sa wydzielone do osobnego authenticated account shell, ktory nie wymaga aktywnego orchard
+  - zalogowany `super_admin` bez orchard nie trafia juz na onboarding przy starcie z `/`, tylko na `/settings/profile`
+  - publiczny kontrakt `ExportAvailabilitySummary` ma teraz jawny `scope = owned_orchards | all_orchards_admin` oraz `orchards_count`
+  - source-of-truth docs dla kontraktow, eksportu i UX sa zsynchronizowane z wdrozonym zachowaniem `owner` vs `super_admin`
+  - automatyka ma nowe integration coverage dla administracyjnego eksportu wielu orchard oraz E2E dla seeded `super_admin` na `/settings/profile`
+- `Phase 5E`
+  - shared `EmptyStateCard`, `PrerequisiteCard`, `RecordNotFoundCard`, `AccessDeniedCard` i `FeedbackBanner` maja mobilny uklad CTA bez tracenia dotychczasowych kontraktow
+  - `orchard switcher` zachowuje auto-submit, ale komunikuje stan zablokowany dla jednego orchard i pending podczas zmiany kontekstu
+  - dashboard, listy i raporty maja ujednolicony reset filtrow wokol `Wyczysc filtry`, a `reports/season-summary` dostal route-level loading skeleton
+  - E2E obejmuje teraz rozroznienie `global empty` vs `filtered empty`, recovery dla brakujacej aktywnosci, single-orchard switcher state oraz mobilny smoke pass bez poziomego scrolla
+- `Phase 5F`
+  - `DashboardSummary` jest rozszerzony o `upcoming_activities` jako orchard-scoped feed planowanych wpisow od dzis wzwyz
+  - dashboard pokazuje osobny blok `Nadchodzace aktywnosci` z empty state, CTA do tworzenia wpisu i linkiem do listy aktywnosci
+  - planningowy feed nie wprowadza nowego modelu planowania; korzysta z istniejacych `activities.status = planned`
+  - automatyka ma nowe integration coverage dla sortowania, limitu i izolacji `upcoming_activities` oraz E2E dla pustego i niepustego stanu tego bloku
+- `Phase 5G`
+  - `ActionResult<T>.error_code` jest teraz zamknietym katalogiem MVP, a docs maja unit test pilnujacy zgodnosci z realnie zwracanymi kodami
+  - batch preview dla drzew zachowuje teraz spojny kontrakt bledu z `data`, bez recznie skladanych wyjatkow od helpera
+  - `orchard switcher` zachowuje biezaca trase po zmianie aktywnego orchard, zamiast zawsze wracac na `/dashboard`
+  - nieudany orchard switch i zablokowany revoke membership koncza sie jawnym warning bannerem, a udany revoke pokazuje success banner na `/settings/members`
+- `Release closeout / final QA sign-off`
+  - referencyjny baseline jest odbudowywany komenda `pnpm seed:baseline-reset`, a gotowosc danych potwierdza `pnpm qa:baseline-status = READY`
+  - pelny gate `supabase db lint`, `pnpm typecheck`, `pnpm test` i `pnpm test:e2e` przechodzi na czystym baseline; znany warning `v_membership_joined_at` pozostaje nieblokujacy
+  - `pnpm dev` startuje poprawnie lokalnie po aktualnym closeoucie
+  - audit walidacyjnych / permission / missing-active-orchard komunikatow jest domkniety dla MVP, a user-facing copy nie miesza juz technicznego `orchard` z polskim UX poza swiadomie technicznymi miejscami
+  - pelna automatyka mutuje liczby rekordow w baseline, wiec przed recznym seeded smoke trzeba ponownie wykonac `pnpm seed:baseline-reset`
 
 ### Swiadomie odlozone po obecnym etapie
 
 - detail pages dla `plots`, `varieties`, `trees`
 - delete UI dla `varieties` i `trees`
-- `upcoming_activities` i szerszy planning block na dashboardzie
-- dalszy responsive polish dla mobilnych flow terenowych
+- szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 
 ### Najwazniejsze punkty wejscia do dokumentacji
 
@@ -222,17 +255,24 @@ Ma zawierac:
 
 Ostatnio potwierdzone jako przechodzace:
 
-- `pnpm seed:baseline-reset`
-- `pnpm qa:baseline-status`
 - `supabase db lint`
-- `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
 - `pnpm test:e2e`
+- `pnpm qa:baseline-status`
+- `pnpm dev`
+
+Dodatkowy status lokalnego baseline QA:
+
+- po `pnpm seed:baseline-reset` referencyjny baseline wraca do `READY`
+- po `pnpm test` i `pnpm test:e2e` baseline nie jest juz referencyjny, bo suite'y dopisuja dane scenariuszy; przed manual QA trzeba zrobic kolejny `pnpm seed:baseline-reset`
 
 ### Rekomendowany nastepny vertical slice
 
-- `Phase 6I - migration and query hardening`, czyli przeglad MVP migracji pod spojnoscia nazw, forward-only safety i realnym pokryciem indeksami pod dashboard, harvest reporting oraz najczestsze query operacyjne
+- `Post-MVP roadmap planning`, czyli decyzja ktore odlozone elementy staja sie nowym priorytetem po obecnym closeoucie:
+  - detail pages dla `plots`, `varieties`, `trees`
+  - delete UI dla `varieties` i `trees`
+  - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 
 ## UZUPELNIJ SAM - stan lokalny i reczna weryfikacja
 
@@ -316,10 +356,10 @@ Ostatnio potwierdzone jako przechodzace:
   - automatycznie potwierdzone lokalnie: `pnpm seed:baseline-users`
   - Zamkniete w Phase 5A:
   - `/dashboard` pokazuje teraz realne summary aktywnego sadu zamiast placeholdera
-  - read model `getDashboardSummaryForOrchard` liczy aktywne dzialki, aktywne drzewa, ostatnie aktywnosci i ostatnie zbiory
+  - read model `getDashboardSummaryForOrchard` liczy aktywne dzialki, aktywne drzewa, ostatnie aktywnosci, ostatnie zbiory i `upcoming_activities`
   - owner widzi szybkie wejscia do `settings/orchard` i `settings/members`, a wszyscy maja link do `/reports/season-summary`
-  - dashboard ma onboardingowy empty state oraz partial empty state dla pustych feedow aktywnosci i zbiorow
-  - dodany integration test dla dashboard summary z limitem, sortowaniem i izolacja orchard
+  - dashboard ma onboardingowy empty state oraz partial empty state dla pustych feedow aktywnosci, zbiorow i planowanych prac
+  - dodany integration test dla dashboard summary z limitem, sortowaniem i izolacja orchard, w tym dla `upcoming_activities`
   - automatycznie potwierdzone lokalnie: `pnpm lint`, `pnpm typecheck`, `pnpm test`
   - Zamkniete w Phase 5B1:
   - `plots`, `varieties`, `trees`, `activities` i `harvests` maja wspolny wzorzec `global empty state` vs `filtered empty state`
@@ -351,7 +391,7 @@ Ostatnio potwierdzone jako przechodzace:
   - globalny admin / super user shell, podglad userow i remove user
   - reczny smoke test nowych stron `activities` w przegladarce
   - reczny smoke test nowych stron `harvests` w przegladarce
-  - planningowy blok `upcoming_activities` na dashboardzie
+  - szerszy planningowy block na dashboardzie wykraczajacy poza prosty feed `upcoming_activities`
   - reczny smoke test na kontach seedowych
 
 - Rzeczy, ktore dzialaja dobrze i nie wymagaja ruszania:

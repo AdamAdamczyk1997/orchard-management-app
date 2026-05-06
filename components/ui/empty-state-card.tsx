@@ -23,9 +23,10 @@ export function EmptyStateCard({
       <CardTitle>{title}</CardTitle>
       <CardDescription>{description}</CardDescription>
       {actions.length > 0 ? (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           {actions.map((action) => (
             <LinkButton
+              className="w-full sm:w-auto"
               href={action.href}
               key={`${action.href}:${action.label}`}
               variant={action.variant}

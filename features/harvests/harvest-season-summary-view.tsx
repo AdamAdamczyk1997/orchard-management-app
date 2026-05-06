@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { Input } from "@/components/ui/input";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
@@ -103,14 +104,24 @@ export function HarvestSeasonSummaryView({
             sumy globalne, rozklad per odmiana, per dzialka oraz historie w czasie.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <LinkButton href={buildHarvestLocationHref(filters)} variant="secondary">
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={buildHarvestLocationHref(filters)}
+            variant="secondary"
+          >
             Zbiory po lokalizacji
           </LinkButton>
-          <LinkButton href={harvestListHref} variant="secondary">
+          <LinkButton
+            className="w-full sm:w-auto"
+            href={harvestListHref}
+            variant="secondary"
+          >
             Pokaz wpisy zbioru
           </LinkButton>
-          <LinkButton href="/harvests/new">Nowy wpis zbioru</LinkButton>
+          <LinkButton className="w-full sm:w-auto" href="/harvests/new">
+            Nowy wpis zbioru
+          </LinkButton>
         </div>
       </div>
 
@@ -161,13 +172,13 @@ export function HarvestSeasonSummaryView({
             </Select>
           </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
-            <Button type="submit" variant="secondary">
+            <Button className="w-full sm:w-auto" type="submit" variant="secondary">
               Pokaz raport
             </Button>
-            <LinkButton href={resetHref} variant="ghost">
-              Przywroc domyslne
+            <LinkButton className="w-full sm:w-auto" href={resetHref} variant="ghost">
+              Wyczysc filtry
             </LinkButton>
-            <LinkButton href="/harvests" variant="ghost">
+            <LinkButton className="w-full sm:w-auto" href="/harvests" variant="ghost">
               Wroc do listy zbiorow
             </LinkButton>
           </div>
@@ -203,18 +214,14 @@ export function HarvestSeasonSummaryView({
       </div>
 
       {summary.record_count === 0 ? (
-        <Card className="grid gap-3">
-          <CardTitle>Brak danych w tym sezonie</CardTitle>
-          <CardDescription>
-            Zmien sezon albo filtry raportu, albo dodaj pierwszy wpis zbioru.
-          </CardDescription>
-          <div className="flex flex-wrap gap-3">
-            <LinkButton href="/harvests/new">Dodaj wpis zbioru</LinkButton>
-            <LinkButton href={resetHref} variant="ghost">
-              Przywroc domyslne filtry
-            </LinkButton>
-          </div>
-        </Card>
+        <EmptyStateCard
+          actions={[
+            { href: resetHref, label: "Wyczysc filtry", variant: "secondary" },
+            { href: "/harvests/new", label: "Dodaj wpis zbioru", variant: "ghost" },
+          ]}
+          description="Zmien sezon albo filtry raportu, albo dodaj pierwszy wpis zbioru."
+          title="Brak danych w tym sezonie"
+        />
       ) : (
         <>
           <div className="grid gap-4 xl:grid-cols-2">
