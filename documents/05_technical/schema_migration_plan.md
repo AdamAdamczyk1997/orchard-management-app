@@ -86,6 +86,14 @@ Rekomendowana kolejnosc plikow:
 | `024` | `024_extend_plots_with_layout_settings.sql` | `plots.layout_type`, schematy numeracji, punkt odniesienia i notatki ukladu | `005`, `014` |
 | `025` | `025_add_plot_layout_guards_for_activity_and_harvest_locations.sql` | trigger hardening dla `activity_scopes` i `harvest_records` z uwzglednieniem `plots.layout_type` | `009`, `011`, `012`, `024` |
 | `026` | `026_harden_operational_query_indexes.sql` | celowane indeksy pod dashboard, tree-filtered `activities` oraz listy i raporty `harvest_records` | `007`-`011`, `023`, `025` |
+| `027` | `027_reharden_harvest_trigger_search_path.sql` | ponowne utwardzenie `search_path` dla `set_harvest_derived_fields_and_validate()` po redefinicji trigger function w `025` | `017`, `025` |
+| `028` | `028_reharden_activity_scope_trigger_search_path.sql` | ponowne utwardzenie `search_path` dla `validate_activity_scope_consistency()` po redefinicji trigger function w `025` | `017`, `025` |
+| `029` | `029_wrap_auth_uid_in_orchards_select_policy.sql` | optymalizacja `auth.uid()` w polityce `SELECT` dla `orchards` | `014`, `021`, `022` |
+| `030` | `030_add_covering_foreign_key_indexes.sql` | brakujace indeksy pokrywajace FK dla `orchard_memberships`, `trees`, `activities`, `harvest_records` i `bulk_tree_import_batches` | `004`, `007`, `008`, `011`, `023` |
+| `031` | `031_remove_unused_membership_joined_at_variable.sql` | uproszczenie RPC `create_orchard_with_owner_membership(...)` przez usuniecie nieuzywanej zmiennej lintowej | `015`, `017` |
+| `032` | `032_drop_redundant_multicolumn_shadowed_indexes.sql` | usuniecie redundantnych single-column indeksow zastapionych przez bardziej trafne indeksy wielokolumnowe | `003`, `005`, `006`, `007`, `008`, `011`, `026` |
+| `033` | `033_prune_unused_and_overwide_operational_indexes.sql` | uproszczenie indeksow `bulk_tree_import_batches` i usuniecie nieuzywanych / zastapionych indeksow `activity_scopes` oraz `harvest_records` | `009`, `011`, `023`, `026`, `030` |
+| `034` | `034_wrap_auth_uid_in_profiles_update_policy.sql` | optymalizacja `auth.uid()` w polityce `UPDATE` dla `profiles` | `014` |
 
 ### Zaleznosci pakietu
 
@@ -151,7 +159,7 @@ Rekomendowana kolejnosc plikow:
 
 - optional storage / attachments
 - import CSV / XLSX flows
-- dalsze plot-aware walidacje drzew i batch flow oparte o `plots.layout_type`
+- dalsze rozszerzenia domenowe po zatwierdzeniu konkretnego use case'u; podstawowe plot-aware walidacje i batch flow oparte o `plots.layout_type` sa juz dostarczone w `023`-`025`
 
 ### Delivered in current `0.2` slices
 
@@ -159,6 +167,14 @@ Rekomendowana kolejnosc plikow:
 - `024_extend_plots_with_layout_settings.sql`
 - `025_add_plot_layout_guards_for_activity_and_harvest_locations.sql`
 - `026_harden_operational_query_indexes.sql`
+- `027_reharden_harvest_trigger_search_path.sql`
+- `028_reharden_activity_scope_trigger_search_path.sql`
+- `029_wrap_auth_uid_in_orchards_select_policy.sql`
+- `030_add_covering_foreign_key_indexes.sql`
+- `031_remove_unused_membership_joined_at_variable.sql`
+- `032_drop_redundant_multicolumn_shadowed_indexes.sql`
+- `033_prune_unused_and_overwide_operational_indexes.sql`
+- `034_wrap_auth_uid_in_profiles_update_policy.sql`
 - `bulk_tree_import_batches`
 - `trees.planted_batch_id`
 - `plots.layout_type`
@@ -170,6 +186,10 @@ Rekomendowana kolejnosc plikow:
 - `default_trees_per_row`
 - triggerowe blokady `row` / `location_range` dla dzialek `irregular` w `activity_scopes` i `harvest_records`
 - indeksy operacyjne pod dashboard feeds, tree-filtered `activities` oraz harvest list/report queries
+- brakujace indeksy pokrywajace FK dla `invited_by_profile_id`, relacji `variety` / `tree` / `activity` oraz audytowych `created_by_profile_id`
+- cleanup redundantnych indeksow `orchard_id` / `status`, kiedy nowsze indeksy wielokolumnowe pokrywaja te same sciezki filtrowania przez lewy prefiks
+- cleanup nieuzywanych indeksow pomocniczych oraz zamiana zbyt szerokich indeksow batchowych na minimalne indeksy pokrywajace FK
+- domkniecie ostatnich lint follow-upow dla RLS init plan i PL/pgSQL warningow bez edytowania historycznych migracji
 
 ### Delivered in immediate `v1_security` and hardening package
 
@@ -180,6 +200,8 @@ Rekomendowana kolejnosc plikow:
 - `020_wrap_auth_uid_in_orchard_membership_select_policy.sql`
 - `021_wrap_auth_uid_in_orchards_update_policy.sql`
 - `022_wrap_auth_uid_in_orchards_insert_policy.sql`
+- `029_wrap_auth_uid_in_orchards_select_policy.sql`
+- `034_wrap_auth_uid_in_profiles_update_policy.sql`
 - `enable row level security` on all baseline domain tables
 - final MVP policies for:
   - `profiles`
@@ -280,14 +302,22 @@ Pokryte scenariusze:
 
 ### Validation status of the current package
 
-- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`026`
+- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`034`
 - lokalne `supabase db reset` przechodzi dla aktualnego pakietu
 - lokalne `pnpm seed:baseline-users` tworzy albo aktualizuje komplet 6 kont seedowych wymaganych przez `001_baseline_reference_seed.sql`
 - lokalne `pnpm seed:baseline-sql` odpala referencyjny seed SQL przez Supabase CLI bez recznego SQL Editor
 - lokalne `pnpm seed:baseline-reset` spina reset bazy, bootstrap `auth.users` i odpalanie referencyjnego seedu
 - lokalne `pnpm qa:baseline-status` pozwala potwierdzic, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
-- lokalne `supabase db lint` przechodzi po dodaniu `026_harden_operational_query_indexes.sql`
-- lokalne `supabase db lint --local -o json` nie zgłasza juz warningow `Function Search Path Mutable`, `Multiple Permissive Policies` ani `Auth RLS Initialization Plan`; obecnie pozostaje tylko niezwiązany warning o nieuzywanej zmiennej `v_membership_joined_at` w RPC `create_orchard_with_owner_membership(...)`
+- lokalne `supabase db lint` przechodzi dla aktualnego pakietu `001`-`034`
+- `027_reharden_harvest_trigger_search_path.sql` domyka regresje, w ktorej redefinicja `public.set_harvest_derived_fields_and_validate()` w `025` nadpisala wczesniejsze ustawienie `search_path` z `017`
+- `028_reharden_activity_scope_trigger_search_path.sql` domyka analogiczna regresje dla `public.validate_activity_scope_consistency()`, zredefiniowanej w `025` bez jawnego `search_path`
+- `029_wrap_auth_uid_in_orchards_select_policy.sql` domyka follow-up wydajnosciowy dla polityki `orchards_select_member_creator_or_super_admin`, zastępując gole `auth.uid()` przez `(select auth.uid())`
+- `030_add_covering_foreign_key_indexes.sql` domyka brakujace indeksy pokrywajace FK, ktore nie mialy indeksu z kluczem obcym jako kolumna wiodaca mimo istnienia innych indeksow raportowych lub orchard-scoped
+- `031_remove_unused_membership_joined_at_variable.sql` usuwa ostatni warning PL/pgSQL o nieuzywanej zmiennej w `create_orchard_with_owner_membership(...)` bez zmiany kontraktu RPC
+- `032_drop_redundant_multicolumn_shadowed_indexes.sql` usuwa single-column indeksy, ktore byly cieniowane przez indeksy wielokolumnowe z tym samym leading column i nie dodawaly osobnej wartosci dla aktualnych query pathow
+- `033_prune_unused_and_overwide_operational_indexes.sql` usuwa nieuzywany indeks `activity_scopes(scope_level, row_number)`, usuwa legacy indeksy `harvest_records` zastapione przez pakiet `026` i zamienia zbyt szerokie indeksy historii `bulk_tree_import_batches` na mniejsze indeksy pokrywajace same FK `orchard_id` i `plot_id`
+- `034_wrap_auth_uid_in_profiles_update_policy.sql` domyka `Auth RLS Initialization Plan` dla `profiles_update_self_or_super_admin`, zastępując gole `auth.uid()` przez `(select auth.uid())`
+- lokalne `supabase db lint --local -o json` nie zgłasza juz warningow `Function Search Path Mutable`, `Auth RLS Initialization Plan`, `Unindexed foreign keys` ani warningu o `v_membership_joined_at`
 - pakiet jest gotowy do uruchomienia lokalnie w srodowisku z PostgreSQL lub Supabase CLI
 
 ## 7. Readiness statement

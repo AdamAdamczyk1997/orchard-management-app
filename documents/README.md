@@ -6,16 +6,19 @@ To jest jedyny kanoniczny katalog aktywnej dokumentacji projektu.
 
 Szybka mapa wejscia:
 
+- [app_high_level_overview.md](./00_overview_and_checklists/app_high_level_overview.md)
 - [documentation_map.md](./00_overview_and_checklists/documentation_map.md)
+- [session_handoff.md](./00_overview_and_checklists/session_handoff.md)
+- [01_implementation_materials/README.md](./01_implementation_materials/README.md)
 
 ## Jak czytac skroty i oznaczenia
 
 - `MVP`
   Minimal Viable Product, czyli pierwsza realnie uzywalna wersja produktu.
 - `MVP 0.1`
-  najblizszy, podstawowy zakres wdrozenia, ktory chcemy dowiezc jako pierwszy sensowny release.
+  podstawowy zakres pierwszego sensownego release'u. W repo jest traktowany jako zamkniety funkcjonalnie rdzen, a nie przyszly plan startowy.
 - `Etap 0.2`
-  kolejny krok po `MVP 0.1`, czyli funkcje zaplanowane i wspierane przez architekture, ale swiadomie odlozone na pozniej.
+  kolejny krok po `MVP 0.1`. Czesc funkcji z tego etapu jest juz wdrozona, m.in. export, batch tree flows, rozszerzone lokalizacje i raporty lokalizacyjne.
 - `source of truth`
   dokument, ktory traktujemy jako nadrzedna specyfikacje przy implementacji.
 
@@ -40,6 +43,8 @@ To sa dokumenty, na podstawie ktorych przygotowujemy migracje SQL, RLS, API, for
   - `supabase/migrations/020_wrap_auth_uid_in_orchard_membership_select_policy.sql`
   - `supabase/migrations/021_wrap_auth_uid_in_orchards_update_policy.sql`
   - `supabase/migrations/022_wrap_auth_uid_in_orchards_insert_policy.sql`
+  - `supabase/migrations/029_wrap_auth_uid_in_orchards_select_policy.sql`
+  - `supabase/migrations/034_wrap_auth_uid_in_profiles_update_policy.sql`
 
 - Referencyjny seed lokalny dla baseline i testow znajduje sie w:
   - `supabase/seeds/001_baseline_reference_seed.sql`
@@ -68,12 +73,14 @@ To sa dokumenty, na podstawie ktorych przygotowujemy migracje SQL, RLS, API, for
 Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i implementacje:
 
 - `00_overview_and_checklists/codex_working_prompt.md`
+- `00_overview_and_checklists/app_high_level_overview.md`
+- `00_overview_and_checklists/local_dev_tools_quickstart.md`
 - `00_overview_and_checklists/manual_testing_quickstart.md`
 - `00_overview_and_checklists/session_handoff.md`
-- `00_overview_and_checklists/startup_materials_checklist.md`
 - `01_implementation_materials/README.md`
-- `01_implementation_materials/implementation_master_plan.md`
 - `01_implementation_materials/user_flows.md`
+- `01_implementation_materials/plot_visual_operations_roadmap.md` - kierunek produktu i architektury dla `Plot Visual Operations MVP`
+- `01_implementation_materials/plot_visual_operations_implementation_master_plan.md` - checklista wykonawcza implementacji `Plot Visual Operations MVP`
 - `02_product_documents/mvp_scope_and_priorities.md`
 - `02_product_documents/personas_and_user_types.md`
 - `02_product_documents/glossary.md`
@@ -101,7 +108,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
   Checklisty, mapy dokumentacji, materialy orientacyjne i przegladowe.
 
 - `01_implementation_materials`
-  Glowny punkt startowy do implementacji: master plan, flow i zestaw wejscia w development.
+  Lekki punkt startowy do implementacji: README, flow i wskazniki do aktywnych source of truth.
 
 - `02_product_documents`
   Dokumenty produktowe: zakres, persony, slownik i cele uzytkownika.
@@ -128,14 +135,16 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 
 ### `00_overview_and_checklists`
 
+- `app_high_level_overview.md`
 - `codex_working_prompt.md`
+- `documentation_map.md`
+- `local_dev_tools_quickstart.md`
+- `manual_testing_quickstart.md`
 - `session_handoff.md`
-- `startup_materials_checklist.md`
 
 ### `01_implementation_materials`
 
 - `README.md`
-- `implementation_master_plan.md`
 - `user_flows.md`
 
 ### `02_product_documents`
@@ -191,7 +200,9 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 ### `archive`
 
 - `README.md`
+- `implementation_master_plan.md`
 - `high_level_plan.md`
+- `startup_materials_checklist.md`
 - `technology_and_responsibilities.md`
 - `orchardlog_data_model_location_and_variety_reports_update.md`
 - `phase_1_auth_onboarding_vertical_slice.md`

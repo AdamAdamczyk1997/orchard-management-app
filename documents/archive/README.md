@@ -18,7 +18,9 @@ implementacji.
 
 ## Zawartosc
 
+- `implementation_master_plan.md`
 - `high_level_plan.md`
+- `startup_materials_checklist.md`
 - `technology_and_responsibilities.md`
 - `orchardlog_data_model_location_and_variety_reports_update.md`
 - `phase_1_auth_onboarding_vertical_slice.md`

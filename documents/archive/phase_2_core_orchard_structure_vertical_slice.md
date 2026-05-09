@@ -11,7 +11,7 @@ This note documents the second implemented vertical slice:
 
 It is implementation-oriented and should be used together with:
 
-- [implementation_master_plan.md](../01_implementation_materials/implementation_master_plan.md)
+- [implementation_master_plan.md](./implementation_master_plan.md)
 - [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
 - [tree_location_policy.md](../03_domain_and_business_rules/tree_location_policy.md)
 - [authorization_and_rls_strategy.md](../05_technical/authorization_and_rls_strategy.md)

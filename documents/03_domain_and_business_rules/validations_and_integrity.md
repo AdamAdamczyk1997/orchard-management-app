@@ -76,8 +76,8 @@ Ten dokument tlumaczy te decyzje na warstwy walidacji i integralnosci, ale nie t
 
 - kazda mutacja domenowa musi pracowac w kontekscie `active_orchard`
 - brak aktywnego orchard powinien zwracac `NO_ACTIVE_ORCHARD`
-- jesli user nie ma aktywnego membership, operacja powinna zwracac `ORCHARD_MEMBERSHIP_REQUIRED`
-- onboarding orchard jest wymagany tylko wtedy, gdy user nie ma zadnego aktywnego membership
+- jesli resolver nie moze zbudowac working contextu i user nie ma dostepnego orchard do pracy, flow onboardingowy korzysta z `ORCHARD_ONBOARDING_REQUIRED`
+- onboarding orchard jest wymagany tylko wtedy, gdy user nie ma zadnego orchard dostepnego do pracy w aktualnym stanie membership
 
 ### Ownership i zgodnosc danych
 

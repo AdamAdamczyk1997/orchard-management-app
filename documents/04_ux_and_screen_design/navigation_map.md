@@ -61,9 +61,15 @@ Dodatkowo:
 - `/settings/orchard`
 - `/settings/members`
 
-### Swiadomie odlozone po Phase 2
+### Planowane w `Plot Visual Operations MVP`
 
 - `/plots/[plotId]`
+
+`/plots/[plotId]` ma byc operacyjnym detail page dzialki w slice `Plot Visual Operations MVP`.
+Do czasu implementacji tego slice'u brak trasy w kodzie jest oczekiwany i nie jest regresja.
+
+### Swiadomie odlozone po Phase 2
+
 - `/trees/[treeId]`
 - `/varieties/[varietyId]`
 

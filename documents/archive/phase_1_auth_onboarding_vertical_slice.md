@@ -12,7 +12,7 @@ This note documents the first implemented vertical slice:
 It is intentionally implementation-oriented.
 Use it together with:
 
-- [implementation_master_plan.md](../01_implementation_materials/implementation_master_plan.md)
+- [implementation_master_plan.md](./implementation_master_plan.md)
 - [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
 - [authorization_and_rls_strategy.md](../05_technical/authorization_and_rls_strategy.md)
 - [api_and_system_operations.md](../06_backend_and_contracts/api_and_system_operations.md)

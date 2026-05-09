@@ -9,7 +9,10 @@ co musi znalezc sie w pierwszej uzywalnej wersji aplikacji, a co mozna swiadomie
 Wazne:
 to jest dokument priorytetyzacji produktu, a nie live status implementacji repo.
 Aktualny stan wdrozenia jest utrzymywany w `session_handoff.md`,
-`implementation_master_plan.md` i `documentation_map.md`.
+`documentation_map.md` i aktywnych source-of-truth docs w `documents/`.
+Na obecnym stanie repo funkcjonalny rdzen `MVP 0.1` jest domkniety, a czesc zakresu `0.2`
+jest juz wdrozona. Ten plik zostaje jako produktowa mapa priorytetow i nie powinien byc
+czytany jako lista rzeczy nadal niewykonanych.
 
 ## Zalozenia robocze
 
@@ -164,6 +167,13 @@ Uwaga implementacyjna:
 
 ## Zakres wersji 0.2 - `should have`
 
+Status repo:
+ponizsze elementy sa w duzej czesci juz wdrozone jako Phase 6:
+rozszerzone lokalizacje dzialek i drzew, batch tree create, bulk deactivate,
+raport lokalizacji odmiany, raport lokalizacji zbiorow oraz export danych konta.
+Aktywne rozroznienie po obecnym closeoucie jest nastepujace:
+`export` jest wdrozony, natomiast `import` i `restore workflow` pozostaja odlozone.
+
 ### 1. Lokalizacja drzew w modelu rozszerzonym
 
 - `layout_type` dla dzialki
@@ -195,6 +205,11 @@ Uwaga implementacyjna:
 - export danych konta do pliku dla `owner`, a administracyjnie takze dla `super_admin`
 - import wybranych danych z kontrola walidacji
 
+Uwaga statusowa:
+
+- export jest wdrozony na `/settings/profile` i w `GET /settings/profile/export`
+- import i restore pozostaja poza obecnym zakresem
+
 ## Zakres `later`
 
 - przypomnienia o pracach
@@ -204,6 +219,8 @@ Uwaga implementacyjna:
 - analiza historii i rozbudowane raporty plonow
 - odmiany globalne lub wspoldzielone
 - rozbudowane role i wspolpraca wielu uzytkownikow
+- delete UI dla `varieties` i `trees`
+- dedykowane detail pages dla `plots`, `varieties` i `trees`
 
 ## Swiadomie poza pierwszym wydaniem
 

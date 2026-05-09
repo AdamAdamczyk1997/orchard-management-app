@@ -1,3 +1,19 @@
+## Archival note
+
+Ten dokument zostal przeniesiony do `documents/archive/` po domknieciu roli aktywnego execution guide.
+Zachowujemy go jako historyczny indeks realizacji faz i slad decyzji delivery, a nie jako
+biezacy punkt startowy do pracy.
+
+Aktualne wejscia robocze to:
+
+- `documents/README.md`
+- `documents/00_overview_and_checklists/documentation_map.md`
+- `documents/00_overview_and_checklists/session_handoff.md`
+- `documents/01_implementation_materials/README.md`
+
+Niezaznaczone checkboxy w tym pliku oznaczaja backlog swiadomie odlozony albo zalozenia,
+ktore zostaly zastapione przez nowsze aktywne source-of-truth docs.
+
 # OrchardLog / Sadownik+ Implementation Master Plan
 
 ## Purpose of this document

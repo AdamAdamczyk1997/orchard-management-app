@@ -51,7 +51,7 @@ W aktualnym vertical slice zostaly wdrozone:
 
 Swiadomie odlozone:
 
-- dedykowane detail pages dla `plots`
+- `/plots/[plotId]` nie jest juz traktowane jako ogolnie odlozony detail page; jest planowane jako operacyjny detail page dzialki w `Plot Visual Operations MVP`
 - dedykowane detail pages dla `varieties`
 - dedykowane detail pages dla `trees`
 
@@ -71,7 +71,8 @@ W aktualnym vertical slice zostaly wdrozone:
 Swiadomie rozdzielone od tego slice:
 
 - `reports/season-summary` pozostaje ekranem raportowania zbiorow
-- detail pages dla `plots` i `trees` nadal sa odlozone, wiec szczegoly aktywnosci pokazuja je tylko jako metadata text
+- `/plots/[plotId]` jest planowane w `Plot Visual Operations MVP`; do czasu wdrozenia PVO szczegoly aktywnosci pokazuja dzialke tylko jako metadata text
+- detail page dla `trees` nadal jest odlozony, wiec szczegoly aktywnosci pokazuja drzewo tylko jako metadata text
 
 ### Aktualizacja Phase 4A
 
@@ -173,7 +174,8 @@ W aktualnym vertical slice zostaly wdrozone:
 Swiadomie odlozone do kolejnego kroku:
 
 - szerszy planningowy blok prac wykraczajacy poza prosty feed `upcoming_activities`
-- detail pages dla `plots`, `varieties` i `trees`
+- `/plots/[plotId]` przechodzi do planowanego slice `Plot Visual Operations MVP`; brak tej trasy przed implementacja PVO jest oczekiwany
+- detail pages dla `varieties` i `trees`
 
 ### Aktualizacja Phase 5F
 

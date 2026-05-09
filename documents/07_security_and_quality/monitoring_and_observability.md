@@ -55,7 +55,7 @@ Monitoring ma pomagac szybko zauwazyc:
 - wzrost bledow 5xx
 - masowe niepowodzenia zapisow
 - problemy z baza danych lub storage
-- seria bledow `NO_ACTIVE_ORCHARD` albo `ORCHARD_MEMBERSHIP_REQUIRED` po wdrozeniu
+- seria bledow `NO_ACTIVE_ORCHARD` albo `ORCHARD_ONBOARDING_REQUIRED` po wdrozeniu
 
 ## 5. Poziomy logowania
 

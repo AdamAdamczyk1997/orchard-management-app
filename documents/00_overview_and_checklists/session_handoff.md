@@ -18,7 +18,7 @@ Ma zawierac:
    - `documents/README.md`
    - `documents/00_overview_and_checklists/documentation_map.md`
    - `documents/01_implementation_materials/README.md`
-   - `documents/01_implementation_materials/implementation_master_plan.md`
+   - `documents/02_product_documents/mvp_scope_and_priorities.md`
 2. Po kazdej wiekszej sesji uzupelnij sekcje `UZUPELNIJ SAM`.
 3. Nie duplikuj tutaj calej dokumentacji; zapisuj tylko najwazniejszy stan operacyjny.
 
@@ -195,6 +195,23 @@ Ma zawierac:
   - dodane sa celowane indeksy pod dashboard feeds, tree-filtered `activities` oraz harvest list/report queries
   - `getHarvestLocationSummary` zawęza teraz dane po `plot_id` juz na poziomie SQL i cache kluczuje pelny zestaw filtrow `season_year + plot_id + variety_id`
   - `listActivities(..., { tree_id })` zachowuje obecny model `activities.tree_id OR activity_scopes.tree_id`, ale ma teraz integration regression dla direct i scoped tree links bez przecieku orchard
+- `Phase 6I follow-up`
+  - dodana migracja `027_reharden_harvest_trigger_search_path.sql` jako forward-only poprawka hardeningowa
+  - follow-up przywraca `set search_path = public` dla `public.set_harvest_derived_fields_and_validate()`, bo redefinicja funkcji w `025` nadpisala wczesniejsze ustawienie z `017`
+  - dodana migracja `028_reharden_activity_scope_trigger_search_path.sql` jako analogiczny follow-up dla `public.validate_activity_scope_consistency()`
+  - follow-up przywraca `set search_path = public` po redefinicji trigger function w `025`, zeby nie wracal warning `Function Search Path Mutable`
+  - dodana migracja `029_wrap_auth_uid_in_orchards_select_policy.sql` jako follow-up wydajnosciowy dla RLS `SELECT` na `public.orchards`
+  - follow-up zamienia gole `auth.uid()` na `(select auth.uid())` w polityce `orchards_select_member_creator_or_super_admin`, zeby nie bylo per-row reevaluacji w lint `Auth RLS Initialization Plan`
+  - dodana migracja `030_add_covering_foreign_key_indexes.sql` jako follow-up wydajnosciowy dla brakujacych indeksow pokrywajacych FK
+  - follow-up dodaje brakujace indeksy z kluczem obcym jako kolumna wiodaca dla `orchard_memberships`, `trees`, `activities`, `harvest_records` i `bulk_tree_import_batches`, zeby domknac warningi `Unindexed foreign keys`
+  - dodana migracja `031_remove_unused_membership_joined_at_variable.sql` jako follow-up porzadkujacy dla RPC onboardingu orchard
+  - follow-up usuwa nieuzywana zmienna `v_membership_joined_at` z `public.create_orchard_with_owner_membership(...)`, dzieki czemu `supabase db lint` przechodzi juz bez ostatniego warningu PL/pgSQL
+  - dodana migracja `032_drop_redundant_multicolumn_shadowed_indexes.sql` jako follow-up po audycie `Unused Index`
+  - follow-up usuwa tylko te single-column indeksy, ktore byly realnie redundantne wobec indeksow wielokolumnowych z tym samym leading column; warning dla `idx_orchard_memberships_profile_status` zostal uznany za nieakcyjny na swiezym local baseline i indeks zostaje, bo wspiera lookupy `profile_id + status`
+  - dodana migracja `033_prune_unused_and_overwide_operational_indexes.sql` jako drugi follow-up po audycie `Unused Index`
+  - follow-up zamienia `bulk_tree_import_batches(orchard_id, created_at desc)` i `(plot_id, row_number, created_at desc)` na prostsze indeksy FK `orchard_id` i `plot_id`, usuwa nieuzywany `activity_scopes(scope_level, row_number)` oraz usuwa legacy indeksy `harvest_records`, ktore byly juz zastapione bardziej trafnymi indeksami z `026`
+  - dodana migracja `034_wrap_auth_uid_in_profiles_update_policy.sql` jako follow-up wydajnosciowy dla RLS `UPDATE` na `public.profiles`
+  - follow-up zamienia gole `auth.uid()` na `(select auth.uid())` w polityce `profiles_update_self_or_super_admin`, zeby uniknac per-row reevaluacji w lint `Auth RLS Initialization Plan`
 - `Phase 5D / 6J`
   - `/settings/profile` i `GET /settings/profile/export` sa wydzielone do osobnego authenticated account shell, ktory nie wymaga aktywnego orchard
   - zalogowany `super_admin` bez orchard nie trafia juz na onboarding przy starcie z `/`, tylko na `/settings/profile`
@@ -218,7 +235,7 @@ Ma zawierac:
   - nieudany orchard switch i zablokowany revoke membership koncza sie jawnym warning bannerem, a udany revoke pokazuje success banner na `/settings/members`
 - `Release closeout / final QA sign-off`
   - referencyjny baseline jest odbudowywany komenda `pnpm seed:baseline-reset`, a gotowosc danych potwierdza `pnpm qa:baseline-status = READY`
-  - pelny gate `supabase db lint`, `pnpm typecheck`, `pnpm test` i `pnpm test:e2e` przechodzi na czystym baseline; znany warning `v_membership_joined_at` pozostaje nieblokujacy
+  - pelny gate `supabase db lint`, `pnpm typecheck`, `pnpm test` i `pnpm test:e2e` przechodzi na czystym baseline
   - `pnpm dev` startuje poprawnie lokalnie po aktualnym closeoucie
   - audit walidacyjnych / permission / missing-active-orchard komunikatow jest domkniety dla MVP, a user-facing copy nie miesza juz technicznego `orchard` z polskim UX poza swiadomie technicznymi miejscami
   - pelna automatyka mutuje liczby rekordow w baseline, wiec przed recznym seeded smoke trzeba ponownie wykonac `pnpm seed:baseline-reset`
@@ -227,6 +244,9 @@ Ma zawierac:
 
 - detail pages dla `plots`, `varieties`, `trees`
 - delete UI dla `varieties` i `trees`
+- zmiana roli membership orchard
+- import UI i restore workflow
+- storage / attachments
 - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 
 ### Najwazniejsze punkty wejscia do dokumentacji
@@ -234,7 +254,7 @@ Ma zawierac:
 - [documents/README.md](../README.md)
 - [documentation_map.md](./documentation_map.md)
 - [documents/01_implementation_materials/README.md](../01_implementation_materials/README.md)
-- [implementation_master_plan.md](../01_implementation_materials/implementation_master_plan.md)
+- [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md)
 - [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
 - [authorization_and_rls_strategy.md](../05_technical/authorization_and_rls_strategy.md)
 - [test_plan.md](../07_security_and_quality/test_plan.md)
@@ -272,6 +292,9 @@ Dodatkowy status lokalnego baseline QA:
 - `Post-MVP roadmap planning`, czyli decyzja ktore odlozone elementy staja sie nowym priorytetem po obecnym closeoucie:
   - detail pages dla `plots`, `varieties`, `trees`
   - delete UI dla `varieties` i `trees`
+  - zmiana roli membership orchard
+  - import UI i restore workflow
+  - storage / attachments po zatwierdzeniu konkretnego use case'u
   - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 
 ## UZUPELNIJ SAM - stan lokalny i reczna weryfikacja
@@ -300,7 +323,7 @@ Dodatkowy status lokalnego baseline QA:
 
 - UI / UX do poprawy, Bledy albo edge case'y zauwazone recznie, Security Issues:
   - Zamkniete w Pre-Phase 3 Stabilization Pass:
-  - `Function Search Path Mutable` z Supabase lint naprawiony migracja `017_harden_function_search_paths.sql`
+  - pierwotny warning `Function Search Path Mutable` byl hardenowany migracja `017_harden_function_search_paths.sql`, a regresje po redefinicji trigger functions w `025` dostaly follow-upy `027_reharden_harvest_trigger_search_path.sql` i `028_reharden_activity_scope_trigger_search_path.sql`
   - polski jest teraz domyslnym jezykiem glownego UX i copy dla aktualnie wdrozonych flow
   - dodane glowne `README.md` repo
   - onboarding intro ma lepszy kontrast i czytelniejszy naglowek
@@ -312,8 +335,13 @@ Dodatkowy status lokalnego baseline QA:
   - Zamkniete w follow-up RLS hardening:
   - `Multiple Permissive Policies` dla `orchard_memberships` naprawione migracja `019_consolidate_orchard_membership_insert_policy.sql`
   - `Auth RLS Initialization Plan` dla `orchard_memberships` naprawiony migracja `020_wrap_auth_uid_in_orchard_membership_select_policy.sql`
-  - `Auth RLS Initialization Plan` dla `orchards` naprawiony migracjami `021_wrap_auth_uid_in_orchards_update_policy.sql` i `022_wrap_auth_uid_in_orchards_insert_policy.sql`
-  - lokalny `supabase db lint --local -o json` nie zgłasza juz tych warningow; obecnie zostaje tylko niezwiązany warning o nieuzywanej zmiennej `v_membership_joined_at` w `create_orchard_with_owner_membership(...)`
+  - `Auth RLS Initialization Plan` dla `orchards` naprawiony migracjami `021_wrap_auth_uid_in_orchards_update_policy.sql`, `022_wrap_auth_uid_in_orchards_insert_policy.sql` i `029_wrap_auth_uid_in_orchards_select_policy.sql`
+  - `Auth RLS Initialization Plan` dla `profiles` naprawiony migracja `034_wrap_auth_uid_in_profiles_update_policy.sql`
+  - brakujace indeksy pokrywajace FK dla `orchard_memberships`, `trees`, `activities`, `harvest_records` i `bulk_tree_import_batches` domkniete migracja `030_add_covering_foreign_key_indexes.sql`
+  - ostatni warning o nieuzywanej zmiennej `v_membership_joined_at` w `create_orchard_with_owner_membership(...)` domkniety migracja `031_remove_unused_membership_joined_at_variable.sql`
+  - po audycie `Unused Index` usuniete zostaly redundantne indeksy `idx_orchards_status`, `idx_plots_orchard_id`, `idx_varieties_orchard_id`, `idx_trees_orchard_id`, `idx_activities_orchard_id` i `idx_harvest_records_orchard_id`; `idx_orchard_memberships_profile_status` zostal swiadomie zachowany
+  - w drugim passie `Unused Index` uproszczone zostaly indeksy `bulk_tree_import_batches`, usuniety zostal nieuzywany `idx_activity_scopes_scope_level_row`, a `harvest_records` stracily stare indeksy `idx_harvest_records_season_date`, `idx_harvest_records_orchard_variety_season` i `idx_harvest_records_orchard_plot_season`, bo ich role przejal pakiet `026`
+  - lokalny `supabase db lint --local -o json` przechodzi bez pozostalych warningow schematu `public`
   - Zamkniete w Phase 3 Core Slice:
   - dodane trasy `/activities`, `/activities/new` i `/activities/[activityId]/edit`
   - lista aktywnosci ma filtry po dacie, dzialce, drzewie, typie, statusie i wykonawcy
@@ -376,7 +404,7 @@ Dodatkowy status lokalnego baseline QA:
   - dodana komenda `pnpm qa:baseline-status` do walidacji baseline auth users i referencyjnych danych seedowych przed manual QA
   - narzedzie sprawdza profile, orchardy, membership matrix, liczby rekordow i normalizacje harvest w tonach
   - przy zabrudzonej lokalnej bazie po testach narzedzie rekomenduje `pnpm seed:baseline-reset` zamiast samego rerunu SQL seedu
-  - `manual_testing_quickstart`, `local_dev_tools_quickstart`, `schema_migration_plan`, `test_plan`, `README` i `implementation_master_plan` zostaly zaktualizowane pod nowy workflow
+  - `manual_testing_quickstart`, `local_dev_tools_quickstart`, `schema_migration_plan`, `test_plan`, `README` i aktywne mapy dokumentacji zostaly zaktualizowane pod nowy workflow; historyczny `implementation_master_plan` jest teraz w `documents/archive/`
   - dodane unit tests dla evaluatora gotowosci seeded QA
   - automatycznie potwierdzone lokalnie: `pnpm lint`, `pnpm typecheck`, `pnpm test`
   - Zamkniete w Phase 5C1:
@@ -400,9 +428,9 @@ Dodatkowy status lokalnego baseline QA:
 ### 4. Najblizszy cel kolejnej sesji
 
 - Co chcesz zrobic jako nastepne:
-  - `zrobic reczny seeded smoke pass w przegladarce na gotowym baseline`
+  - `zrobic post-MVP roadmap planning i wybrac nastepny priorytetowy vertical slice`
 - Co ma byc zakresem nowego chatu:
-  - `bazujemy na zamknietym Phase 5C1, nie ruszamy dashboard summary ani harvest reporting, tylko wykonujemy reczny smoke pass i zbieramy responsive / UX follow-upy`
+  - `bazujemy na obecnym closeoucie i aktywnej dokumentacji; nie wracamy do planowania od zera, tylko porzadkujemy odlozone elementy i wybieramy kolejny konkretny zakres implementacji`
 
 ### 5. Kontekst organizacyjny
 
@@ -418,13 +446,37 @@ Dodatkowy status lokalnego baseline QA:
 Mozesz wkleić cos w tym stylu:
 
 ```text
-Przeczytaj najpierw:
+Pracujemy nad OrchardLog / Sadownik+.
+Rozmawiamy po polsku, ale nazwy techniczne, pliki, DTO, endpointy, encje i SQL trzymamy po angielsku.
+
+Najpierw przeczytaj:
 - documents/00_overview_and_checklists/codex_working_prompt.md
+- documents/00_overview_and_checklists/app_high_level_overview.md
 - documents/00_overview_and_checklists/session_handoff.md
 - documents/README.md
+- documents/00_overview_and_checklists/documentation_map.md
 - documents/01_implementation_materials/README.md
-- documents/01_implementation_materials/implementation_master_plan.md
+- documents/02_product_documents/mvp_scope_and_priorities.md
 
-Nastepnie kontynuuj prace od sekcji "Najblizszy cel kolejnej sesji" z session_handoff.md.
-Nie zaczynaj od projektowania od zera - bazuj na aktualnym repo, dokumentacji, migracjach, testach i wdrozonych slice'ach.
+Potem zorientuj sie w repo:
+- sprawdz `git status --short`, bo worktree moze byc brudny,
+- nie cofaj i nie nadpisuj zmian, ktorych sam nie zrobiles,
+- traktuj `documents/archive/` jako material historyczny, nie source of truth,
+- jesli dokumenty, migracje, testy i kod sa niespojne, sprawdz faktyczny stan implementacji i jasno nazwij rozjazd.
+
+Nie zaczynaj projektowania od zera.
+Bazuj na aktualnym repo, aktywnej dokumentacji, migracjach Supabase, seedach, testach i juz wdrozonych vertical slice'ach.
+Najpierw ustal, ktory slice albo follow-up jest kontynuowany, a dopiero potem proponuj zmiany.
+
+Szczegolnie zwracaj uwage na:
+- `active_orchard` rozwiazywany po stronie serwera i cookie `ol_active_orchard`,
+- orchard-scoped ownership i RLS,
+- role `owner`, `worker`, `super_admin` oraz outsider bez membership,
+- aktualny pakiet migracji `001`-`034`,
+- workflow baseline: `pnpm seed:baseline-reset` -> `pnpm qa:baseline-status`,
+- gate jakosci: `supabase db lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`,
+- swiadomie odlozone funkcje: detail pages dla `plots` / `varieties` / `trees`, delete UI dla `varieties` / `trees`, zmiana roli membership, import / restore, storage / attachments i szerszy planning block.
+
+Nastepnie kontynuuj prace od sekcji "Rekomendowany nastepny vertical slice" oraz "Najblizszy cel kolejnej sesji" z `session_handoff.md`.
+Jesli brakuje jednoznacznego kierunku, zaproponuj 2-3 sensowne opcje, wskaż rekomendowana i uzasadnij krotko technicznie.
 ```

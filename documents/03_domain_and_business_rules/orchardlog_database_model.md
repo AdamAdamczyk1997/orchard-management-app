@@ -32,10 +32,10 @@ Te tematy sa rozwijane w dokumentach:
 - `MVP`
   pierwsza realnie uzywalna wersja aplikacji.
 - `MVP 0.1`
-  zakres, ktory wdrazamy teraz jako pierwszy praktyczny release.
+  podstawowy zakres pierwszego praktycznego release'u. W aktualnym repo jest to funkcjonalnie domkniety rdzen produktu.
 - `Etap 0.2`
-  kolejny krok po `MVP 0.1`, czyli rozszerzenia juz przewidziane w architekturze, ale odlozone na nastepny etap.
-- Jesli tabela albo funkcja jest oznaczona jako `Etap 0.2`, to model moze byc na nia gotowy juz teraz, ale implementacja nie musi wejsc do pierwszego wydania.
+  kolejny krok po `MVP 0.1`. Czesc rozszerzen z tego etapu jest juz wdrozona, ale nie nalezy do pierwotnego baseline v1.
+- Jesli tabela albo funkcja jest oznaczona jako `Etap 0.2`, to model moze byc na nia gotowy juz teraz, ale nie jest czescia pierwotnego baseline SQL migrations v1.
 
 ## Final Core Domain and Data Model - Final Consolidated Version
 
@@ -658,7 +658,6 @@ Naglowek wpisu dziennika prac.
 - CHECK: dla `activity_type = 'pruning'` `activity_subtype in ('winter_pruning', 'summer_pruning')`, a dla pozostalych typow `activity_subtype is null`
 - CHECK: `work_duration_minutes >= 0` gdy ustawione
 - CHECK: `cost_amount >= 0` gdy ustawione
-- index on `orchard_id`
 - index on `(plot_id, activity_date desc)`
 - index on `(orchard_id, activity_type, status, activity_date desc)`
 - index on `(performed_by_profile_id, activity_date desc)`
@@ -712,7 +711,6 @@ create table activities (
   )
 );
 
-create index idx_activities_orchard_id on activities(orchard_id);
 create index idx_activities_plot_date on activities(plot_id, activity_date desc);
 create index idx_activities_orchard_type_status_date
   on activities(orchard_id, activity_type, status, activity_date desc);
@@ -754,7 +752,6 @@ Dokladny zakres wykonania aktywnosci sezonowej.
 - CHECK: `from_position > 0` i `to_position > 0` gdy ustawione
 - CHECK: `to_position >= from_position` gdy oba ustawione
 - index on `activity_id`
-- index on `(scope_level, row_number)`
 - partial index on `(tree_id, activity_id)` where `tree_id is not null`
 
 ```sql
@@ -811,7 +808,6 @@ create table activity_scopes (
 );
 
 create index idx_activity_scopes_activity_id on activity_scopes(activity_id);
-create index idx_activity_scopes_scope_level_row on activity_scopes(scope_level, row_number);
 create index idx_activity_scopes_tree_activity
   on activity_scopes(tree_id, activity_id)
   where tree_id is not null;
@@ -899,14 +895,11 @@ Ilosciowy zapis zbioru. Nie zastępuje `activities`, tylko uzupelnia je o dane r
 - CHECK: `quantity_unit in ('kg', 't')`
 - CHECK: `quantity_kg > 0`
 - CHECK: `to_position >= from_position` gdy oba ustawione
-- index on `orchard_id`
-- index on `(season_year, harvest_date desc)`
-- index on `(orchard_id, variety_id, season_year)`
-- index on `(orchard_id, plot_id, season_year)`
 - index on `(orchard_id, harvest_date desc, created_at desc)` for recent dashboard reads
 - index on `(orchard_id, season_year, harvest_date desc, created_at desc)` for harvest list reads
 - partial index on `(orchard_id, season_year, plot_id, harvest_date desc, created_at desc)` where `plot_id is not null`
 - partial index on `(orchard_id, season_year, variety_id, harvest_date desc, created_at desc)` where `variety_id is not null`
+- FK-covering indexes on `plot_id`, `variety_id`, `tree_id`, `activity_id` and `created_by_profile_id`
 
 ```sql
 create table harvest_records (
@@ -937,12 +930,6 @@ create table harvest_records (
   )
 );
 
-create index idx_harvest_records_orchard_id on harvest_records(orchard_id);
-create index idx_harvest_records_season_date on harvest_records(season_year, harvest_date desc);
-create index idx_harvest_records_orchard_variety_season
-  on harvest_records(orchard_id, variety_id, season_year);
-create index idx_harvest_records_orchard_plot_season
-  on harvest_records(orchard_id, plot_id, season_year);
 create index idx_harvest_records_orchard_recent
   on harvest_records(orchard_id, harvest_date desc, created_at desc);
 create index idx_harvest_records_orchard_season_recent
@@ -953,6 +940,12 @@ create index idx_harvest_records_orchard_season_plot_recent
 create index idx_harvest_records_orchard_season_variety_recent
   on harvest_records(orchard_id, season_year, variety_id, harvest_date desc, created_at desc)
   where variety_id is not null;
+create index idx_harvest_records_plot_id on harvest_records(plot_id);
+create index idx_harvest_records_variety_id on harvest_records(variety_id);
+create index idx_harvest_records_tree_id on harvest_records(tree_id);
+create index idx_harvest_records_activity_id on harvest_records(activity_id);
+create index idx_harvest_records_created_by_profile_id
+  on harvest_records(created_by_profile_id);
 ```
 
 ## 5. Rozszerzenia etapu 0.2
@@ -995,7 +988,10 @@ W tym samym pakiecie aktywne jest tez `trees.planted_batch_id`.
 - CHECK: `to_position >= from_position`
 - CHECK: `status in ('draft', 'done', 'failed', 'cancelled')`
 - CHECK: `default_condition_status in ('new', 'good', 'warning', 'critical', 'removed')`
-- index on `(orchard_id, created_at desc)`
+- FK-covering index on `orchard_id`
+- FK-covering index on `plot_id`
+- FK-covering index on `variety_id`
+- FK-covering index on `created_by_profile_id`
 
 ## 6. Relacje miedzy encjami
 

@@ -120,10 +120,17 @@ Na obecnym etapie mozna realnie testowac:
 
 Te obszary sa nadal odlozone albo nie sa jeszcze domkniete:
 
-- detail pages dla `plots`, `varieties` i `trees`
-- osobny global admin shell dla `super_admin`
+- `/plots/[plotId]` jest planowanym/current slice `Plot Visual Operations MVP`; do czasu implementacji PVO brak tego widoku nie jest bugiem
+- detail pages dla `varieties` i `trees`
+- delete UI dla `varieties` i `trees`
+- zmiana roli membership orchard
+- import UI i restore workflow
+- storage / attachments
+- szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
+- osobny globalny panel admina poza obecnym account shell dla `super_admin`
 
 Jesli cos z tej listy nie dziala albo nie istnieje w UI, to na ten moment nie jest to regresja.
+Po wdrozeniu `Plot Visual Operations MVP` ten quickstart powinien zostac uzupelniony o scenariusze testowe dla visual plot detail.
 
 ## Minimalne przygotowanie lokalnego srodowiska
 

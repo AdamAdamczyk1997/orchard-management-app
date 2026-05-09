@@ -14,9 +14,14 @@ Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 
 ### Dla implementacji i decyzji technicznych
 
-1. [documents/README.md](../README.md)
-2. [implementation_master_plan.md](../01_implementation_materials/implementation_master_plan.md)
+1. [app_high_level_overview.md](./app_high_level_overview.md)
+2. [documents/README.md](../README.md)
 3. [session_handoff.md](./session_handoff.md)
+4. [documents/01_implementation_materials/README.md](../01_implementation_materials/README.md)
+5. [plot_visual_operations_roadmap.md](../01_implementation_materials/plot_visual_operations_roadmap.md)
+6. [plot_visual_operations_implementation_master_plan.md](../01_implementation_materials/plot_visual_operations_implementation_master_plan.md)
+
+Historyczny execution index `implementation_master_plan.md` zostal przeniesiony do `documents/archive/`.
 
 ### Dla modelu domeny i kontraktow
 
@@ -37,6 +42,7 @@ Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 ### Dla testowania i QA
 
 - [manual_testing_quickstart.md](./manual_testing_quickstart.md)
+- [local_dev_tools_quickstart.md](./local_dev_tools_quickstart.md)
 - [test_plan.md](../07_security_and_quality/test_plan.md)
 - [mvp_acceptance_criteria.md](../07_security_and_quality/mvp_acceptance_criteria.md)
 
@@ -48,28 +54,37 @@ Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 - `plots`, `varieties`, `trees`
 - `activities` z detail view i seasonal summary
 - `harvests` z raportami sezonowymi i lokalizacyjnymi
-- dashboard operacyjny
-- export konta dla `owner`
+- dashboard operacyjny z blokiem `upcoming_activities`
+- export konta dla eligible `owner`, a administracyjnie takze dla `super_admin`
 - batch create i bulk deactivate dla `trees`
+- plot-aware layout rules dla `plots`, `trees`, `activities` i `harvests`
 - seed / QA workflow
+- browser E2E przez `pnpm test:e2e`
 
-### Czesiowo wdrozone
+### Wspierajace, ale wymagajace okresowej rewizji
 
-- responsive polish terenowych flow
 - monitoring i observability
-- browser E2E
+- storage / attachments jako dokument techniczny przyszlego slice'u
+- responsive polish terenowych flow po kolejnych zmianach UI
+
+### Planowane aktywne slice'y
+
+- `Plot Visual Operations MVP` reaktywuje `/plots/[plotId]` jako operacyjny detail page dzialki. Do czasu implementacji tego slice'u brak tej trasy w kodzie jest oczekiwany, nie jest regresja.
 
 ### Swiadomie odlozone
 
-- detail pages dla `plots`, `varieties`, `trees`
-- `upcoming_activities` na dashboardzie
+- detail pages dla `varieties` i `trees`
+- delete UI dla `varieties` i `trees`
+- zmiana roli membership orchard
 - import UI i restore workflow
-- osobny global admin shell dla `super_admin`
+- storage / attachments
+- szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 
 ## Archiwum
 
 `documents/archive/` zachowuje:
 
+- historyczny execution index `implementation_master_plan.md`
 - stare szkice produktu
 - zamkniete implementation notes z wczesnych faz
 - materialy historyczne, ktore nie sa juz source of truth
