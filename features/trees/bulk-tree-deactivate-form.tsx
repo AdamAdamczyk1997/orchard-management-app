@@ -18,6 +18,7 @@ import {
   supportsRowRangeWorkflows,
   type PlotTreeWorkflowOption,
 } from "@/lib/domain/plots";
+import type { BulkDeactivateTreesPrefill } from "@/lib/domain/tree-batch-prefill";
 import type {
   ActionResult,
   BulkDeactivateTreesPreviewResult,
@@ -31,6 +32,7 @@ type BulkDeactivateTreesFormAction = (
 type BulkTreeDeactivateFormProps = {
   action: BulkDeactivateTreesFormAction;
   plotOptions: PlotTreeWorkflowOption[];
+  prefill?: BulkDeactivateTreesPrefill;
 };
 
 const initialState: ActionResult<BulkDeactivateTreesPreviewResult> = {
@@ -40,12 +42,19 @@ const initialState: ActionResult<BulkDeactivateTreesPreviewResult> = {
 export function BulkTreeDeactivateForm({
   action,
   plotOptions,
+  prefill,
 }: BulkTreeDeactivateFormProps) {
   const [state, formAction] = useActionState(action, initialState);
-  const [selectedPlotId, setSelectedPlotId] = useState("");
-  const [rowNumber, setRowNumber] = useState("");
-  const [fromPosition, setFromPosition] = useState("");
-  const [toPosition, setToPosition] = useState("");
+  const [selectedPlotId, setSelectedPlotId] = useState(prefill?.plot_id ?? "");
+  const [rowNumber, setRowNumber] = useState(
+    prefill ? String(prefill.row_number) : "",
+  );
+  const [fromPosition, setFromPosition] = useState(
+    prefill ? String(prefill.from_position) : "",
+  );
+  const [toPosition, setToPosition] = useState(
+    prefill ? String(prefill.to_position) : "",
+  );
   const [reason, setReason] = useState("");
   const preview = state.data;
   const selectedPlot = plotOptions.find((plot) => plot.id === selectedPlotId);

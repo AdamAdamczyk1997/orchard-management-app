@@ -35,6 +35,28 @@ function formatPlotDefaultGrid(plot: PlotSummary) {
   return "Brak";
 }
 
+function getPlotTreeStats(plot: PlotSummary) {
+  return (
+    plot.tree_stats ?? {
+      active_tree_count: plot.tree_count ?? 0,
+      removed_or_inactive_tree_count: 0,
+      dominant_varieties: [],
+    }
+  );
+}
+
+function formatDominantVarieties(plot: PlotSummary) {
+  const stats = getPlotTreeStats(plot);
+
+  if (stats.dominant_varieties.length === 0) {
+    return "Brak aktywnych odmian";
+  }
+
+  return stats.dominant_varieties
+    .map((variety) => `${variety.variety_name} (${variety.active_tree_count})`)
+    .join(", ");
+}
+
 export function PlotList({
   plots,
   redirectTo,
@@ -63,95 +85,144 @@ export function PlotList({
 
   return (
     <div className="grid gap-4">
-      {plots.map((plot) => (
-        <Card className="grid gap-4" key={plot.id}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="grid gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="text-lg">{plot.name}</CardTitle>
-                <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
-                  {getPlotStatusLabel(plot.status)}
-                </span>
-                {plot.code ? (
-                  <span className="rounded-full border border-[#dfd3bb] px-3 py-1 text-xs font-medium text-[#5b6155]">
-                    {plot.code}
+      {plots.map((plot) => {
+        const treeStats = getPlotTreeStats(plot);
+
+        return (
+          <Card className="grid gap-4" data-testid="plot-card" key={plot.id}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <CardTitle className="text-lg">{plot.name}</CardTitle>
+                  <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-xs font-medium text-[#355139]">
+                    {getPlotStatusLabel(plot.status)}
                   </span>
-                ) : null}
+                  {plot.code ? (
+                    <span className="rounded-full border border-[#dfd3bb] px-3 py-1 text-xs font-medium text-[#5b6155]">
+                      {plot.code}
+                    </span>
+                  ) : null}
+                </div>
+                {plot.location_name ? (
+                  <CardDescription>{plot.location_name}</CardDescription>
+                ) : (
+                  <CardDescription>Brak opisu lokalizacji.</CardDescription>
+                )}
               </div>
-              {plot.location_name ? (
-                <CardDescription>{plot.location_name}</CardDescription>
-              ) : (
-                <CardDescription>Brak opisu lokalizacji.</CardDescription>
-              )}
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#efe6d3] px-4 py-2 text-sm font-medium text-[#1f3c28] transition hover:bg-[#e2d4b3]"
+                  data-testid="plot-open-link"
+                  href={`/plots/${plot.id}`}
+                >
+                  Otworz dzialke
+                </Link>
+                <Link
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+                  href={`/plots/${plot.id}/edit`}
+                >
+                  Edytuj
+                </Link>
+                <form action={plot.status === "archived" ? restorePlot : archivePlot}>
+                  <input name="plot_id" type="hidden" value={plot.id} />
+                  <input name="redirect_to" type="hidden" value={redirectTo} />
+                  <Button
+                    type="submit"
+                    variant={plot.status === "archived" ? "secondary" : "ghost"}
+                  >
+                    {plot.status === "archived" ? "Przywroc" : "Archiwizuj"}
+                  </Button>
+                </form>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
-                href={`/plots/${plot.id}/edit`}
-              >
-                Edytuj
-              </Link>
-              <form action={plot.status === "archived" ? restorePlot : archivePlot}>
-                <input name="plot_id" type="hidden" value={plot.id} />
-                <input name="redirect_to" type="hidden" value={redirectTo} />
-                <Button type="submit" variant={plot.status === "archived" ? "secondary" : "ghost"}>
-                  {plot.status === "archived" ? "Przywroc" : "Archiwizuj"}
-                </Button>
-              </form>
+            <div className="grid gap-3 border-y border-[#efe6d3] py-3 text-sm text-[#5b6155] sm:grid-cols-3">
+              <div className="grid gap-1">
+                <span className="text-xs font-medium uppercase text-[#6d7568]">
+                  Aktywne drzewa
+                </span>
+                <span
+                  className="text-lg font-semibold text-[#233b2a]"
+                  data-testid="plot-active-tree-count"
+                >
+                  {treeStats.active_tree_count}
+                </span>
+              </div>
+              <div className="grid gap-1">
+                <span className="text-xs font-medium uppercase text-[#6d7568]">
+                  Usuniete / nieaktywne
+                </span>
+                <span
+                  className="text-lg font-semibold text-[#233b2a]"
+                  data-testid="plot-removed-tree-count"
+                >
+                  {treeStats.removed_or_inactive_tree_count}
+                </span>
+              </div>
+              <div className="grid min-w-0 gap-1">
+                <span className="text-xs font-medium uppercase text-[#6d7568]">
+                  Dominujace odmiany
+                </span>
+                <span
+                  className="break-words font-medium text-[#304335]"
+                  data-testid="plot-dominant-varieties"
+                >
+                  {formatDominantVarieties(plot)}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="grid gap-2 text-sm text-[#5b6155] sm:grid-cols-2">
-            <p>
-              <span className="font-medium text-[#304335]">Powierzchnia:</span>{" "}
-              {plot.area_m2 ? `${plot.area_m2} m2` : "Brak"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Gleba:</span>{" "}
-              {plot.soil_type ?? "Brak"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Nawadnianie:</span>{" "}
-              {plot.irrigation_type ?? "Brak"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Aktywny rekord:</span>{" "}
-              {plot.is_active ? "Tak" : "Nie"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Uklad:</span>{" "}
-              {getPlotLayoutTypeLabel(plot.layout_type)}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
-              {plot.row_numbering_scheme
-                ? getRowNumberingSchemeLabel(plot.row_numbering_scheme)
-                : "Brak"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
-              {plot.tree_numbering_scheme
-                ? getTreeNumberingSchemeLabel(plot.tree_numbering_scheme)
-                : "Brak"}
-            </p>
-            <p>
-              <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
-              {formatPlotDefaultGrid(plot)}
-            </p>
-          </div>
-          {plot.entrance_description ? (
-            <CardDescription>
-              <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
-              {plot.entrance_description}
-            </CardDescription>
-          ) : null}
-          {plot.description ? (
-            <CardDescription>{plot.description}</CardDescription>
-          ) : null}
-          {plot.layout_notes ? (
-            <CardDescription>{plot.layout_notes}</CardDescription>
-          ) : null}
-        </Card>
-      ))}
+            <div className="grid gap-2 text-sm text-[#5b6155] sm:grid-cols-2">
+              <p>
+                <span className="font-medium text-[#304335]">Powierzchnia:</span>{" "}
+                {plot.area_m2 ? `${plot.area_m2} m2` : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Gleba:</span>{" "}
+                {plot.soil_type ?? "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Nawadnianie:</span>{" "}
+                {plot.irrigation_type ?? "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Aktywny rekord:</span>{" "}
+                {plot.is_active ? "Tak" : "Nie"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Uklad:</span>{" "}
+                {getPlotLayoutTypeLabel(plot.layout_type)}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja rzedow:</span>{" "}
+                {plot.row_numbering_scheme
+                  ? getRowNumberingSchemeLabel(plot.row_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Numeracja drzew:</span>{" "}
+                {plot.tree_numbering_scheme
+                  ? getTreeNumberingSchemeLabel(plot.tree_numbering_scheme)
+                  : "Brak"}
+              </p>
+              <p>
+                <span className="font-medium text-[#304335]">Planowana siatka:</span>{" "}
+                {formatPlotDefaultGrid(plot)}
+              </p>
+            </div>
+            {plot.entrance_description ? (
+              <CardDescription>
+                <span className="font-medium text-[#304335]">Punkt odniesienia:</span>{" "}
+                {plot.entrance_description}
+              </CardDescription>
+            ) : null}
+            {plot.description ? (
+              <CardDescription>{plot.description}</CardDescription>
+            ) : null}
+            {plot.layout_notes ? (
+              <CardDescription>{plot.layout_notes}</CardDescription>
+            ) : null}
+          </Card>
+        );
+      })}
     </div>
   );
 }

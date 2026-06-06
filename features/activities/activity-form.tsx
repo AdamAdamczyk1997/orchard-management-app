@@ -29,6 +29,7 @@ import {
   getTreeNumberingSchemeLabel,
   supportsActivityScopeLevelForPlotLayout,
 } from "@/lib/domain/plots";
+import type { ActivityFormPrefill } from "@/lib/domain/activity-prefill";
 import type {
   ActionResult,
   ActiveMemberOption,
@@ -54,6 +55,7 @@ type ActivityFormProps = {
   memberOptions: ActiveMemberOption[];
   defaultPerformedBy?: string;
   defaultPerformedByProfileId?: string;
+  prefill?: ActivityFormPrefill;
 };
 
 const initialActivityFormState: ActionResult<ActivityDetails> = {
@@ -96,9 +98,12 @@ function createEmptyMaterial(): ActivityMaterialInput {
   };
 }
 
-function buildInitialScopes(activity?: ActivityDetails): ActivityScopeInput[] {
+function buildInitialScopes(
+  activity?: ActivityDetails,
+  prefill?: ActivityFormPrefill,
+): ActivityScopeInput[] {
   if (!activity) {
-    return [];
+    return prefill?.scopes ?? [];
   }
 
   return activity.scopes.map((scope) => ({
@@ -179,6 +184,7 @@ export function ActivityForm({
   memberOptions,
   defaultPerformedBy,
   defaultPerformedByProfileId,
+  prefill,
 }: ActivityFormProps) {
   const [state, formAction] = useActionState(action, initialActivityFormState);
   const [activityType, setActivityType] = useState<ActivityFormInput["activity_type"]>(
@@ -187,8 +193,12 @@ export function ActivityForm({
   const [activitySubtype, setActivitySubtype] = useState(
     activity?.activity_subtype ?? "",
   );
-  const [selectedPlotId, setSelectedPlotId] = useState(activity?.plot_id ?? "");
-  const [selectedTreeId, setSelectedTreeId] = useState(activity?.tree_id ?? "");
+  const [selectedPlotId, setSelectedPlotId] = useState(
+    activity?.plot_id ?? prefill?.plot_id ?? "",
+  );
+  const [selectedTreeId, setSelectedTreeId] = useState(
+    activity?.tree_id ?? prefill?.tree_id ?? "",
+  );
   const [activityDate, setActivityDate] = useState(
     activity?.activity_date ?? new Date().toISOString().slice(0, 10),
   );
@@ -196,7 +206,9 @@ export function ActivityForm({
     activity?.season_phase ?? deriveSeasonPhaseFromDate(activityDate),
   );
   const [seasonPhaseEdited, setSeasonPhaseEdited] = useState(Boolean(activity?.season_phase));
-  const [scopes, setScopes] = useState<ActivityScopeInput[]>(buildInitialScopes(activity));
+  const [scopes, setScopes] = useState<ActivityScopeInput[]>(
+    buildInitialScopes(activity, prefill),
+  );
   const [materials, setMaterials] = useState<ActivityMaterialInput[]>(
     buildInitialMaterials(activity),
   );

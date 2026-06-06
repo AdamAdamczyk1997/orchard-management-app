@@ -30,6 +30,7 @@ Ma zawierac:
 - ownership danych jest `orchard`-scoped
 - auth, onboarding, membership i protected app shell sa wdrozone
 - core orchard structure dla `plots`, `varieties`, `trees` jest wdrozona
+- `Plot Visual Operations MVP` ma automatycznie domkniete Phase 1, Phase 5 i Phase 6: `/plots` ma operacyjne plot cards ze statystykami drzew i CTA, `/plots/[plotId]` ma grid/fallback, lokalne filters, `Browse` tree detail panel, `Select` mode, Add Activity prefill do `/activities/new`, bulk deactivate prefill do `/trees/batch/deactivate` oraz Plant New / batch create prefill do `/trees/batch/new`, wszystko oparte o server-side active orchard context
 - baza, baseline migrations, seed i `v1_security` sa juz przygotowane
 - lokalny bootstrap seedowych kont `auth.users` jest zautomatyzowany komenda `pnpm seed:baseline-users`
 - lokalne uruchamianie referencyjnego SQL seedu jest zautomatyzowane komenda `pnpm seed:baseline-sql`
@@ -109,12 +110,12 @@ Ma zawierac:
   - listy rozrozniaja teraz `brak rekordow` od `brak wynikow po filtrach`
   - kazda z tych list ma streamingowy loading skeleton podczas ladowania danych
   - CTA w pustych stanach prowadza do tworzenia pierwszego rekordu albo do czyszczenia filtrow
- - `Phase 5B2a`
-   - krytyczne detail/edit/settings routes nie koncza sie juz cichym redirectem przy braku rekordu
-   - `activities`, `harvests`, `plots`, `trees`, `varieties` oraz `settings` pokazuja czytelne recovery cards dla `record not found`
-   - create/edit flows wymagajace dzialki albo aktywnej dzialki korzystaja ze wspolnego `prerequisite card`
-   - `requireActiveOrchard` zwraca teraz zwezony kontekst po wszystkich redirect guards, co upraszcza strony chronione
-   - w tym kroku nie zamknieto jeszcze seeded QA hardening; zostal jako osobny follow-up
+- `Phase 5B2a`
+  - krytyczne detail/edit/settings routes nie koncza sie juz cichym redirectem przy braku rekordu
+  - `activities`, `harvests`, `plots`, `trees`, `varieties` oraz `settings` pokazuja czytelne recovery cards dla `record not found`
+  - create/edit flows wymagajace dzialki albo aktywnej dzialki korzystaja ze wspolnego `prerequisite card`
+  - `requireActiveOrchard` zwraca teraz zwezony kontekst po wszystkich redirect guards, co upraszcza strony chronione
+  - w tym kroku nie zamknieto jeszcze seeded QA hardening; zostal jako osobny follow-up
 - `Phase 5B2b`
   - dodana komenda `pnpm qa:baseline-status`, ktora sprawdza gotowosc referencyjnego baseline do manual QA
   - narzedzie waliduje `auth.users`, profile, orchardy, membership matrix, liczby rekordow i harvest normalization
@@ -239,10 +240,53 @@ Ma zawierac:
   - `pnpm dev` startuje poprawnie lokalnie po aktualnym closeoucie
   - audit walidacyjnych / permission / missing-active-orchard komunikatow jest domkniety dla MVP, a user-facing copy nie miesza juz technicznego `orchard` z polskim UX poza swiadomie technicznymi miejscami
   - pelna automatyka mutuje liczby rekordow w baseline, wiec przed recznym seeded smoke trzeba ponownie wykonac `pnpm seed:baseline-reset`
+- `Plot Visual Operations MVP - start`
+  - Phase 0 audit zostal wykonany dla route/data/test inventory
+  - potwierdzono, ze przed tym krokiem istnialy `/plots`, `/plots/new` i `/plots/[plotId]/edit`, ale nie istnialo `/plots/[plotId]`
+  - dodano read-only route foundation `app/(app)/plots/[plotId]/page.tsx`
+  - route uzywa `requireActiveOrchard`, wczytuje dzialke przez `readPlotByIdForOrchard(orchardId, plotId)` i nie przyjmuje `orchard_id` z klienta
+  - dodano orchard-scoped wrapper `listTreesForPlotInOrchard(orchardId, plotId)`
+  - dodano pure helper `buildPlotVisualGrid` w `lib/domain/plot-visual-grid.ts`
+  - read-only widok pokazuje metadata dzialki, liczniki drzew, grid dla `layout_type = rows`, partial grid z ostrzezeniami dla `mixed` oraz fallback bez sztucznej siatki dla `irregular`
+  - removed / inactive trees sa widoczne jako muted historical markers, a inferred empty positions sa liczone tylko miedzy realnym `min(position_in_row)` i `max(position_in_row)` w rzedzie
+  - helper ostrzega o niekompletnych lokalizacjach, partial coverage dla `mixed` i zdublowanych aktywnych logicznych lokalizacjach liczonych po `row_number + position_in_row`
+  - `/plots` ma CTA `Otworz dzialke` do nowej trasy
+  - `/plots` pokazuje teraz plot card stats: active tree count, removed/inactive tree count oraz dominant varieties liczone tylko z aktywnych drzew
+  - `listPlotsForOrchard` dolacza `tree_stats` i kompatybilny `tree_count`; agregacja jest w pure helperze `buildPlotTreeStatsByPlot` bez migracji, RPC ani mutacji
+  - statystyki kart sa pokryte unit tests oraz integration regression dla active/removed/inactive trees, unassigned active tree, dominant varieties i archived plot status
+  - dodano unit coverage `tests/unit/plot-visual-grid.spec.ts`
+  - dodano local read-only filters w `features/plots/plot-visual-overview.tsx`: lifecycle, variety, condition i location verified
+  - filtry dzialaja na juz zaladowanych `trees`, bez nowych query, migracji, RPC, server actions ani `orchard_id` z klienta
+  - top-level stat cards na `/plots/[plotId]` zostaja totalami calej dzialki, a grid/fallback lista sa liczone po filtrach
+  - dodano filtered empty state z resetem i licznik `Pokazano X z Y drzew`
+  - dodano helper `filterPlotVisualTrees` z unit coverage dla lifecycle, variety, unassigned, condition, verified/unverified i combined filters
+  - dodano `tests/e2e/plot-visual-operations.spec.ts` dla przejscia `/plots -> /plots/[plotId]`, `rows`, `mixed`, `irregular` i smoke filtrow
+  - dodano `Browse` interaction: klikniecie tree marker albo fallback tree otwiera read-only panel metadata
+  - dodano `features/plots/plot-tree-detail-panel.tsx` z tree metadata, edit linkiem, aktywnym `Dodaj aktywnosc` dla active tree, disabled `Dodaj aktywnosc` dla removed/inactive tree, close button, `Escape` close i focus restore
+  - panel nie wykonuje mutacji, nie pobiera danych per marker i nie pokazuje jeszcze timeline aktywnosci/zbiorow
+  - Playwright smoke sprawdza panel, metadata, edit link oraz focus/escape behavior
+  - dodano `Select` mode, single tree toggle, explicit same-row range selection i selection summary oparty o skompresowane `activity_scopes`
+  - `compressPlotSelectionToActivityScopes` i `buildSameRowPlotSelectionRange` maja unit coverage dla ranges, section boundaries, inactive/removed exclusions, limits i invalid states
+  - `buildActivityPrefillFromPlotSelection` buduje prefill do `/activities/new`: single tree ustawia parent `tree_id` i scope `tree`, multi-selection uzywa skompresowanych scopes
+  - selection bar prowadzi do `/activities/new?plot_id=...&tree_id=...&scopes=...` tylko dla valid selection; empty/invalid/over-limit selection renderuje disabled CTA
+  - `/activities/new` bezpiecznie parsuje prefill przez `resolveActivityPrefillFromSearchParams`, waliduje option set aktywnego orchard i nie przyjmuje `orchard_id` z klienta
+  - security regression blokuje zapis activity z parent plot z jednego orchard i `tree` scope z innego orchard
+  - Playwright pokrywa direct prefill, selection single tree -> activity form, same-row range -> activity form, tree detail CTA -> activity form oraz removed tree disabled CTA
+  - dodano `resolveBulkDeactivateTreesPrefillFromPlotSelection` i `resolveBulkDeactivatePrefillFromSearchParams` dla `/trees/batch/deactivate`
+  - selection bar pokazuje `Wycofaj drzewa` tylko dla jednego kompletnego `location_range`; empty, multi-range, tree-scope i invalid selection sa blokowane komunikatem
+  - `/trees/batch/deactivate` uzupelnia `plot_id`, `row_number`, `from_position`, `to_position` z query prefill, ale nadal wymaga preview i osobnego confirmation
+  - Playwright pokrywa selected one row range -> bulk deactivate prefill -> preview bez potwierdzania destrukcyjnej operacji
+  - dodano `buildBulkTreeBatchPrefillFromEmptyRange` oraz query builder dla `/trees/batch/new`
+  - `/trees/batch/new` parsuje prefill przez `resolveBulkTreeBatchPrefillFromSearchParams`, waliduje active orchard `plotOptions`, odrzuca `irregular` i nie przyjmuje `orchard_id` z klienta
+  - `BulkTreeBatchForm` przyjmuje bezpieczny prefill dla `plot_id`, `section_name`, `row_number`, `from_position`, `to_position`, ale nadal wymaga preview i opcjonalnego confirmation przez istniejacy `submitBulkTreeBatch`
+  - `PlotVisualOverview` pokazuje `Dosadz drzewa` dla ciaglego zakresu `empty_inferred` w jednym rzedzie; przy aktywnych filtrach akcja jest blokowana, zeby ukryte drzewa nie tworzyly falszywych pustych pozycji
+  - Playwright pokrywa utworzenie testowej dziury w rzedzie, empty inferred position -> `/trees/batch/new` prefill -> batch create preview
+  - aktywny master plan PVO zostal zsynchronizowany: Phase 0 = Done, Phase 1 = Automated done / manual owner-worker smoke pending, Phase 2 = Done, Phase 3 = Done, Phase 4 = Automated done / manual QA pending, Phase 5 = Done, Phase 6 = Automated done / manual UX confirmation pending
 
 ### Swiadomie odlozone po obecnym etapie
 
-- detail pages dla `plots`, `varieties`, `trees`
+- przyszle harvest entry pointy z mapy
+- detail pages dla `varieties` i `trees`
 - delete UI dla `varieties` i `trees`
 - zmiana roli membership orchard
 - import UI i restore workflow
@@ -282,6 +326,18 @@ Ostatnio potwierdzone jako przechodzace:
 - `pnpm qa:baseline-status`
 - `pnpm dev`
 
+Ostatnio potwierdzone lokalnie po starcie `Plot Visual Operations MVP`:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+  - `36` plikow testowych
+  - `164` testy
+- `pnpm seed:baseline-reset`
+- `pnpm qa:baseline-status = READY`
+- `pnpm test:e2e`
+  - `12` testow Playwright passed
+
 Dodatkowy status lokalnego baseline QA:
 
 - po `pnpm seed:baseline-reset` referencyjny baseline wraca do `READY`
@@ -289,13 +345,10 @@ Dodatkowy status lokalnego baseline QA:
 
 ### Rekomendowany nastepny vertical slice
 
-- `Post-MVP roadmap planning`, czyli decyzja ktore odlozone elementy staja sie nowym priorytetem po obecnym closeoucie:
-  - detail pages dla `plots`, `varieties`, `trees`
-  - delete UI dla `varieties` i `trees`
-  - zmiana roli membership orchard
-  - import UI i restore workflow
-  - storage / attachments po zatwierdzeniu konkretnego use case'u
-  - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
+- `Plot Visual Operations MVP closeout / next backlog`
+  - najblizszy krok: reczny QA closeout Phase 1/4/6 albo przejscie do PVO Phase 7/Future Domain Hardening
+  - Phase 1 Plot Card Stats, Phase 5 Add Activity from Selection i Phase 6 Structural Actions sa domkniete automatycznie i zsynchronizowane w master planie
+  - zachowac server-side active orchard context; klient nadal nie moze przekazywac zaufanego `orchard_id`
 
 ## UZUPELNIJ SAM - stan lokalny i reczna weryfikacja
 
@@ -414,6 +467,33 @@ Dodatkowy status lokalnego baseline QA:
   - `activities/[activityId]` i `harvests/[harvestRecordId]` renderuja success feedback po szybkich akcjach detail view
   - dodane unit tests dla helperow feedback i zaktualizowane source-of-truth docs dla UI states i acceptance
   - automatycznie potwierdzone lokalnie: `pnpm typecheck`, `pnpm lint`, `pnpm test`
+  - Zamkniete w Plot Visual Operations MVP start:
+  - wykonany Phase 0 audit tras, read modeli, formularzy, walidacji i testow
+  - dodany read-only fundament `/plots/[plotId]`
+  - dodany `buildPlotVisualGrid` z unit testami
+  - dodany `PlotVisualOverview` dla grid/fallback renderu
+  - dodane read-only filters dla grid/fallback renderu bez nowych roundtripow
+  - dodany `Browse` tree detail panel bez mutacji i bez per-marker server calls
+  - dodany focus management: wejscie do panelu, `Escape` close i powrot fokusu na marker
+  - dodany `Select` mode w `PlotVisualOverview` z single tree toggle dla active trees
+  - dodany pure helper `compressPlotSelectionToActivityScopes` w `lib/domain/plot-selection.ts`
+  - dodany pure helper `buildSameRowPlotSelectionRange` dla explicit start/end range selection i pomijania inactive/removed trees
+  - dodany pure helper `getPlotSelectionActivityActionState` dla empty/ready/blocked Add Activity state
+  - selection summary pokazuje selected count, compressed `location_range` / `tree` scopes i ostrzezenia limitow
+  - `Select` mode ma przycisk `Zakres`, pending start marker i dodawanie same-row zakresu po wskazaniu konca
+  - selection summary ma `Add Activity` action state: pusty albo over-limit wybór blokuje CTA, a valid selection linkuje do `/activities/new` z prefill query
+  - `buildActivityPrefillFromPlotSelection` buduje single tree prefill jako parent `tree_id` + scope `tree`, a multi-range selection jako skompresowane scopes bez parent `tree_id`
+  - dodany URL query format dla activity prefill: `/activities/new?plot_id=...&tree_id=...&scopes=...`
+  - dodany `resolveActivityPrefillFromSearchParams`, ktory waliduje query prefill przez `activityScopeSchema`, limity PVO i orchard-scoped `plotOptions` / `treeOptions`
+  - `ActivityForm` przyjmuje bezpieczny create prefill dla `plot_id`, `tree_id` i `activity_scopes`, nadal zapisujac przez `createActivity` i `normalizeActivityPayload`
+  - `/activities/new` pokazuje applied/invalid prefill message i przy invalid prefill wraca do pustego formularza bez crasha
+  - dodane unit tests dla selection compression, same-row range selection, action state, validation i query/scope limits
+  - dodane unit tests dla activity prefill parsera oraz regression tests dla single tree / multi-scope `normalizeActivityPayload`
+  - Playwright smoke sprawdza, ze `Select` mode nie otwiera panelu, explicit start/end range selection kompresuje drzewa do range summary, action state przechodzi z empty do ready, direct `/activities/new` prefill wypelnia plot/scopes/tree, a selection/tree panel CTA wypelnia activity form
+  - security regression sprawdza odrzucenie activity z parent plot z jednego orchard i `tree` scope z innego orchard
+  - dodany Playwright smoke dla seeded `rows`, `mixed` i `irregular`
+  - dodany CTA `Otworz dzialke` na `/plots`
+  - automatycznie potwierdzone lokalnie: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm seed:baseline-reset`, `pnpm qa:baseline-status`, `pnpm test:e2e`
   - Nadal odlozone albo wymagajace osobnej decyzji:
   - przelacznik jezyka PL / EN i pelne i18n
   - globalny admin / super user shell, podglad userow i remove user
@@ -428,9 +508,9 @@ Dodatkowy status lokalnego baseline QA:
 ### 4. Najblizszy cel kolejnej sesji
 
 - Co chcesz zrobic jako nastepne:
-  - `zrobic post-MVP roadmap planning i wybrac nastepny priorytetowy vertical slice`
+  - `wykonac reczny QA closeout PVO Phase 1/4/6 albo przejsc do PVO Phase 7/Future Domain Hardening`
 - Co ma byc zakresem nowego chatu:
-  - `bazujemy na obecnym closeoucie i aktywnej dokumentacji; nie wracamy do planowania od zera, tylko porzadkujemy odlozone elementy i wybieramy kolejny konkretny zakres implementacji`
+  - `bazujemy na aktualnym PVO master planie; Phase 1 Plot Card Stats, Phase 5 Add Activity From Selection i Phase 6 Structural Actions sa domkniete automatycznie, a manual UX/owner-worker smoke check pozostaje jako QA closeout`
 
 ### 5. Kontekst organizacyjny
 
@@ -458,6 +538,8 @@ Najpierw przeczytaj:
 - documents/01_implementation_materials/README.md
 - documents/02_product_documents/mvp_scope_and_priorities.md
 
+Dokument documents/01_implementation_materials/plot_visual_operations_implementation_master_plan.md jest naszym planem który chcemy zrealizować jako rozwój tej aplikacji.
+
 Potem zorientuj sie w repo:
 - sprawdz `git status --short`, bo worktree moze byc brudny,
 - nie cofaj i nie nadpisuj zmian, ktorych sam nie zrobiles,
@@ -475,8 +557,8 @@ Szczegolnie zwracaj uwage na:
 - aktualny pakiet migracji `001`-`034`,
 - workflow baseline: `pnpm seed:baseline-reset` -> `pnpm qa:baseline-status`,
 - gate jakosci: `supabase db lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`,
-- swiadomie odlozone funkcje: detail pages dla `plots` / `varieties` / `trees`, delete UI dla `varieties` / `trees`, zmiana roli membership, import / restore, storage / attachments i szerszy planning block.
+- swiadomie odlozone funkcje: future harvest entry points z mapy, detail pages dla `varieties` / `trees`, delete UI dla `varieties` / `trees`, zmiana roli membership, import / restore, storage / attachments i szerszy planning block.
 
-Nastepnie kontynuuj prace od sekcji "Rekomendowany nastepny vertical slice" oraz "Najblizszy cel kolejnej sesji" z `session_handoff.md`.
-Jesli brakuje jednoznacznego kierunku, zaproponuj 2-3 sensowne opcje, wskaż rekomendowana i uzasadnij krotko technicznie.
+Nastepnie kontynuuj `Plot Visual Operations MVP` od sekcji "Rekomendowany nastepny vertical slice" oraz "Najblizszy cel kolejnej sesji" z `session_handoff.md`.
+Jesli dokumenty i kod sa niespojne, pierwszenstwo ma faktyczny stan implementacji oraz `plot_visual_operations_implementation_master_plan.md`.
 ```

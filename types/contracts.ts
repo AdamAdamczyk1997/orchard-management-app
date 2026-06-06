@@ -231,6 +231,19 @@ export type PlotFormInput = {
   status: PlotStatus;
 };
 
+export type PlotDominantVarietySummary = {
+  variety_id: string;
+  variety_name: string;
+  variety_species: string | null;
+  active_tree_count: number;
+};
+
+export type PlotTreeStats = {
+  active_tree_count: number;
+  removed_or_inactive_tree_count: number;
+  dominant_varieties: PlotDominantVarietySummary[];
+};
+
 export type PlotSummary = {
   id: string;
   orchard_id: string;
@@ -251,6 +264,7 @@ export type PlotSummary = {
   status: PlotStatus;
   is_active: boolean;
   tree_count?: number;
+  tree_stats?: PlotTreeStats;
   created_at?: string;
   updated_at?: string;
 };

@@ -7,15 +7,31 @@ import {
   listTreeOptionsForOrchard,
 } from "@/lib/orchard-data/activities";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
+import { type NextSearchParams } from "@/lib/utils/search-params";
+import { resolveActivityPrefillFromSearchParams } from "@/lib/validation/activity-prefill";
 import { createActivity } from "@/server/actions/activities";
 
-export default async function NewActivityPage() {
+type NewActivityPageProps = {
+  searchParams: Promise<NextSearchParams>;
+};
+
+export default async function NewActivityPage({
+  searchParams,
+}: NewActivityPageProps) {
   const context = await requireActiveOrchard("/activities/new");
-  const [plotOptions, treeOptions, memberOptions] = await Promise.all([
+  const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] = await Promise.all([
     listPlotOptionsForOrchard(context.orchard.id),
     listTreeOptionsForOrchard(context.orchard.id),
     listActiveMemberOptionsForOrchard(context.orchard.id),
+    searchParams,
   ]);
+  const prefillResult = resolveActivityPrefillFromSearchParams(
+    resolvedSearchParams,
+    {
+      plotOptions,
+      treeOptions,
+    },
+  );
 
   if (plotOptions.length === 0) {
     return (
@@ -45,12 +61,31 @@ export default async function NewActivityPage() {
           materialami.
         </CardDescription>
       </Card>
+      {prefillResult.status === "applied" ? (
+        <Card
+          className="grid gap-1 border-[#d8c7a9] bg-[#fbfaf7]"
+          data-testid="activity-prefill-message"
+        >
+          <CardTitle className="text-lg">Zakres zostal uzupelniony</CardTitle>
+          <CardDescription>{prefillResult.message}</CardDescription>
+        </Card>
+      ) : null}
+      {prefillResult.status === "invalid" ? (
+        <Card
+          className="grid gap-1 border-[#d8b675] bg-[#f8f0df]"
+          data-testid="activity-prefill-message"
+        >
+          <CardTitle className="text-lg">Nie uzyto linku prefill</CardTitle>
+          <CardDescription>{prefillResult.message}</CardDescription>
+        </Card>
+      ) : null}
       <ActivityForm
         action={createActivity}
         defaultPerformedBy={context.profile?.display_name ?? context.profile?.email ?? ""}
         defaultPerformedByProfileId={context.profile?.id ?? ""}
         memberOptions={memberOptions}
         mode="create"
+        prefill={prefillResult.prefill ?? undefined}
         plotOptions={plotOptions}
         treeOptions={treeOptions}
       />

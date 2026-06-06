@@ -137,6 +137,73 @@ describe("phase 3 activities validation", () => {
     ]);
   });
 
+  it("mirrors a single tree scope into the parent tree_id", () => {
+    const parsed = activityFormSchema.parse(
+      buildValidActivityInput({
+        tree_id: "",
+        activity_type: "inspection",
+        scopes: JSON.stringify([
+          {
+            scope_level: "tree",
+            tree_id: VALID_TREE_ID,
+          },
+        ]),
+      }),
+    );
+    const normalized = normalizeActivityPayload(parsed);
+
+    expect(normalized.tree_id).toBe(VALID_TREE_ID);
+    expect(normalized.scopes).toEqual([
+      {
+        scope_order: 1,
+        scope_level: "tree",
+        tree_id: VALID_TREE_ID,
+      },
+    ]);
+  });
+
+  it("keeps parent tree_id empty for multi-scope activity payloads", () => {
+    const parsed = activityFormSchema.parse(
+      buildValidActivityInput({
+        tree_id: "",
+        activity_type: "inspection",
+        scopes: JSON.stringify([
+          {
+            scope_level: "location_range",
+            row_number: 1,
+            from_position: 1,
+            to_position: 3,
+          },
+          {
+            scope_level: "location_range",
+            row_number: 2,
+            from_position: 1,
+            to_position: 2,
+          },
+        ]),
+      }),
+    );
+    const normalized = normalizeActivityPayload(parsed);
+
+    expect(normalized.tree_id).toBeNull();
+    expect(normalized.scopes).toEqual([
+      {
+        scope_order: 1,
+        scope_level: "location_range",
+        row_number: 1,
+        from_position: 1,
+        to_position: 3,
+      },
+      {
+        scope_order: 2,
+        scope_level: "location_range",
+        row_number: 2,
+        from_position: 1,
+        to_position: 2,
+      },
+    ]);
+  });
+
   it("resolves summary filters with current year defaults and seasonal type guard", () => {
     const filters = resolveActivitySummaryFilters({}, 2026);
 

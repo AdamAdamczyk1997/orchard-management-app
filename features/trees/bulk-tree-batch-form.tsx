@@ -20,6 +20,7 @@ import {
   type PlotTreeWorkflowOption,
 } from "@/lib/domain/plots";
 import { SPECIES_PRESETS } from "@/lib/domain/species";
+import type { BulkTreeBatchPrefill } from "@/lib/domain/tree-batch-prefill";
 import type {
   ActionResult,
   BulkTreeBatchPreviewResult,
@@ -34,6 +35,7 @@ type BulkTreeBatchFormAction = (
 type BulkTreeBatchFormProps = {
   action: BulkTreeBatchFormAction;
   plotOptions: PlotTreeWorkflowOption[];
+  prefill?: BulkTreeBatchPrefill;
   varietyOptions: VarietyOption[];
 };
 
@@ -44,16 +46,23 @@ const initialState: ActionResult<BulkTreeBatchPreviewResult> = {
 export function BulkTreeBatchForm({
   action,
   plotOptions,
+  prefill,
   varietyOptions,
 }: BulkTreeBatchFormProps) {
   const [state, formAction] = useActionState(action, initialState);
-  const [selectedPlotId, setSelectedPlotId] = useState("");
+  const [selectedPlotId, setSelectedPlotId] = useState(prefill?.plot_id ?? "");
   const [varietyId, setVarietyId] = useState("");
   const [species, setSpecies] = useState("");
-  const [sectionName, setSectionName] = useState("");
-  const [rowNumber, setRowNumber] = useState("");
-  const [fromPosition, setFromPosition] = useState("");
-  const [toPosition, setToPosition] = useState("");
+  const [sectionName, setSectionName] = useState(prefill?.section_name ?? "");
+  const [rowNumber, setRowNumber] = useState(
+    prefill ? String(prefill.row_number) : "",
+  );
+  const [fromPosition, setFromPosition] = useState(
+    prefill ? String(prefill.from_position) : "",
+  );
+  const [toPosition, setToPosition] = useState(
+    prefill ? String(prefill.to_position) : "",
+  );
   const [treeCodePattern, setTreeCodePattern] = useState("");
   const [defaultConditionStatus, setDefaultConditionStatus] = useState("new");
   const [defaultPlantedAt, setDefaultPlantedAt] = useState("");

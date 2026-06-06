@@ -71,10 +71,12 @@ Na obecnym etapie mozna realnie testowac:
   - orchard switcher
 - `plots`:
   - list
+  - plot card stats: active tree count, removed/inactive tree count i dominant varieties z aktywnych drzew
   - create
   - edit
   - archive / restore
   - ustawienia ukladu dzialki: `layout_type`, numeracja, punkt odniesienia i notatki
+  - visual detail `/plots/[plotId]` z grid/fallback, filters, Browse panel, Select mode i prefill do `/activities/new`
 - `varieties`:
   - list
   - create
@@ -120,7 +122,7 @@ Na obecnym etapie mozna realnie testowac:
 
 Te obszary sa nadal odlozone albo nie sa jeszcze domkniete:
 
-- `/plots/[plotId]` jest planowanym/current slice `Plot Visual Operations MVP`; do czasu implementacji PVO brak tego widoku nie jest bugiem
+- przyszle harvest entry pointy z mapy sa nadal odlozone; `/plots` plot card stats, `/plots/[plotId]`, Select mode, Add Activity prefill, bulk deactivate prefill i Plant New / batch create prefill sa juz wdrozone
 - detail pages dla `varieties` i `trees`
 - delete UI dla `varieties` i `trees`
 - zmiana roli membership orchard
@@ -130,7 +132,6 @@ Te obszary sa nadal odlozone albo nie sa jeszcze domkniete:
 - osobny globalny panel admina poza obecnym account shell dla `super_admin`
 
 Jesli cos z tej listy nie dziala albo nie istnieje w UI, to na ten moment nie jest to regresja.
-Po wdrozeniu `Plot Visual Operations MVP` ten quickstart powinien zostac uzupelniony o scenariusze testowe dla visual plot detail.
 
 ## Minimalne przygotowanie lokalnego srodowiska
 
@@ -381,6 +382,8 @@ Seed szczegolnie dobrze nadaje sie do testowania:
 - `spraying` z materialami
 - `activities` z sezonowym `summary + coverage`
 - raportu lokalizacji odmiany dla drzew z pelna i niepelna lokalizacja
+- visual plot detail dla `rows`, `mixed` i `irregular`
+- selection z mapy dzialki do `/activities/new` z single tree i range prefill
 - rekordow zbioru dla zakresow:
   - `orchard`
   - `plot`
@@ -421,6 +424,40 @@ Sprawdz:
 - `/reports/variety-locations`, jesli byly ruszane lokalizacje drzew albo biblioteka odmian
 - czy `worker` nadal moze robic operacje operacyjne
 - czy outsider nadal nie widzi danych orchard
+
+### Po zmianach w `Plot Visual Operations`
+
+Sprawdz:
+
+- `/plots` pokazuje na kartach `name`, `code`, `status`, `layout_type`, active tree count, removed/inactive tree count i dominant varieties
+- `/plots -> Otworz dzialke` dla dzialek `rows`, `mixed` i `irregular`
+- Browse mode:
+  - klikniecie active tree otwiera panel metadata
+  - link `Edytuj drzewo` prowadzi do `/trees/[treeId]/edit`
+  - active tree ma link `Dodaj aktywnosc` do `/activities/new` z uzupelnionym `plot_id`, `tree_id` i scope `tree`
+  - removed / inactive tree ma disabled `Dodaj aktywnosc`
+- Select mode:
+  - single active tree selection pokazuje selected count i prowadzi do `/activities/new` z tree prefill
+  - zakres start/end w tym samym rzedzie kompresuje sie do jednego `location_range`
+  - empty, invalid albo over-limit selection blokuje `Dodaj aktywnosc`
+  - jeden `location_range` pokazuje `Wycofaj drzewa` i prowadzi do `/trees/batch/deactivate` z uzupelnionym `plot_id`, `row_number`, `from_position`, `to_position`
+  - multi-range, tree-scope i `irregular` blokuje `Wycofaj drzewa`
+  - klikniecie jednego albo dwoch pustych inferowanych miejsc w tym samym rzedzie pokazuje `Dosadz drzewa`
+  - `Dosadz drzewa` prowadzi do `/trees/batch/new` z uzupelnionym `plot_id`, opcjonalnym `section_name`, `row_number`, `from_position`, `to_position`
+  - przy aktywnych filtrach `Dosadz drzewa` jest zablokowane, zeby ukryte drzewa nie tworzyly falszywych pustych miejsc
+- na `/activities/new` po prefill:
+  - widoczny jest komunikat `Zakres zostal uzupelniony`
+  - formularz nadal zapisuje przez zwykly `ActivityForm`
+  - query nie zawiera zaufanego `orchard_id`
+- na `/trees/batch/deactivate` po prefill:
+  - widoczny jest komunikat `Zakres zostal uzupelniony`
+  - preview nadal jest wymagany przed confirm
+- na `/trees/batch/new` po prefill:
+  - widoczny jest komunikat `Zakres zostal uzupelniony`
+  - preview nadal jest wymagany przed confirm
+  - najpierw generujesz preview
+  - confirmation jest osobnym kliknieciem i nie wykonuje physical delete
+  - query nie zawiera zaufanego `orchard_id`
 
 ### Po zmianach w `activities`
 

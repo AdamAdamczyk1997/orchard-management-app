@@ -224,6 +224,13 @@ export async function listTreesForOrchard(
   return ((data ?? []) as TreeQueryRow[]).map(mapTreeRowToSummary).sort(sortTrees);
 }
 
+export async function listTreesForPlotInOrchard(
+  orchardId: string,
+  plotId: string,
+) {
+  return listTreesForOrchard(orchardId, { plot_id: plotId });
+}
+
 export async function readTreeByIdForOrchard(orchardId: string, treeId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase

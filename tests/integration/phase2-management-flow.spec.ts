@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { listPlotsForOrchard } from "@/lib/orchard-data/plots";
 import {
   cleanupTestUsers,
   createOrchardAsUser,
@@ -292,5 +293,155 @@ describe("phase 2 management flow", () => {
     expect(searchByCode.error).toBeNull();
     expect(searchByCode.data).toHaveLength(1);
     expect(searchByCode.data?.[0]?.tree_code).toBe("S-03-005");
+  });
+
+  it("returns plot card tree stats based on active trees and dominant varieties", async () => {
+    const owner = await createTestUser("phase2-plot-stats-owner");
+    createdUserIds.push(owner.user.id);
+
+    const { client } = await signInTestUser(owner.email, owner.password);
+    const orchard = await createOrchardAsUser(client, {
+      name: createTestOrchardName("phase2-plot-stats"),
+      code: "P2-PST",
+    });
+
+    const northPlot = await createPlotAsUser(client, {
+      orchardId: orchard.orchard_id,
+      name: "North Stats Plot",
+    });
+    const southPlot = await createPlotAsUser(client, {
+      orchardId: orchard.orchard_id,
+      name: "South Stats Plot",
+    });
+    const archivedPlot = await createPlotAsUser(client, {
+      orchardId: orchard.orchard_id,
+      name: "Archived Stats Plot",
+    });
+
+    const gala = await createVarietyAsUser(client, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Gala",
+    });
+    const ligol = await createVarietyAsUser(client, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Ligol",
+    });
+    const jonagold = await createVarietyAsUser(client, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Jonagold",
+    });
+
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: gala.id,
+      species: "apple",
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: gala.id,
+      species: "apple",
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: ligol.id,
+      species: "apple",
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: null,
+      species: "apple",
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: gala.id,
+      species: "apple",
+      conditionStatus: "removed",
+    });
+    const inactiveTree = await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: northPlot.id,
+      varietyId: ligol.id,
+      species: "apple",
+    });
+    await updateTreeAsUser(client, {
+      treeId: inactiveTree.id,
+      orchardId: orchard.orchard_id,
+      patch: { is_active: false },
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: southPlot.id,
+      varietyId: jonagold.id,
+      species: "apple",
+    });
+    await createTreeAsUser(client, {
+      orchardId: orchard.orchard_id,
+      plotId: archivedPlot.id,
+      varietyId: jonagold.id,
+      species: "apple",
+    });
+    await updatePlotAsUser(client, {
+      plotId: archivedPlot.id,
+      orchardId: orchard.orchard_id,
+      patch: {
+        status: "archived",
+        is_active: false,
+      },
+    });
+
+    const plots = await listPlotsForOrchard(
+      orchard.orchard_id,
+      { status: "all" },
+      client,
+    );
+    const northStats = plots.find((plot) => plot.id === northPlot.id)?.tree_stats;
+    const southStats = plots.find((plot) => plot.id === southPlot.id)?.tree_stats;
+    const archivedResult = plots.find((plot) => plot.id === archivedPlot.id);
+    const archivedStats = archivedResult?.tree_stats;
+
+    expect(plots.find((plot) => plot.id === northPlot.id)?.tree_count).toBe(4);
+    expect(northStats).toMatchObject({
+      active_tree_count: 4,
+      removed_or_inactive_tree_count: 2,
+    });
+    expect(northStats?.dominant_varieties).toEqual([
+      {
+        variety_id: gala.id,
+        variety_name: "Gala",
+        variety_species: "apple",
+        active_tree_count: 2,
+      },
+      {
+        variety_id: ligol.id,
+        variety_name: "Ligol",
+        variety_species: "apple",
+        active_tree_count: 1,
+      },
+    ]);
+    expect(southStats).toMatchObject({
+      active_tree_count: 1,
+      removed_or_inactive_tree_count: 0,
+    });
+    expect(southStats?.dominant_varieties).toEqual([
+      {
+        variety_id: jonagold.id,
+        variety_name: "Jonagold",
+        variety_species: "apple",
+        active_tree_count: 1,
+      },
+    ]);
+    expect(archivedResult?.status).toBe("archived");
+    expect(archivedStats).toMatchObject({
+      active_tree_count: 1,
+      removed_or_inactive_tree_count: 0,
+    });
   });
 });

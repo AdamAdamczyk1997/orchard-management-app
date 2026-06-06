@@ -7,6 +7,7 @@ import {
   createPlotAsUser,
   createTestOrchardName,
   createTestUser,
+  createTreeAsUser,
   signInTestUser,
 } from "../helpers/test-data";
 
@@ -122,6 +123,15 @@ describe("activity management RLS", () => {
       name: "Kwatera H",
       code: "H-01",
     });
+    const isolatedTree = await createTreeAsUser(ownerClient, {
+      orchardId: secondOrchard.orchard_id,
+      plotId: isolatedPlot.id,
+      species: "apple",
+      treeCode: "H-01-01",
+      displayName: "Drzewo z innego sadu",
+      rowNumber: 1,
+      positionInRow: 1,
+    });
 
     const workerActivity = await createActivityAsUser(workerClient, {
       parent: {
@@ -186,6 +196,26 @@ describe("activity management RLS", () => {
         p_materials: [],
       })
       .single();
+    const ownerCrossOrchardTreeScopeWrite = await ownerClient
+      .rpc("create_activity_with_children", {
+        p_parent: {
+          orchard_id: orchard.orchard_id,
+          plot_id: plot.id,
+          activity_type: "inspection",
+          activity_date: "2026-04-25",
+          title: "Zakres drzewa z innego sadu",
+          status: "done",
+        },
+        p_scopes: [
+          {
+            scope_level: "tree",
+            scope_order: 1,
+            tree_id: isolatedTree.id,
+          },
+        ],
+        p_materials: [],
+      })
+      .single();
 
     expect(workerChildRead.error).toBeNull();
     expect(workerChildRead.data).toEqual([
@@ -201,5 +231,7 @@ describe("activity management RLS", () => {
     expect(workerReadOtherOrchard.error).toBeNull();
     expect(workerReadOtherOrchard.data).toEqual([]);
     expect(ownerCreateOtherOrchardActivity.error).toBeNull();
+    expect(ownerCrossOrchardTreeScopeWrite.data).toBeNull();
+    expect(ownerCrossOrchardTreeScopeWrite.error).not.toBeNull();
   });
 });
