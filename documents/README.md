@@ -8,7 +8,9 @@ Szybka mapa wejscia:
 
 - [app_high_level_overview.md](./00_overview_and_checklists/app_high_level_overview.md)
 - [documentation_map.md](./00_overview_and_checklists/documentation_map.md)
-- [session_handoff.md](./00_overview_and_checklists/session_handoff.md)
+- [project_context_for_new_chat.md](./00_overview_and_checklists/project_context_for_new_chat.md)
+- [ai_project_map.md](./ai_project_map.md)
+- [ui_implementation_map.md](./ui_implementation_map.md)
 - [01_implementation_materials/README.md](./01_implementation_materials/README.md)
 
 ## Jak czytac skroty i oznaczenia
@@ -76,11 +78,12 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `00_overview_and_checklists/app_high_level_overview.md`
 - `00_overview_and_checklists/local_dev_tools_quickstart.md`
 - `00_overview_and_checklists/manual_testing_quickstart.md`
-- `00_overview_and_checklists/session_handoff.md`
+- `00_overview_and_checklists/project_context_for_new_chat.md`
+- `ai_project_map.md`
+- `ui_implementation_map.md`
+- `diagrams/` - Mermaid maps for app architecture, routes, domain, data flow, testing and business flows
 - `01_implementation_materials/README.md`
 - `01_implementation_materials/user_flows.md`
-- `01_implementation_materials/plot_visual_operations_roadmap.md` - kierunek produktu i architektury dla `Plot Visual Operations MVP`
-- `01_implementation_materials/plot_visual_operations_implementation_master_plan.md` - checklista wykonawcza implementacji `Plot Visual Operations MVP`
 - `02_product_documents/mvp_scope_and_priorities.md`
 - `02_product_documents/personas_and_user_types.md`
 - `02_product_documents/glossary.md`
@@ -99,6 +102,9 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 ### Dokumenty historyczne
 
 - Materialy historyczne i starsze szkice sa trzymane w `documents/archive/`.
+- Zamkniete dokumenty planistyczne `Plot Visual Operations MVP` sa trzymane w:
+  - `archive/plot_visual_operations_roadmap.md`
+  - `archive/plot_visual_operations_implementation_master_plan.md`
 - Dokumenty w archiwum nie sa podstawa do migracji, API, RLS, ekranow ani testow.
 - Jesli pojawi sie konflikt miedzy aktywnym dokumentem a plikiem archiwalnym, pierwszenstwo ma dokument aktywny.
 
@@ -128,10 +134,19 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `07_security_and_quality`
   Kryteria akceptacji, testy, security, backup i observability.
 
+- `diagrams`
+  Mermaid maps dla architektury, routes, domeny, data flow, testow i business flows.
+
 - `archive`
   Wczesne szkice, stare implementation notes i dokumenty historyczne.
 
 ## Aktualny zestaw dokumentow
+
+### Root documents
+
+- `README.md`
+- `ai_project_map.md`
+- `ui_implementation_map.md`
 
 ### `00_overview_and_checklists`
 
@@ -140,7 +155,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `documentation_map.md`
 - `local_dev_tools_quickstart.md`
 - `manual_testing_quickstart.md`
-- `session_handoff.md`
+- `project_context_for_new_chat.md`
 
 ### `01_implementation_materials`
 
@@ -197,6 +212,21 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `backup_restore_and_export.md`
 - `monitoring_and_observability.md`
 
+### `diagrams`
+
+- `01_app_map.md`
+- `02_auth_and_onboarding_flow.md`
+- `03_orchard_context_flow.md`
+- `04_roles_permissions.md`
+- `05_database_domain_map.md`
+- `06_ui_routes_map.md`
+- `07_component_dependency_map.md`
+- `08_data_flow.md`
+- `09_testing_map.md`
+- `10_orchard_business_flow.md`
+- `11_reporting_flow.md`
+- `12_membership_flow.md`
+
 ### `archive`
 
 - `README.md`
@@ -205,5 +235,8 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `startup_materials_checklist.md`
 - `technology_and_responsibilities.md`
 - `orchardlog_data_model_location_and_variety_reports_update.md`
+- `2026-06-06_session_handoff_pvo_closeout_snapshot.md`
+- `plot_visual_operations_roadmap.md`
+- `plot_visual_operations_implementation_master_plan.md`
 - `phase_1_auth_onboarding_vertical_slice.md`
 - `phase_2_core_orchard_structure_vertical_slice.md`

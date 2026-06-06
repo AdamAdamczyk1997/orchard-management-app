@@ -9,3 +9,9 @@
 - W Raport lokalizacji odmiany - przycisk Utworz drzewo - kolor czcionki do zmiany
 
 - dlaczego niektóre są Potwierdzone a niektore nie potwierdzone drzewa?
+
+### Co potrzeba teraz tj 06//06/2026
+
+1. Zrobić seed danych bardziej rozbudowany, tak aby projekt wypełnił się większymi liczbami i obiektami drzew i odmian.
+2. Dorobić diagramy by wizualnie było widać jakie mamy UX/UI
+3. Srawdzić wszystko, przejść po ekranach i pozapisywać sobie co jest do zmienienia.

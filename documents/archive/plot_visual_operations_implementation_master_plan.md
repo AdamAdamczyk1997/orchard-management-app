@@ -1,3 +1,8 @@
+# Archived note
+
+This `Plot Visual Operations MVP` execution plan is historical planning context.
+The implemented state is tracked in active documentation, especially `documents/00_overview_and_checklists/project_context_for_new_chat.md`, `documents/ai_project_map.md` and `documents/ui_implementation_map.md`.
+
 # Plot Visual Operations MVP — Implementation Master Plan
 
 ## 1. How to Use This Plan

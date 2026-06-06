@@ -16,12 +16,19 @@ Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 
 1. [app_high_level_overview.md](./app_high_level_overview.md)
 2. [documents/README.md](../README.md)
-3. [session_handoff.md](./session_handoff.md)
+3. [project_context_for_new_chat.md](./project_context_for_new_chat.md)
 4. [documents/01_implementation_materials/README.md](../01_implementation_materials/README.md)
-5. [plot_visual_operations_roadmap.md](../01_implementation_materials/plot_visual_operations_roadmap.md)
-6. [plot_visual_operations_implementation_master_plan.md](../01_implementation_materials/plot_visual_operations_implementation_master_plan.md)
+5. [ai_project_map.md](../ai_project_map.md)
+6. [ui_implementation_map.md](../ui_implementation_map.md)
 
-Historyczny execution index `implementation_master_plan.md` zostal przeniesiony do `documents/archive/`.
+Historyczny execution index `implementation_master_plan.md` oraz zamkniete dokumenty `Plot Visual Operations MVP` zostaly przeniesione do `documents/archive/`.
+
+### Dla szybkich map architektury
+
+- [01_app_map.md](../diagrams/01_app_map.md)
+- [06_ui_routes_map.md](../diagrams/06_ui_routes_map.md)
+- [08_data_flow.md](../diagrams/08_data_flow.md)
+- [09_testing_map.md](../diagrams/09_testing_map.md)
 
 ### Dla modelu domeny i kontraktow
 
@@ -67,9 +74,14 @@ Historyczny execution index `implementation_master_plan.md` zostal przeniesiony 
 - storage / attachments jako dokument techniczny przyszlego slice'u
 - responsive polish terenowych flow po kolejnych zmianach UI
 
+### Ostatnio domkniete
+
+- `Plot Visual Operations MVP` jest wdrozony: `/plots` ma operacyjne cards, a `/plots/[plotId]` ma visual overview, filters, tree panel, selection prefill oraz structural actions.
+- Planistyczne dokumenty PVO sa zarchiwizowane i nie sa aktywnym backlogiem.
+
 ### Planowane aktywne slice'y
 
-- `Plot Visual Operations MVP` reaktywuje `/plots/[plotId]` jako operacyjny detail page dzialki. Do czasu implementacji tego slice'u brak tej trasy w kodzie jest oczekiwany, nie jest regresja.
+- Brak jednego aktywnego execution master planu. Kolejny slice trzeba ustalic z userem na podstawie aktualnego repo, aktywnych map projektu i biezacego celu.
 
 ### Swiadomie odlozone
 

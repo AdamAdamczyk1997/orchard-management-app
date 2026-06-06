@@ -12,7 +12,7 @@ Ma pomagac nowemu AI albo nowemu wspolpracownikowi zrozumiec:
 
 To nie jest glowny source of truth dla SQL, RLS ani kontraktow.
 Po ogolnym zrozumieniu projektu przejdz do `documents/README.md`,
-`documentation_map.md` i `session_handoff.md`.
+`documentation_map.md` i `project_context_for_new_chat.md`.
 
 ## Czym jest ta aplikacja
 
@@ -141,7 +141,7 @@ Jesli potrzebujesz wejsc glebiej, czytaj w tej kolejnosci:
 
 1. `documents/README.md`
 2. `documents/00_overview_and_checklists/documentation_map.md`
-3. `documents/00_overview_and_checklists/session_handoff.md`
+3. `documents/00_overview_and_checklists/project_context_for_new_chat.md`
 4. `documents/01_implementation_materials/README.md`
 
 Jesli potrzebujesz source of truth dla domeny i kontraktow, przejdz dalej do:

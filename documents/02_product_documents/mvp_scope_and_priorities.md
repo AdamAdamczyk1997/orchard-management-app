@@ -8,7 +8,7 @@ co musi znalezc sie w pierwszej uzywalnej wersji aplikacji, a co mozna swiadomie
 
 Wazne:
 to jest dokument priorytetyzacji produktu, a nie live status implementacji repo.
-Aktualny stan wdrozenia jest utrzymywany w `session_handoff.md`,
+Aktualny stan wdrozenia jest utrzymywany w `project_context_for_new_chat.md`,
 `documentation_map.md` i aktywnych source-of-truth docs w `documents/`.
 Na obecnym stanie repo funkcjonalny rdzen `MVP 0.1` jest domkniety, a czesc zakresu `0.2`
 jest juz wdrozona. Ten plik zostaje jako produktowa mapa priorytetow i nie powinien byc

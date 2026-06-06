@@ -535,7 +535,7 @@ Jesli chcesz zrobic bardzo krotki, ale sensowny pass:
 
 - `README.md`
 - `documents/00_overview_and_checklists/local_dev_tools_quickstart.md`
-- `documents/00_overview_and_checklists/session_handoff.md`
+- `documents/00_overview_and_checklists/project_context_for_new_chat.md`
 - `documents/04_ux_and_screen_design/screens_and_views.md`
 - `documents/04_ux_and_screen_design/navigation_map.md`
 - `documents/07_security_and_quality/test_plan.md`

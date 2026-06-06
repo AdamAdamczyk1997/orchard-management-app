@@ -63,10 +63,10 @@ pnpm build
   `documents/00_overview_and_checklists/documentation_map.md`
 - minimalny zestaw materialow do implementacji:
   `documents/01_implementation_materials/README.md`
-- nadrzedny plan wdrozenia:
-  `documents/01_implementation_materials/implementation_master_plan.md`
-- szybki kontekst sesyjny:
-  `documents/00_overview_and_checklists/session_handoff.md`
+- historyczny plan wdrozenia:
+  `documents/archive/implementation_master_plan.md`
+- aktywny kontekst startowy dla nowego chatu:
+  `documents/00_overview_and_checklists/project_context_for_new_chat.md`
 - workflow narzedzi lokalnych:
   `documents/00_overview_and_checklists/local_dev_tools_quickstart.md`
 

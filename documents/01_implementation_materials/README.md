@@ -8,7 +8,7 @@ Historyczny `implementation_master_plan.md` zostal przeniesiony do `documents/ar
 
 1. [documents/README.md](../README.md)
 2. [app_high_level_overview.md](../00_overview_and_checklists/app_high_level_overview.md)
-3. [session_handoff.md](../00_overview_and_checklists/session_handoff.md)
+3. [project_context_for_new_chat.md](../00_overview_and_checklists/project_context_for_new_chat.md)
 4. [documentation_map.md](../00_overview_and_checklists/documentation_map.md)
 5. [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md)
 6. [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
@@ -28,7 +28,7 @@ Historyczny `implementation_master_plan.md` zostal przeniesiony do `documents/ar
 ## Rekomendowana kolejnosc pracy
 
 1. Najpierw zlapac szybki obraz produktu przez [app_high_level_overview.md](../00_overview_and_checklists/app_high_level_overview.md).
-2. Potem zlapac aktualny stan wdrozenia przez [session_handoff.md](../00_overview_and_checklists/session_handoff.md) i [documentation_map.md](../00_overview_and_checklists/documentation_map.md).
+2. Potem zlapac aktualny stan wdrozenia przez [project_context_for_new_chat.md](../00_overview_and_checklists/project_context_for_new_chat.md) i [documentation_map.md](../00_overview_and_checklists/documentation_map.md).
 3. Nastepnie potwierdzic, ktore aktywne source of truth beda potrzebne przez [documents/README.md](../README.md) i minimalny zestaw z tego katalogu.
 4. Potwierdzic zgodnosc zakresu z [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md).
 5. Model i reguly oprzec o [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md), [business_rules.md](../03_domain_and_business_rules/business_rules.md) i [validations_and_integrity.md](../03_domain_and_business_rules/validations_and_integrity.md).
@@ -38,14 +38,22 @@ Historyczny `implementation_master_plan.md` zostal przeniesiony do `documents/ar
 
 ## Aktywne plany implementacyjne
 
-- [plot_visual_operations_roadmap.md](./plot_visual_operations_roadmap.md) opisuje kierunek produktu i architektury dla `Plot Visual Operations MVP`.
-- [plot_visual_operations_implementation_master_plan.md](./plot_visual_operations_implementation_master_plan.md) jest checklista wykonawcza dla implementacji `Plot Visual Operations MVP`.
+Na ten moment nie ma aktywnego execution master planu w tym katalogu.
+`Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
+
+Aktualny stan projektu sprawdzaj przede wszystkim w:
+
+- [project_context_for_new_chat.md](../00_overview_and_checklists/project_context_for_new_chat.md)
+- [ai_project_map.md](../ai_project_map.md)
+- [ui_implementation_map.md](../ui_implementation_map.md)
 
 ## Archived implementation notes
 
 Zamkniete notatki z wczesnych vertical slice zostaly przeniesione do archiwum:
 
 - [implementation_master_plan.md](../archive/implementation_master_plan.md)
+- [plot_visual_operations_roadmap.md](../archive/plot_visual_operations_roadmap.md)
+- [plot_visual_operations_implementation_master_plan.md](../archive/plot_visual_operations_implementation_master_plan.md)
 - [phase_1_auth_onboarding_vertical_slice.md](../archive/phase_1_auth_onboarding_vertical_slice.md)
 - [phase_2_core_orchard_structure_vertical_slice.md](../archive/phase_2_core_orchard_structure_vertical_slice.md)
 

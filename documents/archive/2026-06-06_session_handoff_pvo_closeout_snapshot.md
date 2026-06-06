@@ -18,6 +18,8 @@ Ma zawierac:
    - `documents/README.md`
    - `documents/00_overview_and_checklists/documentation_map.md`
    - `documents/01_implementation_materials/README.md`
+   - `documents/ai_project_map.md`
+   - `documents/ui_implementation_map.md`
    - `documents/02_product_documents/mvp_scope_and_priorities.md`
 2. Po kazdej wiekszej sesji uzupelnij sekcje `UZUPELNIJ SAM`.
 3. Nie duplikuj tutaj calej dokumentacji; zapisuj tylko najwazniejszy stan operacyjny.
@@ -281,7 +283,7 @@ Ma zawierac:
   - `BulkTreeBatchForm` przyjmuje bezpieczny prefill dla `plot_id`, `section_name`, `row_number`, `from_position`, `to_position`, ale nadal wymaga preview i opcjonalnego confirmation przez istniejacy `submitBulkTreeBatch`
   - `PlotVisualOverview` pokazuje `Dosadz drzewa` dla ciaglego zakresu `empty_inferred` w jednym rzedzie; przy aktywnych filtrach akcja jest blokowana, zeby ukryte drzewa nie tworzyly falszywych pustych pozycji
   - Playwright pokrywa utworzenie testowej dziury w rzedzie, empty inferred position -> `/trees/batch/new` prefill -> batch create preview
-  - aktywny master plan PVO zostal zsynchronizowany: Phase 0 = Done, Phase 1 = Automated done / manual owner-worker smoke pending, Phase 2 = Done, Phase 3 = Done, Phase 4 = Automated done / manual QA pending, Phase 5 = Done, Phase 6 = Automated done / manual UX confirmation pending
+  - historyczny master plan PVO zostal zsynchronizowany przed archiwizacja: Phase 0 = Done, Phase 1 = Automated done / manual owner-worker smoke pending, Phase 2 = Done, Phase 3 = Done, Phase 4 = Automated done / manual QA pending, Phase 5 = Done, Phase 6 = Automated done / manual UX confirmation pending
 
 ### Swiadomie odlozone po obecnym etapie
 
@@ -298,6 +300,8 @@ Ma zawierac:
 - [documents/README.md](../README.md)
 - [documentation_map.md](./documentation_map.md)
 - [documents/01_implementation_materials/README.md](../01_implementation_materials/README.md)
+- [ai_project_map.md](../ai_project_map.md)
+- [ui_implementation_map.md](../ui_implementation_map.md)
 - [mvp_scope_and_priorities.md](../02_product_documents/mvp_scope_and_priorities.md)
 - [orchardlog_database_model.md](../03_domain_and_business_rules/orchardlog_database_model.md)
 - [authorization_and_rls_strategy.md](../05_technical/authorization_and_rls_strategy.md)
@@ -347,7 +351,7 @@ Dodatkowy status lokalnego baseline QA:
 
 - `Plot Visual Operations MVP closeout / next backlog`
   - najblizszy krok: reczny QA closeout Phase 1/4/6 albo przejscie do PVO Phase 7/Future Domain Hardening
-  - Phase 1 Plot Card Stats, Phase 5 Add Activity from Selection i Phase 6 Structural Actions sa domkniete automatycznie i zsynchronizowane w master planie
+  - Phase 1 Plot Card Stats, Phase 5 Add Activity from Selection i Phase 6 Structural Actions sa domkniete automatycznie; historyczny master plan PVO zostal przeniesiony do `documents/archive/`
   - zachowac server-side active orchard context; klient nadal nie moze przekazywac zaufanego `orchard_id`
 
 ## UZUPELNIJ SAM - stan lokalny i reczna weryfikacja
@@ -510,14 +514,14 @@ Dodatkowy status lokalnego baseline QA:
 - Co chcesz zrobic jako nastepne:
   - `wykonac reczny QA closeout PVO Phase 1/4/6 albo przejsc do PVO Phase 7/Future Domain Hardening`
 - Co ma byc zakresem nowego chatu:
-  - `bazujemy na aktualnym PVO master planie; Phase 1 Plot Card Stats, Phase 5 Add Activity From Selection i Phase 6 Structural Actions sa domkniete automatycznie, a manual UX/owner-worker smoke check pozostaje jako QA closeout`
+  - `PVO master plan jest zarchiwizowany; bazujemy na aktywnych mapach projektu, session_handoff i faktycznej implementacji; Phase 1 Plot Card Stats, Phase 5 Add Activity From Selection i Phase 6 Structural Actions sa domkniete automatycznie, a manual UX/owner-worker smoke check pozostaje jako QA closeout`
 
 ### 5. Kontekst organizacyjny
 
 - Nazwa brancha, jesli uzywasz gita:
   - `main`
 - Czy masz lokalne niecommitowane zmiany, na ktore trzeba uwazac:
-  - `troszkę się znajdzie`
+  - `po docs archive cleanup spodziewany stan to clean po commit/push; na starcie zawsze sprawdz git status --short`
 - Czy byly robione dodatkowe reczne zmiany poza repo / dokumentacja:
   - `nie`
 
@@ -536,9 +540,14 @@ Najpierw przeczytaj:
 - documents/README.md
 - documents/00_overview_and_checklists/documentation_map.md
 - documents/01_implementation_materials/README.md
+- documents/ai_project_map.md
+- documents/ui_implementation_map.md
 - documents/02_product_documents/mvp_scope_and_priorities.md
 
-Dokument documents/01_implementation_materials/plot_visual_operations_implementation_master_plan.md jest naszym planem który chcemy zrealizować jako rozwój tej aplikacji.
+Zamkniete dokumenty `Plot Visual Operations MVP` sa w `documents/archive/`:
+- documents/archive/plot_visual_operations_roadmap.md
+- documents/archive/plot_visual_operations_implementation_master_plan.md
+Traktuj je jako material historyczny, nie aktywny source of truth.
 
 Potem zorientuj sie w repo:
 - sprawdz `git status --short`, bo worktree moze byc brudny,
@@ -559,6 +568,6 @@ Szczegolnie zwracaj uwage na:
 - gate jakosci: `supabase db lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`,
 - swiadomie odlozone funkcje: future harvest entry points z mapy, detail pages dla `varieties` / `trees`, delete UI dla `varieties` / `trees`, zmiana roli membership, import / restore, storage / attachments i szerszy planning block.
 
-Nastepnie kontynuuj `Plot Visual Operations MVP` od sekcji "Rekomendowany nastepny vertical slice" oraz "Najblizszy cel kolejnej sesji" z `session_handoff.md`.
-Jesli dokumenty i kod sa niespojne, pierwszenstwo ma faktyczny stan implementacji oraz `plot_visual_operations_implementation_master_plan.md`.
+Nastepnie ustal kolejny slice albo QA closeout na podstawie sekcji "Rekomendowany nastepny vertical slice" oraz "Najblizszy cel kolejnej sesji" z `session_handoff.md`.
+Jesli dokumenty i kod sa niespojne, pierwszenstwo ma faktyczny stan implementacji, migracje, testy oraz aktywne dokumenty; zarchiwizowane PVO docs sa tylko historia decyzji.
 ```
