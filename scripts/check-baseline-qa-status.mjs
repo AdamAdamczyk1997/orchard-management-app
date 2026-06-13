@@ -30,13 +30,21 @@ async function fetchBaselineQaSnapshot(adminClient) {
       ),
       selectRows(adminClient, "orchards", "id, code, name, status"),
       selectRows(adminClient, "orchard_memberships", "orchard_id, profile_id, role, status"),
-      selectRows(adminClient, "plots", "orchard_id"),
+      selectRows(adminClient, "plots", "id, orchard_id, name, layout_type"),
       selectRows(adminClient, "varieties", "orchard_id"),
-      selectRows(adminClient, "trees", "orchard_id"),
-      selectRows(adminClient, "activities", "orchard_id"),
+      selectRows(
+        adminClient,
+        "trees",
+        "id, orchard_id, plot_id, row_number, position_in_row, is_active",
+      ),
+      selectRows(adminClient, "activities", "orchard_id, status"),
       selectRows(adminClient, "activity_scopes", "id"),
       selectRows(adminClient, "activity_materials", "id"),
-      selectRows(adminClient, "harvest_records", "orchard_id, quantity_unit, quantity_kg"),
+      selectRows(
+        adminClient,
+        "harvest_records",
+        "orchard_id, season_year, quantity_value, quantity_unit, quantity_kg",
+      ),
     ]);
 
   const orchardCodeById = new Map(
@@ -66,7 +74,7 @@ async function fetchBaselineQaSnapshot(adminClient) {
   const harvestCountsByOrchard = countByOrchard(harvestRecords);
   const tonneRecords = harvestRecords.filter((record) => record.quantity_unit === "t");
   const normalizedTonneRecords = tonneRecords.filter(
-    (record) => Number(record.quantity_kg) === 1200,
+    (record) => Number(record.quantity_kg) === Number(record.quantity_value) * 1000,
   );
 
   return {
@@ -81,6 +89,39 @@ async function fetchBaselineQaSnapshot(adminClient) {
         status: membership.status,
       }))
       .filter((membership) => membership.orchardCode && membership.email),
+    plots: plots
+      .map((plot) => ({
+        id: plot.id,
+        orchardCode: orchardCodeById.get(plot.orchard_id),
+        name: plot.name,
+        layoutType: plot.layout_type,
+      }))
+      .filter((plot) => plot.orchardCode),
+    trees: trees
+      .map((tree) => ({
+        id: tree.id,
+        orchardCode: orchardCodeById.get(tree.orchard_id),
+        plotId: tree.plot_id,
+        rowNumber: tree.row_number,
+        positionInRow: tree.position_in_row,
+        isActive: tree.is_active,
+      }))
+      .filter((tree) => tree.orchardCode),
+    activities: activities
+      .map((activity) => ({
+        orchardCode: orchardCodeById.get(activity.orchard_id),
+        status: activity.status,
+      }))
+      .filter((activity) => activity.orchardCode),
+    harvestRecords: harvestRecords
+      .map((record) => ({
+        orchardCode: orchardCodeById.get(record.orchard_id),
+        seasonYear: record.season_year,
+        quantityValue: record.quantity_value,
+        quantityUnit: record.quantity_unit,
+        quantityKg: record.quantity_kg,
+      }))
+      .filter((record) => record.orchardCode),
     totals: {
       orchards: orchards.length,
       memberships: memberships.length,

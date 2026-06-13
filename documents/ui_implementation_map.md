@@ -6,7 +6,7 @@ This document maps the current UI implementation to routes, components, server a
 
 - Technical names, routes, files, DTOs, entities, and SQL names are kept in English.
 - `documents/archive/` was not used as source of truth.
-- Some older overview docs still describe `/plots/[plotId]` as planned. Current code contains `app/(app)/plots/[plotId]/page.tsx`, so this map treats it as implemented.
+- Current code contains `app/(app)/plots/[plotId]/page.tsx`, so `/plots/[plotId]` is treated as implemented PVO surface.
 - `manager` and `viewer` exist in schema/types, but current product/UI behavior is centered on `owner`, `worker`, `super_admin`, and outsider.
 
 ## Pages

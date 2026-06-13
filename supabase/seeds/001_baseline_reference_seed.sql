@@ -8,7 +8,8 @@ declare
     'maria.owner@orchardlog.local',
     'pawel.worker@orchardlog.local',
     'ewa.worker@orchardlog.local',
-    'outsider@orchardlog.local'
+    'outsider@orchardlog.local',
+    'empty.owner@orchardlog.local'
   ];
   missing_emails text[];
 begin
@@ -51,6 +52,7 @@ select
     when 'pawel.worker@orchardlog.local' then 'Pawel Pracownik'
     when 'ewa.worker@orchardlog.local' then 'Ewa Pracowniczka'
     when 'outsider@orchardlog.local' then 'Karolina Outsider'
+    when 'empty.owner@orchardlog.local' then 'Emilia Empty Owner'
   end,
   case
     when lower(u.email) = 'admin@orchardlog.local' then 'super_admin'
@@ -69,7 +71,8 @@ where lower(u.email) in (
   'maria.owner@orchardlog.local',
   'pawel.worker@orchardlog.local',
   'ewa.worker@orchardlog.local',
-  'outsider@orchardlog.local'
+  'outsider@orchardlog.local',
+  'empty.owner@orchardlog.local'
 )
 on conflict (id) do update
 set
@@ -107,6 +110,14 @@ values
     'Drugi orchard do testow izolacji danych i cross-membership.',
     'active',
     (select id from public.profiles where email = 'maria.owner@orchardlog.local')
+  ),
+  (
+    '10000000-0000-4000-8000-000000000003',
+    'Sad Pusty',
+    'EMPTY',
+    'Pusty orchard referencyjny do testow empty state.',
+    'active',
+    (select id from public.profiles where email = 'empty.owner@orchardlog.local')
   )
 on conflict (id) do update
 set
@@ -188,6 +199,15 @@ values
     'invited',
     (select id from public.profiles where email = 'maria.owner@orchardlog.local'),
     null
+  ),
+  (
+    '11000000-0000-4000-8000-000000000008',
+    '10000000-0000-4000-8000-000000000003',
+    (select id from public.profiles where email = 'empty.owner@orchardlog.local'),
+    'owner',
+    'active',
+    null,
+    '2026-01-20T08:00:00Z'
   )
 on conflict (orchard_id, profile_id) do update
 set
@@ -296,6 +316,26 @@ values
     null,
     'active',
     true
+  ),
+  (
+    '20000000-0000-4000-8000-000000000005',
+    '10000000-0000-4000-8000-000000000001',
+    'Kwatera Luki PVO',
+    'MAIN-GAP',
+    'Read-only plot for PVO gap and empty-position assertions.',
+    'Polnocny skraj testowy',
+    900.00,
+    'loamy',
+    'drip',
+    'rows',
+    'left_to_right_from_entrance',
+    'from_row_start',
+    'Wjazd testowy od zachodu',
+    'Row 1 has trees at positions 1 and 3; position 2 is intentionally empty.',
+    1,
+    3,
+    'active',
+    true
   )
 on conflict (id) do update
 set
@@ -394,6 +434,19 @@ values
     'September',
     'Moderate resistance',
     'United Kingdom',
+    false
+  ),
+  (
+    '30000000-0000-4000-8000-000000000006',
+    '10000000-0000-4000-8000-000000000001',
+    'Apple',
+    'Gala Report',
+    'Stabilna odmiana do testow raportow i PVO gap.',
+    'Utrzymywac jako immutable fixture.',
+    'Czerwony owoc deserowy.',
+    'September',
+    'Average resistance',
+    'New Zealand',
     false
   )
 on conflict (id) do update
@@ -709,6 +762,56 @@ values
     'Used for planned inspection scenario.',
     false,
     true
+  ),
+  (
+    '40000000-0000-4000-8000-000000000012',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    '30000000-0000-4000-8000-000000000006',
+    'Apple',
+    'MAIN-GAP-R1-P1',
+    'Gala Gap R1/P1',
+    'Gap',
+    1,
+    1,
+    null,
+    null,
+    '2022-03-18',
+    '2022-03-18',
+    'M9',
+    'Gap fixture pollinator group',
+    'good',
+    'Healthy',
+    'fruiting',
+    '2026-09-12',
+    'Immutable left boundary for PVO gap fixture.',
+    true,
+    true
+  ),
+  (
+    '40000000-0000-4000-8000-000000000013',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    '30000000-0000-4000-8000-000000000006',
+    'Apple',
+    'MAIN-GAP-R1-P3',
+    'Gala Gap R1/P3',
+    'Gap',
+    1,
+    3,
+    null,
+    null,
+    '2022-03-18',
+    '2022-03-18',
+    'M9',
+    'Gap fixture pollinator group',
+    'good',
+    'Healthy',
+    'fruiting',
+    '2026-09-12',
+    'Immutable right boundary for PVO gap fixture; row 1 position 2 stays empty.',
+    true,
+    true
   )
 on conflict (id) do update
 set
@@ -875,6 +978,46 @@ values
     null,
     (select id from public.profiles where email = 'maria.owner@orchardlog.local'),
     null
+  ),
+  (
+    '50000000-0000-4000-8000-000000000007',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    null,
+    'spraying',
+    null,
+    '2026-04-18',
+    'Skipped Gala gap spray',
+    'Reference skipped activity for lifecycle filters.',
+    'skipped',
+    0,
+    0.00,
+    'Wind above safe threshold.',
+    'Skipped by design for seeded QA.',
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local'),
+    null,
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local'),
+    null
+  ),
+  (
+    '50000000-0000-4000-8000-000000000008',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    '40000000-0000-4000-8000-000000000012',
+    'inspection',
+    null,
+    '2026-06-05',
+    'Cancelled Gala gap inspection',
+    'Reference cancelled activity for lifecycle filters.',
+    'cancelled',
+    0,
+    0.00,
+    null,
+    'Cancelled before field visit.',
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local'),
+    null,
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local'),
+    null
   )
 on conflict (id) do update
 set
@@ -1004,6 +1147,30 @@ values
     null,
     '40000000-0000-4000-8000-000000000011',
     'Planned health inspection on the plum tree.'
+  ),
+  (
+    '51000000-0000-4000-8000-000000000009',
+    '50000000-0000-4000-8000-000000000007',
+    1,
+    'row',
+    'Gap',
+    1,
+    null,
+    null,
+    null,
+    'Skipped spray row for lifecycle reporting.'
+  ),
+  (
+    '51000000-0000-4000-8000-000000000010',
+    '50000000-0000-4000-8000-000000000008',
+    1,
+    'tree',
+    'Gap',
+    null,
+    null,
+    null,
+    '40000000-0000-4000-8000-000000000012',
+    'Cancelled inspection on the left gap tree.'
   )
 on conflict (id) do update
 set
@@ -1161,6 +1328,42 @@ values
     55.000,
     'kg',
     'Conference harvest used for by-variety reporting.',
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local')
+  ),
+  (
+    '53000000-0000-4000-8000-000000000006',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    '30000000-0000-4000-8000-000000000006',
+    null,
+    null,
+    'variety',
+    '2025-09-22',
+    null,
+    null,
+    null,
+    null,
+    680.000,
+    'kg',
+    'Gala Report 2025 variety harvest for multi-season filtering.',
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local')
+  ),
+  (
+    '53000000-0000-4000-8000-000000000007',
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000005',
+    '30000000-0000-4000-8000-000000000006',
+    '40000000-0000-4000-8000-000000000012',
+    null,
+    'tree',
+    '2026-09-12',
+    'Gap',
+    null,
+    null,
+    null,
+    35.000,
+    'kg',
+    'Gala gap tree-level harvest for MAIN report grouping.',
     (select id from public.profiles where email = 'jan.owner@orchardlog.local')
   )
 on conflict (id) do update

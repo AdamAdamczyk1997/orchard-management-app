@@ -1,11 +1,15 @@
 import {
+  BASELINE_EMPTY_ORCHARD_CODE,
+  BASELINE_EXPECTED_ACTIVITY_STATUSES,
   BASELINE_EXPECTED_COUNTS_BY_ORCHARD,
+  BASELINE_EXPECTED_HARVEST_SEASONS,
+  BASELINE_EXPECTED_HARVEST_UNITS,
   BASELINE_EXPECTED_MEMBERSHIPS,
   BASELINE_EXPECTED_TOTAL_COUNTS,
   BASELINE_ORCHARDS,
+  BASELINE_PVO_GAP_PLOT,
   BASELINE_QA_PERSONAS,
   BASELINE_USER_EMAILS,
-  DEFAULT_BASELINE_PASSWORD,
 } from "./baseline-seed.mjs";
 import {
   BASELINE_QA_STATUS_COMMAND,
@@ -34,6 +38,12 @@ function buildCountSummary(expectedCounts, actualCounts) {
     .join(", ");
 }
 
+function missingExpectedValues(actualValues, expectedValues) {
+  const actualSet = new Set(actualValues.map((value) => String(value)));
+
+  return expectedValues.filter((expectedValue) => !actualSet.has(String(expectedValue)));
+}
+
 function hasExactMembership(memberships, expectedMembership) {
   return memberships.some(
     (membership) =>
@@ -49,6 +59,10 @@ export function evaluateBaselineQaReadiness(snapshot) {
   const profiles = snapshot.profiles ?? [];
   const orchards = snapshot.orchards ?? [];
   const memberships = snapshot.memberships ?? [];
+  const plots = snapshot.plots ?? [];
+  const trees = snapshot.trees ?? [];
+  const activities = snapshot.activities ?? [];
+  const harvestRecords = snapshot.harvestRecords ?? [];
   const totals = snapshot.totals ?? {};
   const byOrchard = snapshot.byOrchard ?? {};
   const harvestNormalization = snapshot.harvestNormalization ?? {
@@ -204,6 +218,113 @@ export function evaluateBaselineQaReadiness(snapshot) {
     details: orchardCountMismatch,
   });
 
+  const emptyCounts = byOrchard[BASELINE_EMPTY_ORCHARD_CODE] ?? {};
+  const emptyOrchardReady =
+    orchardByCode.has(BASELINE_EMPTY_ORCHARD_CODE) &&
+    ["plots", "varieties", "trees", "activities", "harvestRecords"].every(
+      (key) => (emptyCounts[key] ?? 0) === 0,
+    );
+
+  checks.push({
+    id: "empty-orchard",
+    status: emptyOrchardReady ? "pass" : "fail",
+    summary:
+      emptyOrchardReady
+        ? "Sad Pusty jest gotowy i nie ma danych domenowych."
+        : "Sad Pusty nie istnieje albo nie jest prawdziwie pusty.",
+    details: [
+      `orchard exists: ${orchardByCode.has(BASELINE_EMPTY_ORCHARD_CODE)}`,
+      buildCountSummary(
+        {
+          plots: 0,
+          varieties: 0,
+          trees: 0,
+          activities: 0,
+          harvestRecords: 0,
+        },
+        emptyCounts,
+      ),
+    ],
+  });
+
+  const gapPlot = plots.find(
+    (plot) =>
+      plot.id === BASELINE_PVO_GAP_PLOT.plotId ||
+      (plot.orchardCode === BASELINE_PVO_GAP_PLOT.orchardCode &&
+        plot.name === BASELINE_PVO_GAP_PLOT.name),
+  );
+  const gapPlotId = gapPlot?.id ?? BASELINE_PVO_GAP_PLOT.plotId;
+  const activeGapTrees = trees.filter(
+    (tree) =>
+      tree.plotId === gapPlotId &&
+      tree.rowNumber === BASELINE_PVO_GAP_PLOT.rowNumber &&
+      tree.isActive !== false,
+  );
+  const activeGapPositions = activeGapTrees.map((tree) => tree.positionInRow);
+  const missingOccupiedGapPositions = BASELINE_PVO_GAP_PLOT.occupiedPositions.filter(
+    (position) => !activeGapPositions.includes(position),
+  );
+  const unexpectedlyFilledGapPositions = BASELINE_PVO_GAP_PLOT.emptyPositions.filter(
+    (position) => activeGapPositions.includes(position),
+  );
+  const gapPlotReady =
+    gapPlot != null &&
+    missingOccupiedGapPositions.length === 0 &&
+    unexpectedlyFilledGapPositions.length === 0;
+
+  checks.push({
+    id: "pvo-gap-plot",
+    status: gapPlotReady ? "pass" : "fail",
+    summary:
+      gapPlotReady
+        ? "PVO gap fixture ma drzewa na pozycjach 1 i 3 oraz pusta pozycje 2."
+        : "PVO gap fixture nie zgadza sie z referencyjnym ukladem.",
+    details: [
+      `plot: ${gapPlot ? `${gapPlot.name} (${gapPlot.id})` : "missing"}`,
+      `active row ${BASELINE_PVO_GAP_PLOT.rowNumber} positions: ${activeGapPositions.join(", ") || "none"}`,
+      ...missingOccupiedGapPositions.map(
+        (position) => `Brak aktywnego drzewa na pozycji ${position}`,
+      ),
+      ...unexpectedlyFilledGapPositions.map(
+        (position) => `Pozycja ${position} powinna pozostac pusta`,
+      ),
+    ],
+  });
+
+  const activityStatuses = activities.map((activity) => activity.status).filter(Boolean);
+  const missingActivityStatuses = missingExpectedValues(
+    activityStatuses,
+    BASELINE_EXPECTED_ACTIVITY_STATUSES,
+  );
+
+  checks.push({
+    id: "activity-statuses",
+    status: missingActivityStatuses.length === 0 ? "pass" : "fail",
+    summary:
+      missingActivityStatuses.length === 0
+        ? "Baseline zawiera wymagane statusy aktywnosci."
+        : "Baseline nie zawiera wszystkich wymaganych statusow aktywnosci.",
+    details:
+      missingActivityStatuses.length === 0
+        ? [`Obecne statusy: ${[...new Set(activityStatuses)].sort().join(", ")}`]
+        : missingActivityStatuses.map((status) => `Brak statusu aktywnosci: ${status}`),
+  });
+
+  const harvestSeasons = harvestRecords
+    .map((record) => record.seasonYear)
+    .filter((seasonYear) => seasonYear != null);
+  const harvestUnits = harvestRecords
+    .map((record) => record.quantityUnit)
+    .filter(Boolean);
+  const missingHarvestSeasons = missingExpectedValues(
+    harvestSeasons,
+    BASELINE_EXPECTED_HARVEST_SEASONS,
+  );
+  const missingHarvestUnits = missingExpectedValues(
+    harvestUnits,
+    BASELINE_EXPECTED_HARVEST_UNITS,
+  );
+
   const likelyDirtyLocalDataset =
     Object.entries(BASELINE_EXPECTED_TOTAL_COUNTS).some(
       ([key, expectedValue]) => (actualTotalCounts[key] ?? 0) > expectedValue,
@@ -217,19 +338,39 @@ export function evaluateBaselineQaReadiness(snapshot) {
     );
 
   const harvestNormalizationReady =
-    harvestNormalization.tonneRecords === 1 &&
-    harvestNormalization.normalizedTonneRecords === 1;
+    harvestNormalization.tonneRecords >= 1 &&
+    harvestNormalization.normalizedTonneRecords === harvestNormalization.tonneRecords;
 
   checks.push({
     id: "harvest-normalization",
     status: harvestNormalizationReady ? "pass" : "fail",
     summary:
       harvestNormalizationReady
-        ? "Referencyjny rekord harvest w tonach jest poprawnie znormalizowany do quantity_kg."
-        : "Rekord harvest w tonach nie jest gotowy do seeded QA albo quantity_kg nie zgadza sie z triggerem.",
+        ? "Referencyjne rekordy harvest w tonach sa poprawnie znormalizowane do quantity_kg."
+        : "Rekordy harvest w tonach nie sa gotowe do seeded QA albo quantity_kg nie zgadza sie z triggerem.",
     details: [
       `tonne records: ${harvestNormalization.tonneRecords}`,
       `normalized tonne records: ${harvestNormalization.normalizedTonneRecords}`,
+    ],
+  });
+
+  const harvestCoverageReady =
+    missingHarvestSeasons.length === 0 && missingHarvestUnits.length === 0;
+
+  checks.push({
+    id: "harvest-coverage",
+    status: harvestCoverageReady ? "pass" : "fail",
+    summary:
+      harvestCoverageReady
+        ? "Baseline harvest pokrywa wymagane sezony i jednostki."
+        : "Baseline harvest nie pokrywa wymaganych sezonow albo jednostek.",
+    details: [
+      ...(missingHarvestSeasons.length === 0
+        ? [`Obecne sezony: ${[...new Set(harvestSeasons)].sort().join(", ")}`]
+        : missingHarvestSeasons.map((season) => `Brak sezonu harvest: ${season}`)),
+      ...(missingHarvestUnits.length === 0
+        ? [`Obecne jednostki: ${[...new Set(harvestUnits)].sort().join(", ")}`]
+        : missingHarvestUnits.map((unit) => `Brak jednostki harvest: ${unit}`)),
     ],
   });
 
@@ -262,7 +403,8 @@ export function evaluateBaselineQaReadiness(snapshot) {
     checks,
     nextSteps,
     personas: BASELINE_QA_PERSONAS,
-    passwordHint: `Domyslne haslo to ${DEFAULT_BASELINE_PASSWORD}, chyba ze bootstrap kont byl uruchomiony z BASELINE_SEED_USER_PASSWORD.`,
+    passwordHint:
+      "Haslo baseline jest pobierane z BASELINE_SEED_USER_PASSWORD albo lokalnego baseline defaultu; wartosc nie jest wypisywana w raporcie.",
   };
 }
 

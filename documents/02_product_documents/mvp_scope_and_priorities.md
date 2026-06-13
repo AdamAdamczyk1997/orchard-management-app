@@ -153,6 +153,7 @@ Pierwsze wydanie ma byc przydatne w codziennej pracy, nawet bez map, zdjec, przy
 - dashboard z podstawowym przegladem danych
 - ekran `Create orchard`
 - lista dzialek + create / edit
+- operacyjny detail dzialki `/plots/[plotId]` jako `Plot Visual Operations`
 - lista drzew + create / edit
 - lista odmian + create / edit
 - dziennik prac
@@ -163,7 +164,7 @@ Pierwsze wydanie ma byc przydatne w codziennej pracy, nawet bez map, zdjec, przy
 
 Uwaga implementacyjna:
 
-- dedykowane detail pages dla `plots`, `varieties` i `trees` moga pozostac odlozone poza bazowy zakres obecnego MVP, o ile listy i formularze create / edit daja sprawny flow operacyjny
+- `/plots/[plotId]` zostalo wdrozone jako PVO; dedykowane detail pages dla `varieties` i `trees` pozostaja odlozone, bo listy i formularze create / edit daja sprawny flow operacyjny
 
 ## Zakres wersji 0.2 - `should have`
 
@@ -220,7 +221,7 @@ Uwaga statusowa:
 - odmiany globalne lub wspoldzielone
 - rozbudowane role i wspolpraca wielu uzytkownikow
 - delete UI dla `varieties` i `trees`
-- dedykowane detail pages dla `plots`, `varieties` i `trees`
+- dedykowane detail pages dla `varieties` i `trees`
 
 ## Swiadomie poza pierwszym wydaniem
 

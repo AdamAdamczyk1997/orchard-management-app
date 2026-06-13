@@ -322,7 +322,7 @@ Implementation index:
 
 - Current code is source of truth when active documentation and code disagree.
 - `documents/archive/` is historical and should not be used as implementation truth.
-- The current repo contains PVO implementation for `/plots/[plotId]`; older docs that call it planned are stale.
+- The current repo contains PVO implementation for `/plots/[plotId]`; treat it as part of the active product surface.
 - Accept Invitation is not implemented even though membership status enum has `invited`.
 - Report aggregations are application-level TypeScript helpers, not materialized SQL views.
 - Query prefill parameters are UI defaults only; writes still go through server actions, relation validation, RLS, and DB constraints/RPC.

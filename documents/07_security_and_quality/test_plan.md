@@ -443,29 +443,37 @@ Przed uruchomieniem seedu trzeba miec przygotowane konta `auth.users` dla:
 - `pawel.worker@orchardlog.local`
 - `ewa.worker@orchardlog.local`
 - `outsider@orchardlog.local`
+- `empty.owner@orchardlog.local`
+
+Baseline seed jest w wiekszosci immutable reference data. Testy E2E, ktore tworza,
+edytuja, usuwaja, zapraszaja, wycofuja, robia batch create albo bulk deactivate,
+powinny uzywac per-test unique records zamiast mutowac kanoniczne rekordy seedowe.
 
 Seed pokrywa:
 
 - 1 `super_admin`
-- 2 orchards
-- 2 `owners`
+- 3 orchards, w tym `Sad Pusty` / `EMPTY` bez danych domenowych
+- 3 `owners`
 - 2 `workers`
 - 1 outsider bez membership
 - membership cases: `active`, `invited`, `revoked`
-- 4 plots
-- 5 varieties
+- 5 plots, w tym read-only PVO gap plot `Kwatera Luki PVO`
+- 6 varieties
 - trees z lokalizacja i bez lokalizacji
 - aktywnosci o roznych statusach i typach sezonowych
 - `activity_scopes`
 - `activity_materials`
-- `harvest_records` w `kg` i `t`
+- `harvest_records` w `kg` i `t`, z danymi dla sezonow 2025 i 2026
 
 Scenariusze szczegolnie dobrze pokryte przez seed:
 
+- `MAIN` / `Sad Glowny` jako full demo/reference orchard
+- `EMPTY` / `Sad Pusty` jako true empty-state orchard
 - izolacja danych miedzy orchard
 - `owner` i `worker` w tym samym orchard
 - cross-membership user pomiedzy dwoma orchard
 - outsider bez dostepu do danych domenowych
+- read-only PVO gap fixture: row 1 positions 1 i 3 zajete, position 2 pusta
 - `spraying` z materialami
 - `winter_pruning` i `summer_pruning` w jednym sezonie
 - rekordy zbioru dla `orchard`, `plot`, `variety`, `location_range` i `tree`

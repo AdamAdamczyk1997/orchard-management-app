@@ -262,6 +262,7 @@ Wymagane emaile:
 - `pawel.worker@orchardlog.local`
 - `ewa.worker@orchardlog.local`
 - `outsider@orchardlog.local`
+- `empty.owner@orchardlog.local`
 
 Wazne:
 
@@ -317,6 +318,10 @@ Wazny niuans:
 
 Po uruchomieniu seedu dostajesz stabilny zestaw danych referencyjnych.
 
+Traktuj baseline seed jako w wiekszosci immutable reference data. Mutation-heavy E2E,
+czyli create / edit / delete / invite / remove / batch create / bulk deactivate,
+powinny tworzyc per-test unique records zamiast zmieniac kanoniczne rekordy baseline.
+
 Najwazniejsze konta:
 
 - `jan.owner@orchardlog.local`
@@ -337,6 +342,9 @@ Najwazniejsze konta:
 - `outsider@orchardlog.local`
   - brak membership
   - dobre konto do onboardingu i braku dostepu do danych orchard
+- `empty.owner@orchardlog.local`
+  - `owner` w `Sad Pusty`
+  - konto do empty-state tests; `Sad Pusty` nie ma danych domenowych
 - `admin@orchardlog.local`
   - `super_admin`
   - przydatne glownie do technicznych spot-checkow; nie ma jeszcze osobnego admin shell
@@ -351,15 +359,16 @@ Szybki dodatkowy check po zalogowaniu jako `jan.owner@orchardlog.local`:
 
 Seed pokrywa:
 
-- 2 orchardy:
+- 3 orchardy:
   - `Sad Glowny`
   - `Sad Poludniowy`
+  - `Sad Pusty` jako true empty-state orchard
 - membership cases:
   - `active`
   - `invited`
   - `revoked`
-- 4 plots
-- 5 varieties
+- 5 plots, w tym read-only PVO gap fixture `Kwatera Luki PVO`
+- 6 varieties
 - trees z lokalizacja i bez lokalizacji
 - aktywnosci:
   - `winter_pruning`
@@ -368,12 +377,15 @@ Seed pokrywa:
   - `spraying`
   - `harvest`
   - `inspection`
+  - lifecycle statuses: `planned`, `done`, `skipped`, `cancelled`
 - `activity_scopes`
 - `activity_materials`
-- `harvest_records` w `kg` i `t`
+- `harvest_records` w `kg` i `t`, z danymi dla sezonow 2025 i 2026
 
 Seed szczegolnie dobrze nadaje sie do testowania:
 
+- `MAIN` / `Sad Glowny` jako full demo/reference orchard
+- `EMPTY` / `Sad Pusty` jako pusty orchard do empty-state tests
 - izolacji danych miedzy orchard
 - owner-only settings
 - worker permissions
@@ -383,6 +395,7 @@ Seed szczegolnie dobrze nadaje sie do testowania:
 - `activities` z sezonowym `summary + coverage`
 - raportu lokalizacji odmiany dla drzew z pelna i niepelna lokalizacja
 - visual plot detail dla `rows`, `mixed` i `irregular`
+- read-only PVO gap plot `Kwatera Luki PVO`: row 1 positions 1 i 3 sa zajete, position 2 jest pusta
 - selection z mapy dzialki do `/activities/new` z single tree i range prefill
 - rekordow zbioru dla zakresow:
   - `orchard`

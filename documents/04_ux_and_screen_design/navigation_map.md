@@ -39,10 +39,13 @@ Dodatkowo:
 - `/orchards/new`
 - `/dashboard`
 - `/plots`
+- `/plots/[plotId]`
 - `/plots/[plotId]/edit`
 - `/plots/new`
 - `/trees`
 - `/trees/[treeId]/edit`
+- `/trees/batch/new`
+- `/trees/batch/deactivate`
 - `/trees/new`
 - `/varieties`
 - `/varieties/[varietyId]/edit`
@@ -57,27 +60,26 @@ Dodatkowo:
 - `/harvests/new`
 - `/reports/season-summary`
 - `/reports/harvest-locations`
+- `/reports/variety-locations`
 - `/settings/profile`
 - `/settings/orchard`
 - `/settings/members`
 
-### Planowane w `Plot Visual Operations MVP`
+### Plot Visual Operations
 
 - `/plots/[plotId]`
 
-`/plots/[plotId]` ma byc operacyjnym detail page dzialki w slice `Plot Visual Operations MVP`.
-Do czasu implementacji tego slice'u brak trasy w kodzie jest oczekiwany i nie jest regresja.
+`/plots/[plotId]` jest wdrozonym operacyjnym detail page dzialki.
+Ekran pokazuje visual overview, tree detail panel, selection mode oraz prefill do `/activities/new`, `/trees/batch/deactivate` i `/trees/batch/new`.
 
 ### Swiadomie odlozone po Phase 2
 
 - `/trees/[treeId]`
 - `/varieties/[varietyId]`
 
-### Etap 0.2
+### Etap 0.2 wdrozony w aktywnych trasach
 
-- `/trees/batch/new`
-- `/trees/batch/deactivate`
-- `/reports/variety-locations`
+- tree batch create, bulk deactivate i `variety-locations` sa juz czescia aktywnej aplikacji
 - eksport konta pozostaje osadzony na `/settings/profile` jako authenticated account screen
 
 ## Glowne przejscia uzytkownika
@@ -100,8 +102,12 @@ Do czasu implementacji tego slice'u brak trasy w kodzie jest oczekiwany i nie je
 
 - `dashboard -> plots`
 - `plots -> plots/new`
+- `plots -> plots/[plotId]`
 - `plots -> plots/[plotId]/edit`
 - `plots -> trees/new`
+- `plots/[plotId] -> activities/new` z bezpiecznym prefill zaznaczenia
+- `plots/[plotId] -> trees/batch/deactivate` z prefill jednego pelnego `location_range`
+- `plots/[plotId] -> trees/batch/new` z prefill ciaglego pustego zakresu w jednym rzedzie
 
 ### Zarzadzanie drzewami
 
@@ -128,7 +134,7 @@ Do czasu implementacji tego slice'u brak trasy w kodzie jest oczekiwany i nie je
 - `activities -> sezonowe summary i coverage` na tej samej trasie, przez niezalezne filtry `summary_*`
 - `activity details -> activities`
 - `activity details -> activities/[activityId]/edit`
-- szczegoly aktywnosci pokazuja nazwy dzialki i drzewa jako metadata, bez linkow do odlozonych detail pages
+- szczegoly aktywnosci pokazuja nazwy dzialki i drzewa jako metadata; dedykowany tree detail page nadal nie istnieje
 
 ### Zbiory
 

@@ -74,7 +74,7 @@ The app is a Next.js App Router application with route groups for auth, onboardi
 
 The main operational shell is `ProtectedAppShell`. It exposes navigation to plots, varieties, trees, activities, harvests, reports, and owner-only orchard settings. Account settings live in a separate `AccountShell` because profile and account export are account-scoped rather than active-orchard-scoped.
 
-`/plots/[plotId]` is implemented in current code and hosts the Plot Visual Operations screen. Some older overview docs still describe this route as planned; the current repository state should be treated as source of truth here.
+`/plots/[plotId]` is implemented in current code and hosts the Plot Visual Operations screen.
 
 ## Repository references
 

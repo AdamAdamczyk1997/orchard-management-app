@@ -65,7 +65,8 @@ Aktywny kontekst orchard jest rozwiazywany po stronie serwera i trzymany w `http
 - mozemy tworzyc, edytowac, wyszukiwac i przegladac `varieties`,
 - mozemy tworzyc, edytowac, filtrowac i przegladac `trees`,
 - `plots` maja ustawienia ukladu, np. `layout_type`, numeracje rzedow i drzew oraz wskazowki terenowe,
-- `trees` korzystaja z ustawien wybranej dzialki i pilnuja zgodnosci lokalizacji.
+- `trees` korzystaja z ustawien wybranej dzialki i pilnuja zgodnosci lokalizacji,
+- `/plots/[plotId]` ma wdrozony ekran `Plot Visual Operations` z visual overview, filtrami, tree panel, selection mode i prefill do operacji terenowych.
 
 ### 3. Aktywnosci sezonowe
 
@@ -127,7 +128,7 @@ Projekt ma wdrozone:
 
 Na teraz nadal odlozone sa miedzy innymi:
 
-- `/plots/[plotId]` jako operacyjny detail page dzialki jest planowany w `Plot Visual Operations MVP`; do czasu implementacji PVO jego brak w kodzie jest oczekiwany,
+- future harvest entry points z mapy PVO,
 - detail pages dla `varieties` i `trees`,
 - delete UI dla `varieties` i `trees`,
 - zmiana roli membership orchard,

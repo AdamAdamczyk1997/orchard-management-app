@@ -49,9 +49,12 @@ W aktualnym vertical slice zostaly wdrozone:
   - edit
   - filtry po `plot`, `variety`, `species`, `condition_status`, `is_active`
 
+Wdrozone pozniej:
+
+- `/plots/[plotId]` jest obecnie operacyjnym detail page dzialki w `Plot Visual Operations`
+
 Swiadomie odlozone:
 
-- `/plots/[plotId]` nie jest juz traktowane jako ogolnie odlozony detail page; jest planowane jako operacyjny detail page dzialki w `Plot Visual Operations MVP`
 - dedykowane detail pages dla `varieties`
 - dedykowane detail pages dla `trees`
 
@@ -71,7 +74,7 @@ W aktualnym vertical slice zostaly wdrozone:
 Swiadomie rozdzielone od tego slice:
 
 - `reports/season-summary` pozostaje ekranem raportowania zbiorow
-- `/plots/[plotId]` jest planowane w `Plot Visual Operations MVP`; do czasu wdrozenia PVO szczegoly aktywnosci pokazuja dzialke tylko jako metadata text
+- `Plot Visual Operations` zostalo wdrozone pozniej na `/plots/[plotId]`; szczegoly aktywnosci nadal nie sa osobnym ekranem mapy dzialki
 - detail page dla `trees` nadal jest odlozony, wiec szczegoly aktywnosci pokazuja drzewo tylko jako metadata text
 
 ### Aktualizacja Phase 4A
@@ -174,7 +177,7 @@ W aktualnym vertical slice zostaly wdrozone:
 Swiadomie odlozone do kolejnego kroku:
 
 - szerszy planningowy blok prac wykraczajacy poza prosty feed `upcoming_activities`
-- `/plots/[plotId]` przechodzi do planowanego slice `Plot Visual Operations MVP`; brak tej trasy przed implementacja PVO jest oczekiwany
+- future harvest entry points z mapy PVO
 - detail pages dla `varieties` i `trees`
 
 ### Aktualizacja Phase 5F
@@ -364,24 +367,25 @@ Najwazniejsze elementy:
 ### 5. Szczegoly dzialki
 
 Cel:
-pokazac jedna dzialke jako glowny kontener pracy.
+pokazac jedna dzialke jako operacyjny kontener pracy i wizualna mape drzew.
 
 Najwazniejsze elementy:
 
-- dane podstawowe dzialki
-- liczba drzew
-- lista drzew przypisanych do dzialki
-- ostatnie aktywnosci na dzialce
-- ostatnie zbiory na dzialce
+- dane podstawowe dzialki i podsumowanie ukladu
+- statystyki drzew aktywnych, usunietych i nieaktywnych
+- visual overview dla `rows`, `mixed` i `irregular`
+- lokalne filtry po odmianie, statusie drzewa i frazie wyszukiwania
+- `Browse mode` z panelem szczegolow drzewa
+- `Select mode` z kompresja zaznaczenia do zakresow
 - akcje:
   - edytuj dzialke
-  - dodaj drzewo
-  - dodaj aktywnosc
-  - dodaj zbior
+  - dodaj aktywnosc z prefill zaznaczenia
+  - masowo oznacz drzewa jako usuniete przez prefill `/trees/batch/deactivate`
+  - posadz nowe drzewa przez prefill `/trees/batch/new`
 
 Uwaga implementacyjna:
 
-- ekran pozostaje odlozony po Phase 2
+- ekran jest wdrozony jako `Plot Visual Operations`; harvest entry pointy z mapy pozostaja przyszlym rozszerzeniem
 
 ### 6. Formularz dzialki
 

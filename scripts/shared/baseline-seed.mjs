@@ -25,6 +25,10 @@ export const BASELINE_USERS = [
     email: "outsider@orchardlog.local",
     displayName: "Karolina Outsider",
   },
+  {
+    email: "empty.owner@orchardlog.local",
+    displayName: "Emilia Empty Owner",
+  },
 ];
 
 export const BASELINE_USER_EMAILS = BASELINE_USERS.map((user) =>
@@ -40,6 +44,11 @@ export const BASELINE_ORCHARDS = [
   {
     code: "SOUTH",
     name: "Sad Poludniowy",
+    status: "active",
+  },
+  {
+    code: "EMPTY",
+    name: "Sad Pusty",
     status: "active",
   },
 ];
@@ -87,27 +96,33 @@ export const BASELINE_EXPECTED_MEMBERSHIPS = [
     role: "worker",
     status: "invited",
   },
+  {
+    email: "empty.owner@orchardlog.local",
+    orchardCode: "EMPTY",
+    role: "owner",
+    status: "active",
+  },
 ];
 
 export const BASELINE_EXPECTED_TOTAL_COUNTS = {
-  orchards: 2,
-  memberships: 7,
-  plots: 4,
-  varieties: 5,
-  trees: 11,
-  activities: 6,
-  activityScopes: 8,
+  orchards: 3,
+  memberships: 8,
+  plots: 5,
+  varieties: 6,
+  trees: 13,
+  activities: 8,
+  activityScopes: 10,
   activityMaterials: 2,
-  harvestRecords: 5,
+  harvestRecords: 7,
 };
 
 export const BASELINE_EXPECTED_COUNTS_BY_ORCHARD = {
   MAIN: {
-    plots: 2,
-    varieties: 3,
-    trees: 8,
-    activities: 4,
-    harvestRecords: 3,
+    plots: 3,
+    varieties: 4,
+    trees: 10,
+    activities: 6,
+    harvestRecords: 5,
   },
   SOUTH: {
     plots: 2,
@@ -116,7 +131,36 @@ export const BASELINE_EXPECTED_COUNTS_BY_ORCHARD = {
     activities: 2,
     harvestRecords: 2,
   },
+  EMPTY: {
+    plots: 0,
+    varieties: 0,
+    trees: 0,
+    activities: 0,
+    harvestRecords: 0,
+  },
 };
+
+export const BASELINE_EMPTY_ORCHARD_CODE = "EMPTY";
+
+export const BASELINE_PVO_GAP_PLOT = {
+  orchardCode: "MAIN",
+  plotId: "20000000-0000-4000-8000-000000000005",
+  name: "Kwatera Luki PVO",
+  rowNumber: 1,
+  occupiedPositions: [1, 3],
+  emptyPositions: [2],
+};
+
+export const BASELINE_EXPECTED_ACTIVITY_STATUSES = [
+  "planned",
+  "done",
+  "skipped",
+  "cancelled",
+];
+
+export const BASELINE_EXPECTED_HARVEST_SEASONS = [2025, 2026];
+
+export const BASELINE_EXPECTED_HARVEST_UNITS = ["kg", "t"];
 
 export const BASELINE_QA_PERSONAS = [
   {
@@ -133,5 +177,10 @@ export const BASELINE_QA_PERSONAS = [
     email: "outsider@orchardlog.local",
     summary: "brak membership",
     focus: "onboarding albo brak danych orchard po zalogowaniu",
+  },
+  {
+    email: "empty.owner@orchardlog.local",
+    summary: "owner w Sad Pusty bez danych domenowych",
+    focus: "empty states bez mutowania glownego baseline",
   },
 ];

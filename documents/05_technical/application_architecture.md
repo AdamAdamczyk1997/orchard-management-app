@@ -124,11 +124,13 @@ Uwagi etapowe:
   - `/trees/batch/deactivate`
   - `/reports/variety-locations`
   - `/reports/harvest-locations`
-- detail pages `/plots/[plotId]`, `/varieties/[varietyId]`, `/trees/[treeId]` pozostaja swiadomie odlozone do kolejnych slice'ow,
+- po domknieciu `Plot Visual Operations` aktywne jest dodatkowo:
+  - `/plots/[plotId]`
+- `/plots/[plotId]` jest wdrozonym ekranem `Plot Visual Operations`; dedykowane detail pages `/varieties/[varietyId]` i `/trees/[treeId]` pozostaja swiadomie odlozone do kolejnych slice'ow,
 - sezonowe raportowanie prac jest osadzone na `/activities`, a `/reports/season-summary` pozostaje harvestowe,
 - `GET /auth/sync-active-orchard` sluzy do bezpiecznej synchronizacji cookie `ol_active_orchard`,
 - `exportAccountData` jest osadzone na `/settings/profile`, a nie jako osobna trasa `settings/export`,
-- `plots` maja juz explicit `layout_type`, schematy numeracji i notatki ukladu, a kolejny krok to wykorzystanie tych danych w bardziej plot-aware walidacjach drzew.
+- `plots` maja juz explicit `layout_type`, schematy numeracji i notatki ukladu wykorzystywane w walidacjach drzew, batch flows, PVO, `activities` i `harvests`.
 
 ## 3. Podzial odpowiedzialnosci
 

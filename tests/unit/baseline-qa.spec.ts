@@ -22,6 +22,7 @@ function createReadySnapshot() {
       "pawel.worker@orchardlog.local",
       "ewa.worker@orchardlog.local",
       "outsider@orchardlog.local",
+      "empty.owner@orchardlog.local",
     ],
     profiles: [
       {
@@ -54,10 +55,16 @@ function createReadySnapshot() {
         system_role: "user",
         orchard_onboarding_dismissed_at: null,
       },
+      {
+        email: "empty.owner@orchardlog.local",
+        system_role: "user",
+        orchard_onboarding_dismissed_at: "2026-01-20T08:00:00Z",
+      },
     ],
     orchards: [
       { code: "MAIN", name: "Sad Glowny", status: "active" },
       { code: "SOUTH", name: "Sad Poludniowy", status: "active" },
+      { code: "EMPTY", name: "Sad Pusty", status: "active" },
     ],
     memberships: [
       {
@@ -102,25 +109,79 @@ function createReadySnapshot() {
         role: "worker",
         status: "invited",
       },
+      {
+        email: "empty.owner@orchardlog.local",
+        orchardCode: "EMPTY",
+        role: "owner",
+        status: "active",
+      },
+    ],
+    plots: [
+      {
+        id: "20000000-0000-4000-8000-000000000005",
+        orchardCode: "MAIN",
+        name: "Kwatera Luki PVO",
+        layoutType: "rows",
+      },
+    ],
+    trees: [
+      {
+        id: "40000000-0000-4000-8000-000000000012",
+        orchardCode: "MAIN",
+        plotId: "20000000-0000-4000-8000-000000000005",
+        rowNumber: 1,
+        positionInRow: 1,
+        isActive: true,
+      },
+      {
+        id: "40000000-0000-4000-8000-000000000013",
+        orchardCode: "MAIN",
+        plotId: "20000000-0000-4000-8000-000000000005",
+        rowNumber: 1,
+        positionInRow: 3,
+        isActive: true,
+      },
+    ],
+    activities: [
+      { orchardCode: "MAIN", status: "done" },
+      { orchardCode: "SOUTH", status: "planned" },
+      { orchardCode: "MAIN", status: "skipped" },
+      { orchardCode: "MAIN", status: "cancelled" },
+    ],
+    harvestRecords: [
+      {
+        orchardCode: "MAIN",
+        seasonYear: 2025,
+        quantityValue: 680,
+        quantityUnit: "kg",
+        quantityKg: 680,
+      },
+      {
+        orchardCode: "MAIN",
+        seasonYear: 2026,
+        quantityValue: 1.2,
+        quantityUnit: "t",
+        quantityKg: 1200,
+      },
     ],
     totals: {
-      orchards: 2,
-      memberships: 7,
-      plots: 4,
-      varieties: 5,
-      trees: 11,
-      activities: 6,
-      activityScopes: 8,
+      orchards: 3,
+      memberships: 8,
+      plots: 5,
+      varieties: 6,
+      trees: 13,
+      activities: 8,
+      activityScopes: 10,
       activityMaterials: 2,
-      harvestRecords: 5,
+      harvestRecords: 7,
     },
     byOrchard: {
       MAIN: {
-        plots: 2,
-        varieties: 3,
-        trees: 8,
-        activities: 4,
-        harvestRecords: 3,
+        plots: 3,
+        varieties: 4,
+        trees: 10,
+        activities: 6,
+        harvestRecords: 5,
       },
       SOUTH: {
         plots: 2,
@@ -128,6 +189,13 @@ function createReadySnapshot() {
         trees: 3,
         activities: 2,
         harvestRecords: 2,
+      },
+      EMPTY: {
+        plots: 0,
+        varieties: 0,
+        trees: 0,
+        activities: 0,
+        harvestRecords: 0,
       },
     },
     harvestNormalization: {
@@ -157,6 +225,7 @@ describe("baseline QA readiness", () => {
 
     expect(formatted).toContain("Baseline QA status: READY");
     expect(formatted).toContain("jan.owner@orchardlog.local");
+    expect(formatted).not.toContain("Orchard123!");
   });
 
   it("suggests bootstrapping auth users before rerunning the SQL seed", () => {
@@ -178,6 +247,10 @@ describe("baseline QA readiness", () => {
         harvestRecords: 0,
       },
       byOrchard: {},
+      plots: [],
+      trees: [],
+      activities: [],
+      harvestRecords: [],
       harvestNormalization: {
         tonneRecords: 0,
         normalizedTonneRecords: 0,

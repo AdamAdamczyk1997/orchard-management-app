@@ -177,7 +177,7 @@ Server actions:
 - `server/actions/trees.ts`
 - `server/actions/activities.ts`
 - `server/actions/harvests.ts`
-- `server/actions/account.ts`
+- `server/actions/profile.ts`
 
 Domain and validation:
 

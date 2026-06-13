@@ -79,7 +79,9 @@ export async function upsertBaselineUsers() {
   console.log("Baseline auth users are ready.");
   console.log(`Created: ${summary.created}`);
   console.log(`Updated: ${summary.updated}`);
-  console.log(`Password: ${password}`);
+  console.log(
+    "Password: resolved from BASELINE_SEED_USER_PASSWORD or the local baseline default (redacted).",
+  );
   console.log("");
   console.log("Next step:");
   console.log(`- run ${BASELINE_SQL_SEED_COMMAND}`);
