@@ -27,6 +27,8 @@ This file is not a full specification. It is an orientation layer over:
 - Do not design from zero. Base work on the current repo, active docs, migrations, seeds, tests and already implemented vertical slices.
 - Before proposing a new slice, identify whether the user is asking for QA, cleanup, docs, a bug fix, or a real product feature.
 - Keep `orchard_id` trusted only server-side. Client query params and forms may prefill UI state, but writes must still go through validation, server actions, RLS and DB constraints.
+- If the user asks about large plots, hundreds of trees, performance, pagination, async tree selectors or PVO scaling, start from `documents/01_implementation_materials/large_plot_tree_scale_plan.md`.
+- The large-plot scale plan is active but not implemented. Treat it as the current phased strategy, not as completed behavior.
 
 ## Startup Prompt
 
@@ -45,6 +47,7 @@ Najpierw przeczytaj:
 - documents/ai_project_map.md
 - documents/ui_implementation_map.md
 - documents/01_implementation_materials/README.md
+- documents/01_implementation_materials/large_plot_tree_scale_plan.md
 
 Potem zorientuj sie w repo:
 - sprawdz `git status --short`, bo worktree moze byc brudny,
@@ -55,6 +58,7 @@ Potem zorientuj sie w repo:
 Nie zaczynaj projektowania od zera.
 Bazuj na aktualnym repo, aktywnej dokumentacji, migracjach Supabase, seedach, testach i juz wdrozonych vertical slice'ach.
 Najpierw ustal, czy kontynuujemy QA/cleanup/docs/bugfix, czy zaczynamy nowy slice.
+Po rozpoznaniu albo po zakonczonej pracy zapytaj usera o kolejny kierunek, jesli nie wynika on jasno z requestu.
 
 Szczegolnie zwracaj uwage na:
 - `active_orchard` rozwiazywany po stronie serwera i cookie `ol_active_orchard`,
@@ -63,7 +67,8 @@ Szczegolnie zwracaj uwage na:
 - aktualny pakiet migracji Supabase,
 - workflow baseline: `pnpm seed:baseline-reset` -> `pnpm qa:baseline-status`,
 - gate jakosci: `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`,
-- zarchiwizowane dokumenty PVO i stare handoffy nie sa aktywnym planem.
+- aktywny plan skalowania duzych dzialek: `documents/01_implementation_materials/large_plot_tree_scale_plan.md`,
+- zarchiwizowane dokumenty PVO, baseline enrichment i stare handoffy nie sa aktywnym planem.
 ```
 
 ## Current Product State
@@ -88,6 +93,12 @@ Implemented core:
 - dashboard with orchard snapshot, recent records and `upcoming_activities`,
 - reports: season summary, harvest locations, variety locations,
 - `Plot Visual Operations MVP` on `/plots` and `/plots/[plotId]`.
+- enriched baseline seed for regular QA/demo:
+  - 3 orchards,
+  - 5 plots,
+  - 12 varieties,
+  - 45 trees,
+  - `EMPTY` remains true empty-state orchard.
 
 PVO current state:
 
@@ -100,6 +111,27 @@ PVO current state:
   - `documents/archive/plot_visual_operations_roadmap.md`
   - `documents/archive/plot_visual_operations_implementation_master_plan.md`
 
+Baseline seed enrichment current state:
+
+- The baseline enrichment plan has been implemented and archived:
+  - `documents/archive/baseline_seed_enrichment_plan.md`
+- The active baseline metadata lives in:
+  - `supabase/seeds/001_baseline_reference_seed.sql`
+  - `scripts/shared/baseline-seed.mjs`
+  - `tests/unit/baseline-qa.spec.ts`
+- If baseline counts change, update seed SQL, shared baseline metadata, baseline QA tests and minimal docs together.
+
+Active technical plan:
+
+- There is no active execution master plan for the whole product.
+- There is an active, not-yet-implemented technical plan for large plots and tree-scale performance:
+  - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- The recommended first slice from that plan is Phase 0 only:
+  - create a local-only performance fixture,
+  - measure current behavior,
+  - avoid production UI rewrites until measurements exist.
+- Do not put large-scale performance data into the canonical baseline seed.
+
 ## Active Documentation Priority
 
 Start here:
@@ -110,7 +142,8 @@ Start here:
 4. `documents/ai_project_map.md`
 5. `documents/ui_implementation_map.md`
 6. `documents/01_implementation_materials/README.md`
-7. `documents/00_overview_and_checklists/app_high_level_overview.md`
+7. `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+8. `documents/00_overview_and_checklists/app_high_level_overview.md`
 
 For domain and backend work:
 
@@ -142,6 +175,19 @@ For testing and QA:
 - `documents/00_overview_and_checklists/manual_testing_quickstart.md`
 - `documents/00_overview_and_checklists/local_dev_tools_quickstart.md`
 - `tests/`
+
+For large plot / tree-scale performance work:
+
+- `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- `app/(app)/plots/[plotId]/page.tsx`
+- `features/plots/plot-visual-overview.tsx`
+- `lib/domain/plot-visual-grid.ts`
+- `lib/orchard-data/trees.ts`
+- `lib/orchard-data/activities.ts`
+- `lib/orchard-data/harvests.ts`
+- `app/(app)/trees/page.tsx`
+- `features/activities/activity-form.tsx`
+- `features/harvests/harvest-form.tsx`
 
 ## Source Of Truth Order
 
@@ -200,6 +246,19 @@ PVO-specific:
 - `lib/validation/tree-batch-prefill.ts`
 - `tests/e2e/plot-visual-operations.spec.ts`
 
+Large plot scale-specific:
+
+- `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- `app/(app)/trees/page.tsx`
+- `lib/orchard-data/trees.ts`
+- `lib/orchard-data/activities.ts`
+- `lib/orchard-data/harvests.ts`
+- `app/(app)/plots/[plotId]/page.tsx`
+- `features/plots/plot-visual-overview.tsx`
+- `features/activities/activity-form.tsx`
+- `features/harvests/harvest-form.tsx`
+- future performance fixture script from plan Phase 0, once implemented.
+
 ## Planned Or Missing Areas
 
 Do not assume these exist:
@@ -214,11 +273,18 @@ Do not assume these exist:
 - future harvest entry points from the PVO map,
 - richer planning/calendar workflow beyond `upcoming_activities`,
 - report export/download artifacts.
+- large-plot performance fixture from `large_plot_tree_scale_plan.md`,
+- paginated `/trees` list,
+- async tree picker for activity/harvest forms,
+- PVO large-plot overview/focus mode,
+- report read model hardening for very large plot filters.
 
 Notes:
 
 - `manager` and `viewer` exist in schema/types, but current product/UI behavior is centered on `owner`, `worker`, `super_admin` and outsider.
 - `orchard_memberships.status` supports `invited`, but current invite flow activates membership immediately for an existing account.
+- Current PVO works well for regular baseline data. It has not yet been changed for hundreds or thousands of trees in one plot.
+- Current `/trees`, `ActivityForm` and `HarvestForm` still use unbounded tree reads/options in some places. Treat this as planned scale work, not as already solved.
 
 ## Verification Commands
 
@@ -245,6 +311,8 @@ Remember:
 - Integration and E2E tests may mutate local baseline data.
 - Before manual seeded QA, run `pnpm seed:baseline-reset` and confirm `pnpm qa:baseline-status`.
 - For docs-only edits, `git diff --check` can be enough unless links, generated docs or code snippets need deeper validation.
+- For large-plot performance work, start with the plan's Phase 0 fixture and measurements before changing UI strategy.
+- After running a future large performance fixture, reset baseline again before manual seeded QA.
 
 ## How To Choose The Next Step
 
@@ -253,8 +321,9 @@ Remember:
 3. If the request touches implementation, inspect the existing slice before proposing changes.
 4. If the request touches docs, update active entry points and avoid making archive docs normative.
 5. If the request touches DB/RLS/security, verify migrations, policies, seed data and tests before changing code.
-6. Keep changes scoped and update tests/docs when behavior changes.
-7. Before final response, report what changed and which checks ran.
+6. If the request touches large plots/performance/PVO scaling, follow `large_plot_tree_scale_plan.md` and prefer Phase 0 measurement work before production UI rewrites.
+7. Keep changes scoped and update tests/docs when behavior changes.
+8. Before final response, report what changed and which checks ran.
 
 ## Archived Context
 
@@ -265,6 +334,7 @@ Useful archived snapshots:
 - `documents/archive/2026-06-06_session_handoff_pvo_closeout_snapshot.md`
 - `documents/archive/plot_visual_operations_roadmap.md`
 - `documents/archive/plot_visual_operations_implementation_master_plan.md`
+- `documents/archive/baseline_seed_enrichment_plan.md`
 - `documents/archive/implementation_master_plan.md`
 
 These files explain how the project got here, but they are not active implementation plans.

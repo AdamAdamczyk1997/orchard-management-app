@@ -116,7 +116,7 @@ test("owner can inspect seeded plot visual operations across rows, mixed, and ir
   await expect(page.getByTestId("plot-visual-grid")).toBeVisible();
   await expect(page.getByText("Schemat rzedow")).toBeVisible();
   await expect(page.getByTestId("plot-visual-filter-count")).toContainText(
-    "Pokazano 6 z 6 drzew",
+    "Pokazano 22 z 22 drzew",
   );
 
   await page.getByTestId("plot-visual-mode-select").click();
@@ -230,12 +230,12 @@ test("owner can inspect seeded plot visual operations across rows, mixed, and ir
 
   await page.locator("#plot_visual_condition").selectOption("warning");
   await expect(page.getByTestId("plot-visual-filter-count")).toContainText(
-    "Pokazano 1 z 6 drzew",
+    "Pokazano 2 z 22 drzew",
   );
   const warningMarker = page.getByLabel(/Ligol R1\/P3/);
 
   await expect(warningMarker).toBeVisible();
-  await expect(page.getByTestId("plot-visual-marker-active-tree")).toHaveCount(1);
+  await expect(page.getByTestId("plot-visual-marker-active-tree")).toHaveCount(2);
   await warningMarker.click();
 
   const detailPanel = page.getByTestId("plot-tree-detail-panel");
@@ -274,7 +274,7 @@ test("owner can inspect seeded plot visual operations across rows, mixed, and ir
   await openPlot(page, "Kwatera Polnocna");
   await page.locator("#plot_visual_location_verified").selectOption("unverified");
   await expect(page.getByTestId("plot-visual-filter-count")).toContainText(
-    "Pokazano 1 z 6 drzew",
+    "Pokazano 1 z 22 drzew",
   );
   await expect(page.getByTestId("plot-visual-fallback")).toBeVisible();
   await expect(page.getByText("Young Apple Block")).toBeVisible();
@@ -313,7 +313,7 @@ test("owner can inspect seeded plot visual operations across rows, mixed, and ir
 
   await page.locator("#plot_visual_lifecycle").selectOption("active");
   await expect(page.getByTestId("plot-visual-filter-count")).toContainText(
-    "Pokazano 1 z 2 drzew",
+    "Pokazano 11 z 12 drzew",
   );
   await expect(page.getByTestId("plot-visual-marker-removed-tree")).toHaveCount(0);
   await expect(page.getByText("Removed Ligol example")).toHaveCount(0);

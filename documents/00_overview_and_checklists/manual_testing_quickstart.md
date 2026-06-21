@@ -368,8 +368,8 @@ Seed pokrywa:
   - `invited`
   - `revoked`
 - 5 plots, w tym read-only PVO gap fixture `Kwatera Luki PVO`
-- 6 varieties
-- trees z lokalizacja i bez lokalizacji
+- 12 varieties
+- 45 trees z lokalizacja i bez lokalizacji
 - aktywnosci:
   - `winter_pruning`
   - `summer_pruning`

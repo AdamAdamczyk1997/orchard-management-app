@@ -1,6 +1,6 @@
 # Baseline seed enrichment plan
 
-Status: plan only, not implemented.
+Status: archived, implemented.
 Scope: richer baseline varieties and trees for demo/QA readability.
 
 ## Goal
@@ -134,13 +134,13 @@ Existing pattern:
 - `Conference` at row 1 position 1
 - one removed/inactive `Ligol` example at row 1 position 2
 
-Recommended additions: about 10 trees.
+Implemented additions: 10 trees.
 
-Proposed layout:
+Implemented layout:
 
-- section `B`, row 1, positions 3-6: `Conference` / `Williams`
-- section `C`, row 1, positions 1-3: `Pinova`
-- section `C`, row 2, positions 1-3: `Red Jonaprince`
+- section `B`, row 1, positions 3-6: `Conference` / `Williams` / `Bosc`
+- section `C`, row 2, positions 1-3: `Pinova`
+- section `C`, row 3, positions 1-3: `Red Jonaprince`
 
 Expected result:
 
@@ -184,7 +184,7 @@ Expected result:
 
 ## Expected counts after enrichment
 
-Approximate target counts:
+Implemented target counts:
 
 - `MAIN` trees: 36
 - `SOUTH` trees: 9
@@ -192,8 +192,12 @@ Approximate target counts:
 - total trees: 45
 - total varieties: 12
 
-The exact count should be finalized after auditing current tree locations in
-`supabase/seeds/001_baseline_reference_seed.sql`.
+Implementation note:
+
+- `Kwatera Poludniowa` keeps the intended mixed-species shape, but `section C`
+  uses rows 2 and 3 instead of row 1. The database unique index for active tree
+  locations is `plot_id, row_number, position_in_row`, so `section_name` does
+  not make row 1 positions unique.
 
 ## Files likely affected in implementation slice
 

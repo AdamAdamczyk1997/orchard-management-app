@@ -26,5 +26,6 @@ implementacji.
 - `2026-06-06_session_handoff_pvo_closeout_snapshot.md`
 - `plot_visual_operations_roadmap.md`
 - `plot_visual_operations_implementation_master_plan.md`
+- `baseline_seed_enrichment_plan.md`
 - `phase_1_auth_onboarding_vertical_slice.md`
 - `phase_2_core_orchard_structure_vertical_slice.md`

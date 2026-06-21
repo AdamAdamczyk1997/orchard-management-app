@@ -81,7 +81,10 @@ Historyczny execution index `implementation_master_plan.md` oraz zamkniete dokum
 
 ### Planowane aktywne slice'y
 
-- Brak jednego aktywnego execution master planu. Kolejny slice trzeba ustalic z userem na podstawie aktualnego repo, aktywnych map projektu i biezacego celu.
+- Brak jednego aktywnego execution master planu dla calego produktu.
+- Aktywny plan techniczny dla skalowania dzialek z setkami drzew:
+  - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- Kolejny slice trzeba ustalic z userem na podstawie aktualnego repo, aktywnych map projektu i biezacego celu.
 
 ### Swiadomie odlozone
 

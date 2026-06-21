@@ -458,8 +458,8 @@ Seed pokrywa:
 - 1 outsider bez membership
 - membership cases: `active`, `invited`, `revoked`
 - 5 plots, w tym read-only PVO gap plot `Kwatera Luki PVO`
-- 6 varieties
-- trees z lokalizacja i bez lokalizacji
+- 12 varieties
+- 45 trees z lokalizacja i bez lokalizacji
 - aktywnosci o roznych statusach i typach sezonowych
 - `activity_scopes`
 - `activity_materials`

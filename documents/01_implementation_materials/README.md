@@ -38,7 +38,11 @@ Historyczny `implementation_master_plan.md` zostal przeniesiony do `documents/ar
 
 ## Aktywne plany implementacyjne
 
-Na ten moment nie ma aktywnego execution master planu w tym katalogu.
+Na ten moment nie ma aktywnego execution master planu dla calego produktu.
+Aktywny plan techniczny dla skalowania duzych dzialek znajduje sie w:
+
+- [large_plot_tree_scale_plan.md](./large_plot_tree_scale_plan.md)
+
 `Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
 
 Aktualny stan projektu sprawdzaj przede wszystkim w:
@@ -52,6 +56,7 @@ Aktualny stan projektu sprawdzaj przede wszystkim w:
 Zamkniete notatki z wczesnych vertical slice zostaly przeniesione do archiwum:
 
 - [implementation_master_plan.md](../archive/implementation_master_plan.md)
+- [baseline_seed_enrichment_plan.md](../archive/baseline_seed_enrichment_plan.md)
 - [plot_visual_operations_roadmap.md](../archive/plot_visual_operations_roadmap.md)
 - [plot_visual_operations_implementation_master_plan.md](../archive/plot_visual_operations_implementation_master_plan.md)
 - [phase_1_auth_onboarding_vertical_slice.md](../archive/phase_1_auth_onboarding_vertical_slice.md)

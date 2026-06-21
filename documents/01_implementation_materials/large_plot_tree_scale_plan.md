@@ -1,0 +1,738 @@
+# Large plot tree scale plan
+
+Status: active plan, not implemented.
+Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
+or low thousands of trees.
+
+## Goal
+
+Prepare the application for real orchard structure at field scale:
+
+- hundreds of trees in one plot should feel normal,
+- low thousands of trees in one plot should still be usable,
+- workers should be able to quickly record field work without scrolling through
+  huge lists,
+- owners should be able to inspect structure, reports and gaps without the UI
+  becoming slow or visually noisy,
+- existing `active_orchard`, RLS, ownership, baseline QA and PVO fixtures must
+  remain safe.
+
+This plan is intentionally staged. Do not implement all changes in one slice.
+The safest path is: measure first, then improve read models, then change UI
+surfaces one by one.
+
+## Current Implementation Facts
+
+These facts are based on the current repo state, not on archive documents.
+
+- `/plots/[plotId]` reads all trees in the plot through
+  `listTreesForPlotInOrchard()` and passes all of them to `PlotVisualOverview`.
+- `PlotVisualOverview` renders every visible tree or inferred empty position as
+  a DOM element, with interactive buttons in Browse and Select modes.
+- `/trees` reads all trees for the active orchard matching filters through
+  `listTreesForOrchard()`, maps all rows, then sorts in TypeScript.
+- `ActivityForm` and `HarvestForm` receive all `treeOptions` for the orchard and
+  filter them client-side after a plot is selected.
+- `listTreeOptionsForOrchard()` selects all orchard trees before sorting.
+- `getVarietyLocationsReportForOrchard()` reads all active trees for one
+  variety and groups ranges in TypeScript.
+- `getHarvestLocationSummaryForOrchard()` currently resolves plot filtering by
+  first selecting tree IDs for the plot, then building a `tree_id.in(...)`
+  filter. This can become fragile for very large plots.
+- Batch preview flows already use range-based queries, which is good, but their
+  UI can still become too verbose for large ranges.
+
+## Scale Targets
+
+Use these targets for design and testing. They are not product limits unless a
+later slice explicitly turns them into validation limits.
+
+- Small plot: up to 200 trees.
+  - Current full-marker PVO can remain available.
+- Medium plot: 201-800 trees.
+  - UI should default to row/section overview, then focus into one row or one
+    filtered subset.
+- Large plot: 801-2,000 trees.
+  - UI must avoid full DOM marker rendering by default.
+  - Tree selection should be search/range based.
+- Large orchard: 5,000-20,000 trees across many plots.
+  - Global lists and form selectors must be paginated or async searched.
+
+Thresholds should be measured and adjusted after the performance fixture exists.
+
+## Non-goals
+
+- Do not redesign the whole domain model.
+- Do not remove existing PVO small-plot behavior.
+- Do not put large performance data into the canonical baseline seed.
+- Do not weaken server-side `active_orchard` resolution or RLS.
+- Do not trust client-provided `orchard_id`.
+- Do not make `documents/archive/` normative again.
+- Do not add DB indexes blindly before checking real query plans.
+- Do not introduce a heavy rendering library unless measurements justify it.
+
+## Product Principles
+
+### 1. Field work first
+
+A worker in the orchard should not need to pick from 900 tree options. The UI
+should help them record by natural field language:
+
+- plot,
+- section,
+- row,
+- range of positions,
+- single tree only when truly needed.
+
+### 2. Progressive disclosure
+
+Large plots should use this flow:
+
+1. Overview: sections and rows with counts and warnings.
+2. Focus: one row, one section, one range, or one filtered subset.
+3. Detail: one tree or a small set of trees.
+
+The app should avoid showing every tree at once when that makes the page slower
+or harder to understand.
+
+### 3. Server-side narrowing
+
+Every heavy screen should ask the server for the smallest useful dataset:
+
+- count summaries for overview,
+- page slices for lists,
+- row/range detail for focused PVO,
+- search-limited options for forms.
+
+### 4. Keep writes boring and safe
+
+Even if read UX changes, writes must still go through:
+
+- server actions,
+- Zod validation,
+- active orchard context,
+- relation checks,
+- RLS,
+- constraints and RPC guards.
+
+### 5. Keep canonical baseline readable
+
+The enriched baseline is for normal QA/demo. Large-scale data should live in a
+separate performance fixture workflow so normal E2E and manual smoke stay fast.
+
+## Proposed Architecture Strategy
+
+### Read Model Layers
+
+Introduce separate read models for large tree workloads instead of reusing the
+same "full tree summary list" everywhere.
+
+Suggested read models:
+
+- `TreeListPage`
+  - paginated result for `/trees`
+  - includes rows, total count, page, page size and active filters
+- `TreeOptionSearchResult`
+  - small search result for comboboxes
+  - limit default: 20-50
+  - supports selected IDs for hydration in edit/prefill flows
+- `PlotTreeScaleProfile`
+  - count-only profile for one plot
+  - active count, removed count, located count, unlocated count, row count,
+    max positions per row, warning count
+- `PlotVisualOverviewSummary`
+  - section and row summaries for PVO overview
+  - no full tree list by default for medium/large plots
+- `PlotVisualRowDetail`
+  - details for one section + row + filters
+  - used after user focuses a row
+- `PlotVisualTreeDetail`
+  - single tree detail or very small selected set
+
+These can start as TypeScript helpers over Supabase queries. Add SQL RPC only
+when PostgREST queries become awkward or too slow.
+
+### UI Surfaces
+
+Prioritize these surfaces in order:
+
+1. `/trees`
+2. tree selectors in activity and harvest forms
+3. `/plots/[plotId]` PVO
+4. batch preview output
+5. location reports
+
+That order improves daily usability before the more ambitious PVO rendering
+work.
+
+## Implementation Roadmap
+
+## Phase 0 - Performance Fixture And Baseline Measurements
+
+Purpose: stop guessing.
+
+### Implementation
+
+1. Create a local-only performance fixture script, for example:
+   - `scripts/seed-large-plot-fixture.mjs`
+   - or `scripts/seed-large-plot-fixture.sql` plus a runner.
+2. The fixture should run after `pnpm seed:baseline-reset`.
+3. It should create or upsert deterministic data in `MAIN` or a separate
+   performance orchard:
+   - one rows plot with 500 trees,
+   - one rows plot with 1,500 trees,
+   - optional mixed plot with partial row coverage,
+   - several varieties distributed across rows,
+   - a few warning/critical/unverified trees.
+4. Keep fixture IDs deterministic and outside canonical baseline ranges.
+5. Do not include this fixture in `pnpm qa:baseline-status`.
+6. Add a clear cleanup path:
+   - easiest path: rerun `pnpm seed:baseline-reset`.
+
+### Measurements
+
+Record before/after numbers for:
+
+- `/trees`
+  - server render time,
+  - number of rows returned,
+  - DOM node count,
+  - filter response time.
+- `/activities/new`
+  - payload size caused by `treeOptions`,
+  - time to interactive,
+  - select responsiveness after choosing plot.
+- `/harvests/new`
+  - same as activity form.
+- `/plots/[plotId]`
+  - server render time,
+  - client hydration time,
+  - DOM node count,
+  - selection responsiveness.
+- `/reports/variety-locations`
+  - query time and render time for a popular variety.
+- `/reports/harvest-locations`
+  - behavior when filtering by a plot with many trees.
+
+### Tests
+
+- Add no production E2E yet unless the fixture runner is fast enough.
+- Add a small unit test for fixture metadata if a shared helper is introduced.
+- Manual check is acceptable in this phase.
+
+### Acceptance Criteria
+
+- We can generate a large local plot deterministically.
+- We know which pages degrade first.
+- We have agreed provisional thresholds for small/medium/large plots.
+
+## Phase 1 - Paginated `/trees`
+
+Purpose: make the global tree list safe for large orchards.
+
+### Implementation
+
+1. Extend `TreeListFilters` and validation with:
+   - `page`,
+   - `page_size`,
+   - optional sort key if needed later.
+2. Replace `listTreesForOrchard()` use on `/trees` with a paginated read model:
+   - `listTreePageForOrchard(orchardId, filters)`.
+3. Query Supabase with:
+   - `.range(from, to)`,
+   - count metadata,
+   - deterministic order in SQL.
+4. Keep existing filters:
+   - `q`,
+   - `plot_id`,
+   - `variety_id`,
+   - `species`,
+   - `condition_status`,
+   - `is_active`.
+5. Move sort from TypeScript into database order:
+   - plot name may require either joined ordering or a simplified tree order
+     by `plot_id`, `row_number`, `position_in_row`, `tree_code`.
+6. Update `TreeList` with pagination controls.
+7. Preserve query-string filters when moving pages.
+8. Reset to page 1 when filters change.
+
+### Tests
+
+- Unit:
+  - filter parser accepts page and page size,
+  - invalid page falls back safely.
+- Integration:
+  - list returns only requested page,
+  - total count is correct,
+  - filters remain orchard-scoped.
+- E2E:
+  - baseline list still works,
+  - performance fixture list can move to page 2,
+  - clearing filters resets pagination.
+
+### Acceptance Criteria
+
+- `/trees` never renders unbounded tree rows.
+- Existing worker/owner RLS expectations remain unchanged.
+- Normal baseline E2E still passes.
+
+## Phase 2 - Async Tree Picker For Forms
+
+Purpose: remove huge `treeOptions` payloads from activity and harvest forms.
+
+### Implementation
+
+1. Add a server-side tree option search read model:
+   - `searchTreeOptionsForOrchard(orchardId, input)`.
+2. Input:
+   - `plot_id?: string`,
+   - `q?: string`,
+   - `include_ids?: string[]`,
+   - `active_only?: boolean`,
+   - `limit?: number`.
+3. The search must resolve orchard from server context or server-validated
+   active orchard. Never accept trusted `orchard_id` from the client.
+4. Add a route handler or server action for async search.
+   Suggested route shape if using a route handler:
+   - `GET /api/tree-options`
+   - query: `plot_id`, `q`, `include_id`
+   - internally calls active orchard context.
+5. Add a shared client component:
+   - `TreePicker`
+   - supports empty state, loading state, selected value, clear action.
+6. Replace plain tree `<Select>` in:
+   - `ActivityForm` main tree field,
+   - `ActivityForm` scope tree field,
+   - `HarvestForm` tree field.
+7. Keep plot-first UX:
+   - if plot is selected, search within plot by default,
+   - if no plot is selected, require search text before loading options.
+8. Preserve PVO prefill:
+   - prefilled `tree_id` must hydrate its label via `include_ids`,
+   - invalid prefill still shows current warning behavior.
+9. Server actions continue to validate:
+   - tree exists in active orchard,
+   - tree belongs to selected plot when needed,
+   - activity scope tree belongs to parent activity plot.
+
+### Tests
+
+- Unit:
+  - search input sanitization,
+  - selected ID hydration.
+- Integration:
+  - worker can search trees in own orchard,
+  - outsider cannot search foreign orchard,
+  - plot filter only returns trees from that plot.
+- E2E:
+  - create activity for single tree,
+  - create activity with tree scope,
+  - create harvest with tree scope,
+  - PVO prefill still hydrates selected tree.
+
+### Acceptance Criteria
+
+- Activity and harvest forms no longer fetch all tree options on initial load.
+- A plot with 1,500 trees does not make the form sluggish.
+- Existing prefill and validation behavior remains intact.
+
+## Phase 3 - PVO Scale Profile And Overview Mode
+
+Purpose: make `/plots/[plotId]` safe before changing rendering deeply.
+
+### Implementation
+
+1. Add `getPlotTreeScaleProfileForOrchard(orchardId, plotId)`.
+2. Return count summary:
+   - total trees,
+   - active trees,
+   - removed/inactive trees,
+   - located trees,
+   - unlocated trees,
+   - unverified trees,
+   - row count,
+   - maximum row length,
+   - duplicate active location count if relevant.
+3. Use scale profile on `/plots/[plotId]`.
+4. Keep current full `listTreesForPlotInOrchard()` path only for small plots.
+5. For medium/large plots, show a new overview card:
+   - section summaries,
+   - row summaries,
+   - count badges,
+   - warning/critical/unverified counts,
+   - CTA to focus row or search tree.
+6. Do not render full marker grid for medium/large plots by default.
+7. Add a clear UI message:
+   - the plot is large,
+   - overview mode is intentional,
+   - user can focus a row or use filters/search.
+
+### Tests
+
+- Unit:
+  - scale classification helper,
+  - overview decision thresholds.
+- Integration:
+  - scale profile counts are orchard-scoped.
+- E2E:
+  - small baseline PVO still uses current full grid,
+  - performance fixture large plot shows overview mode.
+
+### Acceptance Criteria
+
+- Large plot detail page avoids unbounded tree fetch and marker render.
+- Existing baseline PVO tests continue to pass.
+- Sadownik sees useful row-level information instead of a frozen map.
+
+## Phase 4 - Focused PVO Row Detail
+
+Purpose: allow precise work after overview.
+
+### Implementation
+
+1. Add focused row read model:
+   - `getPlotVisualRowDetailForOrchard(orchardId, plotId, filters)`.
+2. Filters:
+   - `section_name`,
+   - `row_number`,
+   - lifecycle,
+   - variety,
+   - condition,
+   - location verification.
+3. Return only one row or a small filtered subset.
+4. Page URL should be shareable:
+   - `/plots/[plotId]?section=A&row=12`
+   - exact query names can be finalized during implementation.
+5. In focused mode, render current marker-style row if row size is reasonable.
+6. For very long rows, render:
+   - compact row segments,
+   - a table/list fallback,
+   - or windowed markers.
+7. Preserve actions:
+   - Browse tree detail,
+   - Add Activity from one tree,
+   - Select range,
+   - Bulk deactivate,
+   - Plant New for inferred empty ranges.
+8. For selection mode, prefer range controls for large rows:
+   - start position,
+   - end position,
+   - preview selected active count.
+
+### Tests
+
+- Unit:
+  - focused row query param parsing,
+  - selection compression with large rows,
+  - empty inferred range logic on focused row.
+- Integration:
+  - row detail returns only active orchard rows,
+  - row detail handles mixed sections.
+- E2E:
+  - focus a row in large plot,
+  - select range and prefill activity,
+  - select empty range and prefill batch create,
+  - removed tree stays disabled for Add Activity.
+
+### Acceptance Criteria
+
+- Users can inspect and act on one row without loading the whole plot.
+- Current PVO behaviors remain available for focused rows.
+
+## Phase 5 - Better Rendering If Measurements Require It
+
+Purpose: optimize only after read models and overview mode exist.
+
+### Options
+
+Use the simplest option that meets measured targets.
+
+1. CSS/DOM windowing:
+   - render only visible row segments,
+   - simplest to keep accessible buttons.
+2. Compact row segment rendering:
+   - render ranges as blocks,
+   - click segment to open detail list.
+3. Canvas/SVG overview:
+   - useful for thousands of markers,
+   - harder for accessibility and selection,
+   - should not be first choice.
+
+### Tests
+
+- Playwright screenshot for large overview.
+- Keyboard navigation smoke.
+- DOM node count check.
+- Mobile no-horizontal-overflow check.
+
+### Acceptance Criteria
+
+- Large plot page remains responsive on desktop and mobile.
+- Interaction still works with keyboard and screen-reader labels.
+
+## Phase 6 - Batch Preview Output For Large Ranges
+
+Purpose: prevent batch forms from dumping huge lists.
+
+### Implementation
+
+1. Keep range queries; they are the right domain model.
+2. Add summary-first preview UI:
+   - requested positions count,
+   - matched active trees count,
+   - conflicts count,
+   - missing/inactive positions count.
+3. For long ranges, show only first N details by default.
+4. Add "show details" or paginated conflict list if needed.
+5. Consider guardrails:
+   - warn above 500 positions,
+   - require explicit confirmation above a threshold,
+   - never silently truncate write operations.
+6. Ensure RPC write behavior remains atomic.
+
+### Tests
+
+- Unit:
+  - preview summarization,
+  - truncation display rules.
+- Integration:
+  - large preview returns correct counts,
+  - write remains transactional.
+- E2E:
+  - large range preview does not overflow,
+  - confirmation still works for safe range.
+
+### Acceptance Criteria
+
+- Batch flows remain understandable for real field operations.
+- Users see the risk and scale before confirming.
+
+## Phase 7 - Report Read Models For Large Trees
+
+Purpose: keep reports fast and avoid giant client-side or URL-level filters.
+
+### Harvest Location Report
+
+Current risk:
+
+- plot filter can build `tree_id.in(...)` with every tree in a large plot.
+
+Recommended fix:
+
+1. Replace the large `tree_id.in(...)` strategy with a server-side SQL RPC or
+   query that joins `harvest_records` to `trees` when resolving tree-scoped
+   records.
+2. The read model should return location source rows already scoped to:
+   - active orchard,
+   - season,
+   - optional plot,
+   - optional variety.
+3. Keep final aggregation in TypeScript unless SQL aggregation becomes clearly
+   better.
+
+### Variety Locations Report
+
+Current behavior:
+
+- reads all active trees for one variety and groups ranges in TypeScript.
+
+Plan:
+
+1. Keep as-is for hundreds of trees if measurements are good.
+2. If slow, move grouping closer to SQL or add paged/grouped read model.
+3. Keep output grouped by plot/section/row ranges, never raw giant lists.
+
+### Tests
+
+- Integration:
+  - harvest location report with tree-scoped records in a large plot,
+  - no leak across orchard,
+  - variety report groups contiguous ranges.
+- E2E:
+  - report pages still load on performance fixture.
+
+### Acceptance Criteria
+
+- No report builds a huge `tree_id.in(...)` string for large plots.
+- Reports remain grouped and readable for a farmer.
+
+## Phase 8 - Index And Query Plan Hardening
+
+Purpose: add only indexes that measured queries need.
+
+### Candidate Indexes To Evaluate
+
+Do not add all blindly. Use `EXPLAIN` or Supabase inspection first.
+
+- `trees (orchard_id, plot_id, is_active, row_number, position_in_row)`
+- `trees (orchard_id, plot_id, row_number, position_in_row)`
+- `trees (orchard_id, variety_id, is_active, plot_id, row_number, position_in_row)`
+- `trees (orchard_id, tree_code)`
+- optional text search support for `tree_code` / `display_name`
+  - consider `pg_trgm` only if substring search is required and slow.
+- harvest records indexes for season/plot/variety/tree report filters if current
+  indexes are not enough.
+
+### Tests
+
+- `supabase db lint`
+- migration reset
+- targeted integration tests
+- compare query plan before/after for performance fixture.
+
+### Acceptance Criteria
+
+- Query plans use indexes for high-cardinality tree screens.
+- No redundant overwide indexes are added.
+
+## Phase 9 - Documentation And Rollout
+
+Purpose: make the new strategy understandable and maintainable.
+
+### Documentation Updates
+
+Update after each implemented slice:
+
+- `documents/ui_implementation_map.md`
+- `documents/00_overview_and_checklists/manual_testing_quickstart.md`
+- `documents/07_security_and_quality/test_plan.md`
+- relevant UX docs if user-facing behavior changes.
+
+### Manual QA Script
+
+Add a large-plot manual pass:
+
+1. Reset baseline.
+2. Apply performance fixture.
+3. Log in as owner.
+4. Open `/trees`; verify pagination.
+5. Open `/activities/new`; search/select a tree.
+6. Open `/harvests/new`; search/select a tree.
+7. Open large `/plots/[plotId]`; verify overview mode.
+8. Focus one row and select range.
+9. Open reports.
+10. Reset baseline again.
+
+### Release Strategy
+
+Ship in small slices:
+
+1. Fixture and measurements.
+2. `/trees` pagination.
+3. async tree picker.
+4. PVO scale overview.
+5. PVO focused row actions.
+6. batch/report hardening.
+7. index hardening.
+
+Do not merge a later phase if an earlier phase leaves baseline or E2E unstable.
+
+## Quality Gates By Phase
+
+Minimum gates for every implementation phase:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+git diff --check
+```
+
+When database or read models change:
+
+```bash
+supabase db lint
+pnpm seed:baseline-reset
+pnpm qa:baseline-status
+```
+
+When PVO, forms or routes change:
+
+```bash
+pnpm test:e2e
+```
+
+When performance fixture is involved:
+
+```bash
+pnpm seed:baseline-reset
+# run large fixture command once it exists
+pnpm qa:baseline-status
+```
+
+Important: after E2E or performance fixture runs, reset baseline again before
+manual seeded QA.
+
+## Risk Register
+
+### Risk: UI gets faster but less useful
+
+Mitigation:
+
+- preserve small-plot full map,
+- make large-plot overview explainable,
+- keep row focus and search fast.
+
+### Risk: async picker breaks PVO prefill
+
+Mitigation:
+
+- selected ID hydration must be part of the first picker slice,
+- keep server action relation validation unchanged.
+
+### Risk: pagination hides expected records
+
+Mitigation:
+
+- clear count labels,
+- stable filters in query string,
+- reset page on filter change.
+
+### Risk: new indexes create maintenance overhead
+
+Mitigation:
+
+- add indexes only after query plan evidence,
+- avoid duplicating shadowed indexes.
+
+### Risk: performance fixture pollutes normal QA
+
+Mitigation:
+
+- keep it outside canonical baseline,
+- document reset workflow,
+- do not include it in `qa:baseline-status`.
+
+## Open Decisions
+
+These do not block Phase 0, but should be answered before PVO redesign.
+
+1. Expected real-world upper bound per plot:
+   - 300?
+   - 1,000?
+   - 3,000?
+2. Do workers usually record by:
+   - row range,
+   - single tree,
+   - whole plot,
+   - variety?
+3. Is mobile field use primary, or is tablet/desktop more common?
+4. Should large PVO prefer:
+   - row summaries,
+   - table-first row detail,
+   - compact visual map?
+5. Do we need offline-first behavior later?
+
+## Recommended First Slice
+
+Start with Phase 0 only.
+
+Reason:
+
+- it is low-risk,
+- it does not change production behavior,
+- it gives real evidence for thresholds,
+- it prevents premature PVO redesign.
+
+After Phase 0, implement Phase 1 and Phase 2 before deep PVO changes. Those two
+will improve daily work immediately and reduce payload pressure across the app.

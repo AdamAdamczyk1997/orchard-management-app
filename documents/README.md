@@ -160,6 +160,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 ### `01_implementation_materials`
 
 - `README.md`
+- `large_plot_tree_scale_plan.md`
 - `user_flows.md`
 
 ### `02_product_documents`
@@ -238,5 +239,6 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `2026-06-06_session_handoff_pvo_closeout_snapshot.md`
 - `plot_visual_operations_roadmap.md`
 - `plot_visual_operations_implementation_master_plan.md`
+- `baseline_seed_enrichment_plan.md`
 - `phase_1_auth_onboarding_vertical_slice.md`
 - `phase_2_core_orchard_structure_vertical_slice.md`
