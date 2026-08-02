@@ -28,7 +28,7 @@ This file is not a full specification. It is an orientation layer over:
 - Before proposing a new slice, identify whether the user is asking for QA, cleanup, docs, a bug fix, or a real product feature.
 - Keep `orchard_id` trusted only server-side. Client query params and forms may prefill UI state, but writes must still go through validation, server actions, RLS and DB constraints.
 - If the user asks about large plots, hundreds of trees, performance, pagination, async tree selectors or PVO scaling, start from `documents/01_implementation_materials/large_plot_tree_scale_plan.md`.
-- The large-plot scale plan is active but not implemented. Treat it as the current phased strategy, not as completed behavior.
+- The large-plot scale plan is active; Phase 0 fixture exists, but measurements and production scale changes are not completed behavior.
 
 ## Startup Prompt
 
@@ -124,12 +124,20 @@ Baseline seed enrichment current state:
 Active technical plan:
 
 - There is no active execution master plan for the whole product.
-- There is an active, not-yet-implemented technical plan for large plots and tree-scale performance:
+- There is an active technical plan for large plots and tree-scale performance:
   - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
-- The recommended first slice from that plan is Phase 0 only:
-  - create a local-only performance fixture,
-  - measure current behavior,
-  - avoid production UI rewrites until measurements exist.
+- Phase 0 fixture entrypoint is implemented:
+  - `pnpm seed:large-plot-fixture`
+  - `supabase/seeds/010_large_plot_performance_fixture.sql`
+- First Phase 0 measurement snapshot:
+  - `documents/01_implementation_materials/large_plot_phase0_measurements.md`
+- Phase 1 `/trees` pagination is implemented.
+- Phase 2 async tree picker is implemented for activity and harvest create/edit forms:
+  - `GET /api/tree-options` resolves active orchard server-side,
+  - `TreePicker` hydrates selected values through `include_ids`,
+  - activity/harvest forms no longer receive all orchard `treeOptions` on initial load.
+- The recommended next production slice is Phase 3 PVO scale profile and overview mode,
+  unless measurements point to report read model hardening first.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority
@@ -257,7 +265,9 @@ Large plot scale-specific:
 - `features/plots/plot-visual-overview.tsx`
 - `features/activities/activity-form.tsx`
 - `features/harvests/harvest-form.tsx`
-- future performance fixture script from plan Phase 0, once implemented.
+- `scripts/seed-large-plot-fixture.mjs`
+- `supabase/seeds/010_large_plot_performance_fixture.sql`
+- `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 
 ## Planned Or Missing Areas
 
@@ -273,9 +283,7 @@ Do not assume these exist:
 - future harvest entry points from the PVO map,
 - richer planning/calendar workflow beyond `upcoming_activities`,
 - report export/download artifacts.
-- large-plot performance fixture from `large_plot_tree_scale_plan.md`,
-- paginated `/trees` list,
-- async tree picker for activity/harvest forms,
+- large-plot performance measurements from `large_plot_tree_scale_plan.md`,
 - PVO large-plot overview/focus mode,
 - report read model hardening for very large plot filters.
 
@@ -284,7 +292,9 @@ Notes:
 - `manager` and `viewer` exist in schema/types, but current product/UI behavior is centered on `owner`, `worker`, `super_admin` and outsider.
 - `orchard_memberships.status` supports `invited`, but current invite flow activates membership immediately for an existing account.
 - Current PVO works well for regular baseline data. It has not yet been changed for hundreds or thousands of trees in one plot.
-- Current `/trees`, `ActivityForm` and `HarvestForm` still use unbounded tree reads/options in some places. Treat this as planned scale work, not as already solved.
+- `/trees`, `ActivityForm` and `HarvestForm` have large-plot-safe first-pass read models.
+  Remaining known scale risks are PVO full-marker rendering, report filters and legacy
+  full tree option reads in non-form surfaces.
 
 ## Verification Commands
 
@@ -312,7 +322,7 @@ Remember:
 - Before manual seeded QA, run `pnpm seed:baseline-reset` and confirm `pnpm qa:baseline-status`.
 - For docs-only edits, `git diff --check` can be enough unless links, generated docs or code snippets need deeper validation.
 - For large-plot performance work, start with the plan's Phase 0 fixture and measurements before changing UI strategy.
-- After running a future large performance fixture, reset baseline again before manual seeded QA.
+- After running `pnpm seed:large-plot-fixture`, reset baseline again before manual seeded QA.
 
 ## How To Choose The Next Step
 

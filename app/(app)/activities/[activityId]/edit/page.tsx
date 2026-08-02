@@ -4,8 +4,8 @@ import { ActivityForm } from "@/features/activities/activity-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
   listActiveMemberOptionsForOrchard,
-  listTreeOptionsForOrchard,
   readActivityByIdForOrchard,
+  searchTreeOptionsForOrchard,
 } from "@/lib/orchard-data/activities";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
 import { updateActivity } from "@/server/actions/activities";
@@ -19,9 +19,8 @@ type EditActivityPageProps = {
 export default async function EditActivityPage({ params }: EditActivityPageProps) {
   const context = await requireActiveOrchard("/activities");
   const { activityId } = await params;
-  const [plotOptions, treeOptions, memberOptions, activity] = await Promise.all([
+  const [plotOptions, memberOptions, activity] = await Promise.all([
     listPlotOptionsForOrchard(context.orchard.id),
-    listTreeOptionsForOrchard(context.orchard.id),
     listActiveMemberOptionsForOrchard(context.orchard.id),
     readActivityByIdForOrchard(context.orchard.id, activityId),
   ]);
@@ -35,6 +34,14 @@ export default async function EditActivityPage({ params }: EditActivityPageProps
       />
     );
   }
+
+  const activityTreeIds = [
+    activity.tree_id,
+    ...activity.scopes.map((scope) => scope.tree_id),
+  ].filter((treeId): treeId is string => Boolean(treeId));
+  const treeOptions = await searchTreeOptionsForOrchard(context.orchard.id, {
+    include_ids: activityTreeIds,
+  });
 
   return (
     <div className="grid gap-6">

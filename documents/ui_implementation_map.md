@@ -295,15 +295,15 @@ Source file: `app/(app)/varieties/[varietyId]/edit/page.tsx`.
 
 Route: `/trees`
 
-Purpose: List and filter trees by search, plot, variety, species, condition, and active state; expose batch operations.
+Purpose: Paginated list and filter trees by search, plot, variety, species, condition, and active state; expose batch operations.
 
-Main components: `TreeList`, `FeedbackBanner`, filter form.
+Main components: `TreeList`, `FeedbackBanner`, filter form with page size control.
 
 Server actions: none from list page.
 
 Database tables: `trees`, `plots`, `varieties`.
 
-Related tests: `tests/integration/phase2-management-flow.spec.ts`, `tests/security/core-orchard-structure-rls.spec.ts`, `tests/e2e/tree-batch-and-export.spec.ts`.
+Related tests: `tests/unit/list-filters.spec.ts`, `tests/unit/tree-pagination.spec.ts`, `tests/integration/phase2-management-flow.spec.ts`, `tests/security/core-orchard-structure-rls.spec.ts`, `tests/e2e/tree-batch-and-export.spec.ts`.
 
 Status: Implemented.
 
@@ -417,7 +417,7 @@ Route: `/activities/new`
 
 Purpose: Create activity with optional tree/selection prefill, scopes, materials, performer, and status.
 
-Main components: `ActivityForm`, `PrerequisiteCard`, prefill status card.
+Main components: `ActivityForm`, `TreePicker`, `PrerequisiteCard`, prefill status card.
 
 Server actions: `createActivity`.
 
@@ -425,7 +425,8 @@ Database tables: `activities`, `activity_scopes`, `activity_materials`, `plots`,
 
 Related tests: `tests/unit/activity-prefill.spec.ts`, `tests/unit/phase3-activities-validation.spec.ts`, `tests/integration/activity-management-flow.spec.ts`, `tests/security/activity-management-rls.spec.ts`, `tests/e2e/plot-visual-operations.spec.ts`.
 
-Status: Implemented, including PVO selection prefill.
+Status: Implemented, including PVO selection prefill and async tree option
+hydration through `GET /api/tree-options`.
 
 Missing functionality: no attachment/material inventory stock integration.
 
@@ -457,7 +458,7 @@ Route: `/activities/[activityId]/edit`
 
 Purpose: Edit activity parent fields, scopes, materials, and performer.
 
-Main components: `ActivityForm`, `RecordNotFoundCard`, `Card`.
+Main components: `ActivityForm`, `TreePicker`, `RecordNotFoundCard`, `Card`.
 
 Server actions: `updateActivity`.
 
@@ -465,7 +466,7 @@ Database tables: `activities`, `activity_scopes`, `activity_materials`, `plots`,
 
 Related tests: `tests/integration/activity-management-flow.spec.ts`, `tests/unit/phase3-activities-validation.spec.ts`.
 
-Status: Implemented.
+Status: Implemented with async hydration of selected activity tree/scope options.
 
 Missing functionality: no optimistic conflict resolution UI for concurrent edits.
 
@@ -497,7 +498,7 @@ Route: `/harvests/new`
 
 Purpose: Create quantitative harvest record scoped to orchard, plot, variety, location range, or tree.
 
-Main components: `HarvestForm`, `Card`.
+Main components: `HarvestForm`, `TreePicker`, `Card`.
 
 Server actions: `createHarvestRecord`.
 
@@ -505,7 +506,7 @@ Database tables: `harvest_records`, `plots`, `varieties`, `trees`, `activities`.
 
 Related tests: `tests/unit/phase4-harvest-validation.spec.ts`, `tests/integration/harvest-management-flow.spec.ts`.
 
-Status: Implemented.
+Status: Implemented with async tree option search for tree-scoped records.
 
 Missing functionality: no PVO/tree-detail harvest prefill currently wired.
 
@@ -537,7 +538,7 @@ Route: `/harvests/[harvestRecordId]/edit`
 
 Purpose: Edit harvest quantity, scope, optional links, and notes.
 
-Main components: `HarvestForm`, `RecordNotFoundCard`, `Card`.
+Main components: `HarvestForm`, `TreePicker`, `RecordNotFoundCard`, `Card`.
 
 Server actions: `updateHarvestRecord`.
 
@@ -545,7 +546,7 @@ Database tables: `harvest_records`, `plots`, `varieties`, `trees`, `activities`.
 
 Related tests: `tests/integration/harvest-management-flow.spec.ts`, `tests/unit/phase4-harvest-validation.spec.ts`.
 
-Status: Implemented.
+Status: Implemented with async hydration of the selected tree option.
 
 Missing functionality: no conflict-resolution UI for concurrent edits.
 
@@ -707,7 +708,8 @@ Database tables: `profiles`, `orchards`, `orchard_memberships`, `plots`, `variet
 
 Related tests: `tests/integration/account-export.spec.ts`, `tests/e2e/orchard-access.spec.ts`.
 
-Status: Implemented.
+Status: Implemented. Export read model paginates table reads with `.range()`
+so super-admin exports are not silently capped at 1,000 rows.
 
 Missing functionality: no import/restore counterpart.
 

@@ -2,7 +2,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { RecordNotFoundCard } from "@/components/ui/record-not-found-card";
 import { HarvestForm } from "@/features/harvests/harvest-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
-import { listTreeOptionsForOrchard } from "@/lib/orchard-data/activities";
+import { searchTreeOptionsForOrchard } from "@/lib/orchard-data/activities";
 import {
   listHarvestActivityOptionsForOrchard,
   readHarvestRecordByIdForOrchard,
@@ -20,11 +20,10 @@ type EditHarvestPageProps = {
 export default async function EditHarvestPage({ params }: EditHarvestPageProps) {
   const context = await requireActiveOrchard("/harvests");
   const { harvestRecordId } = await params;
-  const [plotOptions, varietyOptions, treeOptions, harvestActivityOptions, harvestRecord] =
+  const [plotOptions, varietyOptions, harvestActivityOptions, harvestRecord] =
     await Promise.all([
       listPlotOptionsForOrchard(context.orchard.id),
       listVarietyOptionsForOrchard(context.orchard.id),
-      listTreeOptionsForOrchard(context.orchard.id),
       listHarvestActivityOptionsForOrchard(context.orchard.id),
       readHarvestRecordByIdForOrchard(context.orchard.id, harvestRecordId),
     ]);
@@ -38,6 +37,10 @@ export default async function EditHarvestPage({ params }: EditHarvestPageProps) 
       />
     );
   }
+
+  const treeOptions = await searchTreeOptionsForOrchard(context.orchard.id, {
+    include_ids: harvestRecord.tree_id ? [harvestRecord.tree_id] : [],
+  });
 
   return (
     <div className="grid gap-6">

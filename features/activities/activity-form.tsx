@@ -10,6 +10,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
+import { TreePicker } from "@/features/trees/tree-picker";
 import {
   ACTIVITY_SCOPE_LEVELS,
   ACTIVITY_STATUSES,
@@ -96,6 +97,18 @@ function createEmptyMaterial(): ActivityMaterialInput {
   return {
     name: "",
   };
+}
+
+function mergeTreeOptionLists(...groups: TreeOption[][]) {
+  const optionsById = new Map<string, TreeOption>();
+
+  for (const group of groups) {
+    for (const option of group) {
+      optionsById.set(option.id, option);
+    }
+  }
+
+  return [...optionsById.values()];
 }
 
 function buildInitialScopes(
@@ -212,11 +225,9 @@ export function ActivityForm({
   const [materials, setMaterials] = useState<ActivityMaterialInput[]>(
     buildInitialMaterials(activity),
   );
+  const [knownTreeOptions, setKnownTreeOptions] = useState(treeOptions);
   const selectedPlot = plotOptions.find((plot) => plot.id === selectedPlotId);
 
-  const selectedPlotTreeOptions = selectedPlotId
-    ? treeOptions.filter((tree) => tree.plot_id === selectedPlotId)
-    : [];
   const scopesRequired = activityTypeRequiresScope(activityType);
   const activityTypeIsSpraying = activityType === "spraying";
   const hasUnsupportedScopeSelection = Boolean(
@@ -249,10 +260,12 @@ export function ActivityForm({
   }, [activityTypeIsSpraying, materials.length]);
 
   useEffect(() => {
-    const matchingTreeOptions = selectedPlotId
-      ? treeOptions.filter((tree) => tree.plot_id === selectedPlotId)
-      : [];
+    setKnownTreeOptions((currentOptions) =>
+      mergeTreeOptionLists(treeOptions, currentOptions),
+    );
+  }, [treeOptions]);
 
+  useEffect(() => {
     if (!selectedPlotId) {
       if (selectedTreeId) {
         setSelectedTreeId("");
@@ -274,7 +287,9 @@ export function ActivityForm({
 
     if (
       selectedTreeId &&
-      !matchingTreeOptions.some((tree) => tree.id === selectedTreeId)
+      knownTreeOptions.some(
+        (tree) => tree.id === selectedTreeId && tree.plot_id !== selectedPlotId,
+      )
     ) {
       setSelectedTreeId("");
     }
@@ -283,7 +298,9 @@ export function ActivityForm({
       currentScopes.map((scope) => {
         if (
           scope.tree_id &&
-          !matchingTreeOptions.some((tree) => tree.id === scope.tree_id)
+          knownTreeOptions.some(
+            (tree) => tree.id === scope.tree_id && tree.plot_id !== selectedPlotId,
+          )
         ) {
           return {
             ...scope,
@@ -294,7 +311,17 @@ export function ActivityForm({
         return scope;
       }),
     );
-  }, [selectedPlotId, selectedTreeId, treeOptions]);
+  }, [knownTreeOptions, selectedPlotId, selectedTreeId]);
+
+  function rememberTreeOption(option?: TreeOption) {
+    if (!option) {
+      return;
+    }
+
+    setKnownTreeOptions((currentOptions) =>
+      mergeTreeOptionLists(currentOptions, [option]),
+    );
+  }
 
   return (
     <form action={formAction} className="grid gap-6" data-testid="activity-form">
@@ -332,20 +359,22 @@ export function ActivityForm({
             htmlFor="tree_id"
             label="Drzewo glowne"
           >
-            <Select
+            <TreePicker
+              emptyOptionLabel="Bez jednego drzewa glownego"
               id="tree_id"
+              initialOptions={knownTreeOptions}
               name="tree_id"
-              onChange={(event) => setSelectedTreeId(event.target.value)}
+              onChange={(treeId, option) => {
+                rememberTreeOption(option);
+                setSelectedTreeId(treeId);
+
+                if (option && option.plot_id !== selectedPlotId) {
+                  setSelectedPlotId(option.plot_id);
+                }
+              }}
+              plotId={selectedPlotId}
               value={selectedTreeId}
-            >
-              <option value="">Bez jednego drzewa glownego</option>
-              {selectedPlotTreeOptions.map((tree) => (
-                <option key={tree.id} value={tree.id}>
-                  {tree.label}
-                  {tree.is_active ? "" : " (nieaktywne)"}
-                </option>
-              ))}
-            </Select>
+            />
           </Field>
           {selectedPlot ? (
             <div
@@ -781,30 +810,31 @@ export function ActivityForm({
 
               {scope.scope_level === "tree" ? (
                 <Field htmlFor={`scope_tree_id_${index}`} label="Drzewo w zakresie">
-                  <Select
+                  <TreePicker
+                    emptyOptionLabel="Wybierz drzewo"
                     id={`scope_tree_id_${index}`}
-                    onChange={(event) =>
+                    initialOptions={knownTreeOptions}
+                    onChange={(treeId, option) => {
+                      rememberTreeOption(option);
+
+                      if (option && option.plot_id !== selectedPlotId) {
+                        setSelectedPlotId(option.plot_id);
+                      }
+
                       setScopes((currentScopes) =>
                         currentScopes.map((currentScope, scopeIndex) =>
                           scopeIndex === index
                             ? {
                                 ...currentScope,
-                                tree_id: event.target.value || undefined,
+                                tree_id: treeId || undefined,
                               }
                             : currentScope,
                         ),
-                      )
-                    }
+                      );
+                    }}
+                    plotId={selectedPlotId}
                     value={scope.tree_id ?? ""}
-                  >
-                    <option value="">Wybierz drzewo</option>
-                    {selectedPlotTreeOptions.map((tree) => (
-                      <option key={tree.id} value={tree.id}>
-                        {tree.label}
-                        {tree.is_active ? "" : " (nieaktywne)"}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </Field>
               ) : null}
 

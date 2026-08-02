@@ -1,7 +1,12 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  TREE_LIST_DEFAULT_PAGE,
+  TREE_LIST_DEFAULT_PAGE_SIZE,
+} from "@/lib/validation/trees";
 import type {
   PlotStatus,
   TreeListFilters,
+  TreeListPage,
   TreeSummary,
   VarietySummary,
 } from "@/types/contracts";
@@ -180,6 +185,14 @@ function sortTrees(left: TreeSummary, right: TreeSummary) {
   return (left.display_name ?? "").localeCompare(right.display_name ?? "");
 }
 
+function normalizeTreeListPage(filters: TreeListFilters) {
+  return Math.max(TREE_LIST_DEFAULT_PAGE, filters.page ?? TREE_LIST_DEFAULT_PAGE);
+}
+
+function normalizeTreeListPageSize(filters: TreeListFilters) {
+  return filters.page_size ?? TREE_LIST_DEFAULT_PAGE_SIZE;
+}
+
 export async function listTreesForOrchard(
   orchardId: string,
   filters: TreeListFilters = {},
@@ -222,6 +235,74 @@ export async function listTreesForOrchard(
   }
 
   return ((data ?? []) as TreeQueryRow[]).map(mapTreeRowToSummary).sort(sortTrees);
+}
+
+export async function listTreePageForOrchard(
+  orchardId: string,
+  filters: TreeListFilters = {},
+): Promise<TreeListPage> {
+  const supabase = await createSupabaseServerClient();
+  const page = normalizeTreeListPage(filters);
+  const pageSize = normalizeTreeListPageSize(filters);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  let query = supabase
+    .from("trees")
+    .select(treeSelect, { count: "exact" })
+    .eq("orchard_id", orchardId);
+
+  if (filters.plot_id) {
+    query = query.eq("plot_id", filters.plot_id);
+  }
+
+  if (filters.variety_id) {
+    query = query.eq("variety_id", filters.variety_id);
+  }
+
+  if (filters.species) {
+    query = query.ilike("species", `%${filters.species}%`);
+  }
+
+  if (filters.condition_status && filters.condition_status !== "all") {
+    query = query.eq("condition_status", filters.condition_status);
+  }
+
+  if (filters.is_active && filters.is_active !== "all") {
+    query = query.eq("is_active", filters.is_active === "true");
+  }
+
+  if (filters.q) {
+    const safeSearch = sanitizeSearchInput(filters.q);
+
+    query = query.or(
+      `tree_code.ilike.%${safeSearch}%,display_name.ilike.%${safeSearch}%`,
+    );
+  }
+
+  const { data, error, count } = await query
+    .order("plot_id", { ascending: true })
+    .order("section_name", { ascending: true, nullsFirst: false })
+    .order("row_number", { ascending: true, nullsFirst: false })
+    .order("position_in_row", { ascending: true, nullsFirst: false })
+    .order("tree_code", { ascending: true, nullsFirst: false })
+    .order("display_name", { ascending: true, nullsFirst: false })
+    .order("id", { ascending: true })
+    .range(from, to);
+
+  if (error) {
+    throw error;
+  }
+
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return {
+    rows: ((data ?? []) as TreeQueryRow[]).map(mapTreeRowToSummary),
+    total_count: totalCount,
+    page,
+    page_size: pageSize,
+    total_pages: totalPages,
+  };
 }
 
 export async function listTreesForPlotInOrchard(

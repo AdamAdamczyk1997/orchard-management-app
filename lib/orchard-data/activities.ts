@@ -3,6 +3,12 @@ import {
   deriveSeasonPhaseFromDate,
   formatActivityScopeLabel,
 } from "@/lib/domain/activities";
+import {
+  TREE_OPTION_SEARCH_MIN_QUERY_LENGTH,
+  normalizeTreeOptionSearchInput,
+  shouldFetchTreeOptionSearch,
+  type TreeOptionSearchInput,
+} from "@/lib/domain/tree-option-search";
 import { formatTreeLocationLabel } from "@/lib/orchard-data/trees";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -242,6 +248,22 @@ const activityDetailsSelect = `
   )
 `;
 
+const treeOptionSelect = `
+  id,
+  plot_id,
+  species,
+  tree_code,
+  display_name,
+  section_name,
+  row_number,
+  position_in_row,
+  is_active,
+  plot:plots (
+    id,
+    name
+  )
+`;
+
 function pickJoinedRecord<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
@@ -256,6 +278,33 @@ function formatTreeDisplayName(tree: {
   species?: string | null;
 }) {
   return tree.display_name ?? tree.tree_code ?? (tree.species ? `${tree.species} drzewo` : null);
+}
+
+function mapTreeOptionRow(tree: TreeOptionQueryRow): TreeOption {
+  const plot = pickJoinedRecord(tree.plot);
+
+  return {
+    id: tree.id,
+    plot_id: tree.plot_id,
+    plot_name: plot?.name ?? "Nieznana dzialka",
+    label: [
+      formatTreeDisplayName(tree),
+      formatTreeLocationLabel(tree),
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    is_active: tree.is_active,
+  };
+}
+
+function sortTreeOptions(left: TreeOption, right: TreeOption) {
+  const plotDiff = left.plot_name.localeCompare(right.plot_name, "pl");
+
+  if (plotDiff !== 0) {
+    return plotDiff;
+  }
+
+  return left.label.localeCompare(right.label, "pl");
 }
 
 function resolvePerformerLabel(row: {
@@ -751,23 +800,7 @@ export async function listTreeOptionsForOrchard(orchardId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("trees")
-    .select(
-      `
-        id,
-        plot_id,
-        species,
-        tree_code,
-        display_name,
-        section_name,
-        row_number,
-        position_in_row,
-        is_active,
-        plot:plots (
-          id,
-          name
-        )
-      `,
-    )
+    .select(treeOptionSelect)
     .eq("orchard_id", orchardId);
 
   if (error) {
@@ -775,29 +808,95 @@ export async function listTreeOptionsForOrchard(orchardId: string) {
   }
 
   return ((data ?? []) as TreeOptionQueryRow[])
-    .map((tree): TreeOption => {
-      const plot = pickJoinedRecord(tree.plot);
+    .map(mapTreeOptionRow)
+    .sort(sortTreeOptions);
+}
 
-      return {
-        id: tree.id,
-        plot_id: tree.plot_id,
-        plot_name: plot?.name ?? "Nieznana dzialka",
-        label: [
-          formatTreeDisplayName(tree),
-          formatTreeLocationLabel(tree),
-        ]
-          .filter(Boolean)
-          .join(" · "),
-        is_active: tree.is_active,
-      };
-    })
-    .sort((left, right) => {
-      const plotDiff = left.plot_name.localeCompare(right.plot_name, "pl");
+export async function searchTreeOptionsForOrchard(
+  orchardId: string,
+  input: TreeOptionSearchInput,
+) {
+  const normalizedInput = normalizeTreeOptionSearchInput(input);
 
-      if (plotDiff !== 0) {
-        return plotDiff;
-      }
+  if (!shouldFetchTreeOptionSearch(normalizedInput)) {
+    return [];
+  }
 
-      return left.label.localeCompare(right.label, "pl");
-    });
+  const supabase = await createSupabaseServerClient();
+  const optionsById = new Map<string, TreeOption>();
+
+  function addRows(rows: TreeOptionQueryRow[] | null) {
+    for (const option of (rows ?? []).map(mapTreeOptionRow)) {
+      optionsById.set(option.id, option);
+    }
+  }
+
+  if (normalizedInput.include_ids.length > 0) {
+    let includeQuery = supabase
+      .from("trees")
+      .select(treeOptionSelect)
+      .eq("orchard_id", orchardId)
+      .in("id", normalizedInput.include_ids);
+
+    if (normalizedInput.plot_id) {
+      includeQuery = includeQuery.eq("plot_id", normalizedInput.plot_id);
+    }
+
+    const { data, error } = await includeQuery;
+
+    if (error) {
+      throw error;
+    }
+
+    addRows(data as TreeOptionQueryRow[] | null);
+  }
+
+  if (
+    normalizedInput.plot_id ||
+    normalizedInput.q.length >= TREE_OPTION_SEARCH_MIN_QUERY_LENGTH
+  ) {
+    let searchQuery = supabase
+      .from("trees")
+      .select(treeOptionSelect)
+      .eq("orchard_id", orchardId);
+
+    if (normalizedInput.plot_id) {
+      searchQuery = searchQuery.eq("plot_id", normalizedInput.plot_id);
+    }
+
+    if (normalizedInput.active_only) {
+      searchQuery = searchQuery.eq("is_active", true);
+    }
+
+    if (normalizedInput.q.length >= TREE_OPTION_SEARCH_MIN_QUERY_LENGTH) {
+      const pattern = `%${normalizedInput.q}%`;
+
+      searchQuery = searchQuery.or(
+        [
+          `tree_code.ilike.${pattern}`,
+          `display_name.ilike.${pattern}`,
+          `species.ilike.${pattern}`,
+          `section_name.ilike.${pattern}`,
+        ].join(","),
+      );
+    }
+
+    const { data, error } = await searchQuery
+      .order("plot_id")
+      .order("section_name", { nullsFirst: false })
+      .order("row_number", { nullsFirst: false })
+      .order("position_in_row", { nullsFirst: false })
+      .order("tree_code", { nullsFirst: false })
+      .order("display_name", { nullsFirst: false })
+      .order("id")
+      .limit(normalizedInput.limit);
+
+    if (error) {
+      throw error;
+    }
+
+    addRows(data as TreeOptionQueryRow[] | null);
+  }
+
+  return [...optionsById.values()].sort(sortTreeOptions);
 }

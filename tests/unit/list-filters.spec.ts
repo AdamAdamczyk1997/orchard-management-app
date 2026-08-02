@@ -6,6 +6,11 @@ import {
   hasActiveTreeListFilters,
   hasActiveVarietyListFilters,
 } from "@/lib/domain/list-filters";
+import {
+  TREE_LIST_DEFAULT_PAGE,
+  TREE_LIST_DEFAULT_PAGE_SIZE,
+  treeListFiltersSchema,
+} from "@/lib/validation/trees";
 
 describe("list filter state helpers", () => {
   it("detects active plot and variety filters", () => {
@@ -28,6 +33,32 @@ describe("list filter state helpers", () => {
     expect(hasActiveTreeListFilters({ is_active: "all" })).toBe(true);
     expect(hasActiveTreeListFilters({ condition_status: "warning" })).toBe(true);
     expect(hasActiveTreeListFilters({ plot_id: "plot-1" })).toBe(true);
+  });
+
+  it("parses tree list pagination with safe fallbacks", () => {
+    expect(
+      treeListFiltersSchema.parse({
+        is_active: "true",
+        page: "3",
+        page_size: "100",
+      }),
+    ).toMatchObject({
+      is_active: "true",
+      page: 3,
+      page_size: 100,
+    });
+
+    expect(
+      treeListFiltersSchema.parse({
+        is_active: "true",
+        page: "-10",
+        page_size: "999",
+      }),
+    ).toMatchObject({
+      is_active: "true",
+      page: TREE_LIST_DEFAULT_PAGE,
+      page_size: TREE_LIST_DEFAULT_PAGE_SIZE,
+    });
   });
 
   it("treats default activity list filters as unfiltered", () => {

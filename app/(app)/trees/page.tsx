@@ -14,7 +14,7 @@ import {
 import { hasActiveTreeListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
-import { listTreesForOrchard } from "@/lib/orchard-data/trees";
+import { listTreePageForOrchard } from "@/lib/orchard-data/trees";
 import { listVarietyOptionsForOrchard } from "@/lib/orchard-data/varieties";
 import {
   buildPathWithSearchParams,
@@ -22,7 +22,11 @@ import {
   type NextSearchParams,
   toUrlSearchParams,
 } from "@/lib/utils/search-params";
-import { treeListFiltersSchema } from "@/lib/validation/trees";
+import {
+  TREE_LIST_DEFAULT_PAGE_SIZE,
+  TREE_LIST_PAGE_SIZE_OPTIONS,
+  treeListFiltersSchema,
+} from "@/lib/validation/trees";
 import type { TreeListFilters } from "@/types/contracts";
 
 type TreesPageProps = {
@@ -33,7 +37,7 @@ export default async function TreesPage({ searchParams }: TreesPageProps) {
   const context = await requireActiveOrchard("/trees");
 
   return (
-    <Suspense fallback={<ListPageLoading filterFieldCount={6} />}>
+    <Suspense fallback={<ListPageLoading filterFieldCount={7} />}>
       <TreesPageContent
         orchardId={context.orchard.id}
         orchardName={context.orchard.name}
@@ -72,6 +76,8 @@ async function TreesPageContent({
       resolvedSearchParams.condition_status,
     ),
     is_active: getSingleSearchParam(resolvedSearchParams.is_active) ?? "true",
+    page: getSingleSearchParam(resolvedSearchParams.page),
+    page_size: getSingleSearchParam(resolvedSearchParams.page_size),
   });
 
   const filters: TreeListFilters = parsedFilters.success
@@ -80,7 +86,7 @@ async function TreesPageContent({
         is_active: "true" as const,
       };
 
-  const trees = await listTreesForOrchard(orchardId, filters);
+  const treePage = await listTreePageForOrchard(orchardId, filters);
   const hasActiveFilters = hasActiveTreeListFilters(filters);
   const dismissHref = buildPathWithSearchParams(
     "/trees",
@@ -196,6 +202,23 @@ async function TreesPageContent({
               <option value="all">Wszystkie drzewa</option>
             </Select>
           </label>
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-[#304335]">
+              Na stronie
+            </span>
+            <Select
+              defaultValue={String(
+                filters.page_size ?? TREE_LIST_DEFAULT_PAGE_SIZE,
+              )}
+              name="page_size"
+            >
+              {TREE_LIST_PAGE_SIZE_OPTIONS.map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize} drzew
+                </option>
+              ))}
+            </Select>
+          </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
             <Button className="w-full sm:w-auto" type="submit" variant="secondary">
               Zastosuj
@@ -211,7 +234,14 @@ async function TreesPageContent({
         clearHref="/trees"
         createHref="/trees/new"
         hasActiveFilters={hasActiveFilters}
-        trees={trees}
+        page={treePage.page}
+        pageSize={treePage.page_size}
+        totalCount={treePage.total_count}
+        totalPages={treePage.total_pages}
+        trees={treePage.rows}
+        urlSearchParams={toUrlSearchParams(resolvedSearchParams, {
+          excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+        })}
       />
     </div>
   );

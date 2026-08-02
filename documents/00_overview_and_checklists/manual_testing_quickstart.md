@@ -302,6 +302,7 @@ Ta komenda:
 
 - weryfikuje `auth.users`, profile, orchardy i membership matrix
 - sprawdza referencyjne liczby rekordow w `plots`, `varieties`, `trees`, `activities`, `activity_scopes`, `activity_materials` i `harvest_records`
+- ignoruje lokalny performance orchard `PERF`, jesli zostal dodany przez `pnpm seed:large-plot-fixture`
 - potwierdza, ze rekord harvest zapisany w tonach ma poprawne `quantity_kg`
 - podaje kolejne kroki, jesli baseline nie jest jeszcze gotowy
 
@@ -313,6 +314,29 @@ Wazny niuans:
 - jesli w raporcie widzisz liczby wieksze od referencyjnych, lokalna baza jest najpewniej zabrudzona po testach albo recznych eksperymentach
 - w takim przypadku nie wystarczy ponownie odpalic samego SQL seedu
 - trzeba wrocic do pelnej sekwencji: `pnpm seed:baseline-reset -> pnpm qa:baseline-status`
+
+### Opcjonalnie: fixture do pomiarow large plots
+
+Po czystym baseline mozna dodac lokalny orchard performance:
+
+```bash
+pnpm seed:large-plot-fixture
+pnpm qa:baseline-status
+```
+
+Fixture tworzy orchard `PERF` z:
+
+- `PERF-500` - rows plot z 500 drzewami
+- `PERF-1500` - rows plot z 1 500 drzewami
+- `PERF-MIX` - mixed plot z czesciowo pustymi pozycjami
+
+To nie jest canonical baseline. Sluzy do pomiarow `/trees`, `/activities/new`,
+`/harvests/new`, `/plots/[plotId]` i raportow lokalizacyjnych przed zmianami
+skalujacymi. `qa:baseline-status` ignoruje `PERF`, a cleanup wykonasz przez:
+
+```bash
+pnpm seed:baseline-reset
+```
 
 ### Krok 6. Zaloguj sie na gotowe konta i testuj role
 

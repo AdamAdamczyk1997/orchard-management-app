@@ -15,3 +15,4 @@
 1. Zrobić seed danych bardziej rozbudowany, tak aby projekt wypełnił się większymi liczbami i obiektami drzew i odmian.
 2. Dorobić diagramy by wizualnie było widać jakie mamy UX/UI
 3. Srawdzić wszystko, przejść po ekranach i pozapisywać sobie co jest do zmienienia.
+4. Przejść po import/eksport danych, tak by móc zaimportować sady z pliku np .json

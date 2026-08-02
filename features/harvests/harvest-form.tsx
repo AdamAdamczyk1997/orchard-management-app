@@ -9,6 +9,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
+import { TreePicker } from "@/features/trees/tree-picker";
 import {
   HARVEST_QUANTITY_UNITS,
   HARVEST_SCOPE_LEVELS,
@@ -56,6 +57,18 @@ function formatVarietyLabel(variety: VarietyOption) {
   return `${variety.species} - ${variety.name}`;
 }
 
+function mergeTreeOptionLists(...groups: TreeOption[][]) {
+  const optionsById = new Map<string, TreeOption>();
+
+  for (const group of groups) {
+    for (const option of group) {
+      optionsById.set(option.id, option);
+    }
+  }
+
+  return [...optionsById.values()];
+}
+
 export function HarvestForm({
   action,
   mode,
@@ -74,18 +87,12 @@ export function HarvestForm({
   const [quantityUnit, setQuantityUnit] = useState<HarvestQuantityUnit>(
     harvestRecord?.quantity_unit ?? "kg",
   );
+  const [knownTreeOptions, setKnownTreeOptions] = useState(treeOptions);
   const selectedPlot = useMemo(
     () => plotOptions.find((plot) => plot.id === selectedPlotId),
     [plotOptions, selectedPlotId],
   );
 
-  const filteredTreeOptions = useMemo(() => {
-    if (!selectedPlotId) {
-      return treeOptions;
-    }
-
-    return treeOptions.filter((tree) => tree.plot_id === selectedPlotId);
-  }, [selectedPlotId, treeOptions]);
   const hasUnsupportedLocationRange =
     scopeLevel === "location_range" &&
     Boolean(
@@ -97,13 +104,32 @@ export function HarvestForm({
     );
 
   useEffect(() => {
+    setKnownTreeOptions((currentOptions) =>
+      mergeTreeOptionLists(treeOptions, currentOptions),
+    );
+  }, [treeOptions]);
+
+  useEffect(() => {
     if (
       selectedTreeId &&
-      !filteredTreeOptions.some((tree) => tree.id === selectedTreeId)
+      selectedPlotId &&
+      knownTreeOptions.some(
+        (tree) => tree.id === selectedTreeId && tree.plot_id !== selectedPlotId,
+      )
     ) {
       setSelectedTreeId("");
     }
-  }, [filteredTreeOptions, selectedTreeId]);
+  }, [knownTreeOptions, selectedPlotId, selectedTreeId]);
+
+  function rememberTreeOption(option?: TreeOption) {
+    if (!option) {
+      return;
+    }
+
+    setKnownTreeOptions((currentOptions) =>
+      mergeTreeOptionLists(currentOptions, [option]),
+    );
+  }
 
   return (
     <form action={formAction} className="grid gap-6">
@@ -309,29 +335,22 @@ export function HarvestForm({
             htmlFor="tree_id"
             label="Drzewo"
           >
-            <Select
+            <TreePicker
+              emptyOptionLabel="Wybierz drzewo"
               id="tree_id"
+              initialOptions={knownTreeOptions}
               name="tree_id"
-              onChange={(event) => {
-                const nextTreeId = event.target.value;
-                const selectedTree = treeOptions.find((tree) => tree.id === nextTreeId);
+              onChange={(treeId, option) => {
+                rememberTreeOption(option);
+                setSelectedTreeId(treeId);
 
-                setSelectedTreeId(nextTreeId);
-
-                if (selectedTree && selectedTree.plot_id !== selectedPlotId) {
-                  setSelectedPlotId(selectedTree.plot_id);
+                if (option && option.plot_id !== selectedPlotId) {
+                  setSelectedPlotId(option.plot_id);
                 }
               }}
+              plotId={selectedPlotId}
               value={selectedTreeId}
-            >
-              <option value="">Wybierz drzewo</option>
-              {filteredTreeOptions.map((tree) => (
-                <option key={tree.id} value={tree.id}>
-                  {tree.label}
-                  {tree.is_active ? "" : " (nieaktywne)"}
-                </option>
-              ))}
-            </Select>
+            />
           </Field>
         ) : null}
 

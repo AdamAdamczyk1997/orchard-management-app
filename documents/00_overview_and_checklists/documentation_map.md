@@ -84,6 +84,7 @@ Historyczny execution index `implementation_master_plan.md` oraz zamkniete dokum
 - Brak jednego aktywnego execution master planu dla calego produktu.
 - Aktywny plan techniczny dla skalowania dzialek z setkami drzew:
   - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- Phase 0 ma lokalny fixture `pnpm seed:large-plot-fixture` i pierwszy snapshot `documents/01_implementation_materials/large_plot_phase0_measurements.md`; `/trees` pagination oraz async tree picker dla activity/harvest forms sa wdrozone, a kolejne kroki to doprecyzowanie pomiarow, PVO scale work i raportowe read modele.
 - Kolejny slice trzeba ustalic z userem na podstawie aktualnego repo, aktywnych map projektu i biezacego celu.
 
 ### Swiadomie odlozone

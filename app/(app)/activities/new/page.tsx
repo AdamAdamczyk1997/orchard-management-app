@@ -4,11 +4,14 @@ import { ActivityForm } from "@/features/activities/activity-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
   listActiveMemberOptionsForOrchard,
-  listTreeOptionsForOrchard,
+  searchTreeOptionsForOrchard,
 } from "@/lib/orchard-data/activities";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
 import { type NextSearchParams } from "@/lib/utils/search-params";
-import { resolveActivityPrefillFromSearchParams } from "@/lib/validation/activity-prefill";
+import {
+  getActivityPrefillTreeIdsFromSearchParams,
+  resolveActivityPrefillFromSearchParams,
+} from "@/lib/validation/activity-prefill";
 import { createActivity } from "@/server/actions/activities";
 
 type NewActivityPageProps = {
@@ -19,11 +22,15 @@ export default async function NewActivityPage({
   searchParams,
 }: NewActivityPageProps) {
   const context = await requireActiveOrchard("/activities/new");
-  const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] = await Promise.all([
+  const resolvedSearchParams = await searchParams;
+  const prefillTreeIds =
+    getActivityPrefillTreeIdsFromSearchParams(resolvedSearchParams);
+  const [plotOptions, treeOptions, memberOptions] = await Promise.all([
     listPlotOptionsForOrchard(context.orchard.id),
-    listTreeOptionsForOrchard(context.orchard.id),
+    searchTreeOptionsForOrchard(context.orchard.id, {
+      include_ids: prefillTreeIds,
+    }),
     listActiveMemberOptionsForOrchard(context.orchard.id),
-    searchParams,
   ]);
   const prefillResult = resolveActivityPrefillFromSearchParams(
     resolvedSearchParams,

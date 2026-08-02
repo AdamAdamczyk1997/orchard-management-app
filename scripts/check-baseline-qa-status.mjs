@@ -4,6 +4,7 @@ import {
   evaluateBaselineQaReadiness,
   formatBaselineQaReport,
 } from "./shared/baseline-qa.mjs";
+import { BASELINE_QA_IGNORED_ORCHARD_CODES } from "./shared/baseline-seed.mjs";
 import {
   createLocalAdminClient,
   listAllAuthUsers,
@@ -37,9 +38,9 @@ async function fetchBaselineQaSnapshot(adminClient) {
         "trees",
         "id, orchard_id, plot_id, row_number, position_in_row, is_active",
       ),
-      selectRows(adminClient, "activities", "orchard_id, status"),
-      selectRows(adminClient, "activity_scopes", "id"),
-      selectRows(adminClient, "activity_materials", "id"),
+      selectRows(adminClient, "activities", "id, orchard_id, status"),
+      selectRows(adminClient, "activity_scopes", "id, activity_id"),
+      selectRows(adminClient, "activity_materials", "id, activity_id"),
       selectRows(
         adminClient,
         "harvest_records",
@@ -47,8 +48,42 @@ async function fetchBaselineQaSnapshot(adminClient) {
       ),
     ]);
 
+  const ignoredOrchardCodes = new Set(BASELINE_QA_IGNORED_ORCHARD_CODES);
+  const baselineOrchards = orchards.filter(
+    (orchard) => !ignoredOrchardCodes.has(orchard.code),
+  );
+  const baselineOrchardIds = new Set(
+    baselineOrchards.map((orchard) => orchard.id),
+  );
+  const baselineMemberships = memberships.filter((membership) =>
+    baselineOrchardIds.has(membership.orchard_id),
+  );
+  const baselinePlots = plots.filter((plot) =>
+    baselineOrchardIds.has(plot.orchard_id),
+  );
+  const baselineVarieties = varieties.filter((variety) =>
+    baselineOrchardIds.has(variety.orchard_id),
+  );
+  const baselineTrees = trees.filter((tree) =>
+    baselineOrchardIds.has(tree.orchard_id),
+  );
+  const baselineActivities = activities.filter((activity) =>
+    baselineOrchardIds.has(activity.orchard_id),
+  );
+  const baselineActivityIds = new Set(
+    baselineActivities.map((activity) => activity.id),
+  );
+  const baselineActivityScopes = activityScopes.filter((scope) =>
+    baselineActivityIds.has(scope.activity_id),
+  );
+  const baselineActivityMaterials = activityMaterials.filter((material) =>
+    baselineActivityIds.has(material.activity_id),
+  );
+  const baselineHarvestRecords = harvestRecords.filter((record) =>
+    baselineOrchardIds.has(record.orchard_id),
+  );
   const orchardCodeById = new Map(
-    orchards.map((orchard) => [orchard.id, orchard.code]),
+    baselineOrchards.map((orchard) => [orchard.id, orchard.code]),
   );
   const profileEmailById = new Map(
     profiles.map((profile) => [profile.id, String(profile.email).toLowerCase()]),
@@ -67,12 +102,14 @@ async function fetchBaselineQaSnapshot(adminClient) {
     }, {});
   }
 
-  const plotCountsByOrchard = countByOrchard(plots);
-  const varietyCountsByOrchard = countByOrchard(varieties);
-  const treeCountsByOrchard = countByOrchard(trees);
-  const activityCountsByOrchard = countByOrchard(activities);
-  const harvestCountsByOrchard = countByOrchard(harvestRecords);
-  const tonneRecords = harvestRecords.filter((record) => record.quantity_unit === "t");
+  const plotCountsByOrchard = countByOrchard(baselinePlots);
+  const varietyCountsByOrchard = countByOrchard(baselineVarieties);
+  const treeCountsByOrchard = countByOrchard(baselineTrees);
+  const activityCountsByOrchard = countByOrchard(baselineActivities);
+  const harvestCountsByOrchard = countByOrchard(baselineHarvestRecords);
+  const tonneRecords = baselineHarvestRecords.filter(
+    (record) => record.quantity_unit === "t",
+  );
   const normalizedTonneRecords = tonneRecords.filter(
     (record) => Number(record.quantity_kg) === Number(record.quantity_value) * 1000,
   );
@@ -80,8 +117,8 @@ async function fetchBaselineQaSnapshot(adminClient) {
   return {
     authUsers: authUsers.map((user) => user.email?.toLowerCase()).filter(Boolean),
     profiles,
-    orchards,
-    memberships: memberships
+    orchards: baselineOrchards,
+    memberships: baselineMemberships
       .map((membership) => ({
         orchardCode: orchardCodeById.get(membership.orchard_id),
         email: profileEmailById.get(membership.profile_id),
@@ -89,7 +126,7 @@ async function fetchBaselineQaSnapshot(adminClient) {
         status: membership.status,
       }))
       .filter((membership) => membership.orchardCode && membership.email),
-    plots: plots
+    plots: baselinePlots
       .map((plot) => ({
         id: plot.id,
         orchardCode: orchardCodeById.get(plot.orchard_id),
@@ -97,7 +134,7 @@ async function fetchBaselineQaSnapshot(adminClient) {
         layoutType: plot.layout_type,
       }))
       .filter((plot) => plot.orchardCode),
-    trees: trees
+    trees: baselineTrees
       .map((tree) => ({
         id: tree.id,
         orchardCode: orchardCodeById.get(tree.orchard_id),
@@ -107,13 +144,13 @@ async function fetchBaselineQaSnapshot(adminClient) {
         isActive: tree.is_active,
       }))
       .filter((tree) => tree.orchardCode),
-    activities: activities
+    activities: baselineActivities
       .map((activity) => ({
         orchardCode: orchardCodeById.get(activity.orchard_id),
         status: activity.status,
       }))
       .filter((activity) => activity.orchardCode),
-    harvestRecords: harvestRecords
+    harvestRecords: baselineHarvestRecords
       .map((record) => ({
         orchardCode: orchardCodeById.get(record.orchard_id),
         seasonYear: record.season_year,
@@ -123,18 +160,18 @@ async function fetchBaselineQaSnapshot(adminClient) {
       }))
       .filter((record) => record.orchardCode),
     totals: {
-      orchards: orchards.length,
-      memberships: memberships.length,
-      plots: plots.length,
-      varieties: varieties.length,
-      trees: trees.length,
-      activities: activities.length,
-      activityScopes: activityScopes.length,
-      activityMaterials: activityMaterials.length,
-      harvestRecords: harvestRecords.length,
+      orchards: baselineOrchards.length,
+      memberships: baselineMemberships.length,
+      plots: baselinePlots.length,
+      varieties: baselineVarieties.length,
+      trees: baselineTrees.length,
+      activities: baselineActivities.length,
+      activityScopes: baselineActivityScopes.length,
+      activityMaterials: baselineActivityMaterials.length,
+      harvestRecords: baselineHarvestRecords.length,
     },
     byOrchard: Object.fromEntries(
-      orchards.map((orchard) => [
+      baselineOrchards.map((orchard) => [
         orchard.code,
         {
           plots: plotCountsByOrchard[orchard.code] ?? 0,

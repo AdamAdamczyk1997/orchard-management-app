@@ -42,6 +42,20 @@ Na ten moment nie ma aktywnego execution master planu dla calego produktu.
 Aktywny plan techniczny dla skalowania duzych dzialek znajduje sie w:
 
 - [large_plot_tree_scale_plan.md](./large_plot_tree_scale_plan.md)
+- [large_plot_phase0_measurements.md](./large_plot_phase0_measurements.md)
+
+Phase 0 ma lokalny fixture do pomiarow:
+
+- `pnpm seed:large-plot-fixture`
+- cleanup po pomiarach: `pnpm seed:baseline-reset`
+
+W planie large-plot wdrozone sa juz:
+
+- Phase 1 `/trees` pagination,
+- Phase 2 async `TreePicker` dla activity/harvest create/edit forms.
+
+Nastepne rekomendowane prace to PVO scale profile / overview mode albo raportowe
+read modele, zależnie od kolejnych pomiarow.
 
 `Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
 

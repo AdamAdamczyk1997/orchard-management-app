@@ -420,6 +420,16 @@ export type TreeListFilters = {
   species?: string;
   condition_status?: TreeConditionStatus | "all";
   is_active?: "true" | "false" | "all";
+  page?: number;
+  page_size?: number;
+};
+
+export type TreeListPage = {
+  rows: TreeSummary[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 };
 
 export type BulkTreeImportBatchStatus = "draft" | "done" | "failed";

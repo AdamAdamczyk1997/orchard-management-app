@@ -48,6 +48,13 @@ type ExportActivityRow = Record<string, unknown> & {
   orchard_id: string;
 };
 
+const EXPORT_PAGE_SIZE = 1000;
+
+type PaginatedQueryResult<T> = {
+  data: T[] | null;
+  error: unknown;
+};
+
 function compareByCreatedAtAndId(
   left: Record<string, unknown>,
   right: Record<string, unknown>,
@@ -80,6 +87,30 @@ function groupRowsByOrchard<T extends { orchard_id?: string | null }>(rows: T[])
 
 async function getQueryClient(supabaseClient?: QueryClient) {
   return supabaseClient ?? createSupabaseServerClient();
+}
+
+async function fetchAllRows<T>(
+  buildQuery: (from: number, to: number) => PromiseLike<PaginatedQueryResult<T>>,
+) {
+  const rows: T[] = [];
+
+  for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
+    const to = from + EXPORT_PAGE_SIZE - 1;
+    const { data, error } = await buildQuery(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const pageRows = data ?? [];
+    rows.push(...pageRows);
+
+    if (pageRows.length < EXPORT_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return rows;
 }
 
 async function readProfileForExport(
@@ -227,62 +258,102 @@ export async function getExportAccountDataForProfile(
   }
 
   const [
-    orchardsResult,
-    membershipsResult,
-    plotsResult,
-    varietiesResult,
-    treesResult,
-    activitiesResult,
-    harvestsResult,
+    orchards,
+    orchardMemberships,
+    plots,
+    varieties,
+    trees,
+    activities,
+    harvestRecords,
   ] = await Promise.all([
-    supabase.from("orchards").select("*").in("id", orchardIds),
-    supabase.from("orchard_memberships").select("*").in("orchard_id", orchardIds),
-    supabase.from("plots").select("*").in("orchard_id", orchardIds),
-    supabase.from("varieties").select("*").in("orchard_id", orchardIds),
-    supabase.from("trees").select("*").in("orchard_id", orchardIds),
-    supabase.from("activities").select("*").in("orchard_id", orchardIds),
-    supabase.from("harvest_records").select("*").in("orchard_id", orchardIds),
+    fetchAllRows<ExportOrchardRow>((from, to) =>
+      supabase.from("orchards").select("*").in("id", orchardIds).order("id").range(from, to),
+    ),
+    fetchAllRows<ExportMembershipRow>((from, to) =>
+      supabase
+        .from("orchard_memberships")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows<Record<string, unknown> & { orchard_id?: string | null }>((from, to) =>
+      supabase
+        .from("plots")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows<Record<string, unknown> & { orchard_id?: string | null }>((from, to) =>
+      supabase
+        .from("varieties")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows<Record<string, unknown> & { orchard_id?: string | null }>((from, to) =>
+      supabase
+        .from("trees")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows<ExportActivityRow>((from, to) =>
+      supabase
+        .from("activities")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows<Record<string, unknown> & { orchard_id?: string | null }>((from, to) =>
+      supabase
+        .from("harvest_records")
+        .select("*")
+        .in("orchard_id", orchardIds)
+        .order("id")
+        .range(from, to),
+    ),
   ]);
-
-  if (orchardsResult.error) throw orchardsResult.error;
-  if (membershipsResult.error) throw membershipsResult.error;
-  if (plotsResult.error) throw plotsResult.error;
-  if (varietiesResult.error) throw varietiesResult.error;
-  if (treesResult.error) throw treesResult.error;
-  if (activitiesResult.error) throw activitiesResult.error;
-  if (harvestsResult.error) throw harvestsResult.error;
-
-  const activities = ((activitiesResult.data ?? []) as ExportActivityRow[]).sort(
-    compareByCreatedAtAndId,
-  );
+  activities.sort(compareByCreatedAtAndId);
   const activityIds = activities.map((activity) => activity.id);
 
   let activityScopes: Array<Record<string, unknown>> = [];
   let activityMaterials: Array<Record<string, unknown>> = [];
 
   if (activityIds.length > 0) {
-    const [scopesResult, materialsResult] = await Promise.all([
-      supabase.from("activity_scopes").select("*").in("activity_id", activityIds),
-      supabase.from("activity_materials").select("*").in("activity_id", activityIds),
+    const [scopes, materials] = await Promise.all([
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("activity_scopes")
+          .select("*")
+          .in("activity_id", activityIds)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        supabase
+          .from("activity_materials")
+          .select("*")
+          .in("activity_id", activityIds)
+          .order("id")
+          .range(from, to),
+      ),
     ]);
 
-    if (scopesResult.error) throw scopesResult.error;
-    if (materialsResult.error) throw materialsResult.error;
-
-    activityScopes = [...(scopesResult.data ?? [])].sort(compareByCreatedAtAndId);
-    activityMaterials = [...(materialsResult.data ?? [])].sort(compareByCreatedAtAndId);
+    activityScopes = scopes.sort(compareByCreatedAtAndId);
+    activityMaterials = materials.sort(compareByCreatedAtAndId);
   }
 
-  const orchards = ((orchardsResult.data ?? []) as ExportOrchardRow[]).sort(
-    compareByCreatedAtAndId,
-  );
-  const orchardMemberships = ((membershipsResult.data ?? []) as ExportMembershipRow[]).sort(
-    compareByCreatedAtAndId,
-  );
-  const plots = [...(plotsResult.data ?? [])].sort(compareByCreatedAtAndId);
-  const varieties = [...(varietiesResult.data ?? [])].sort(compareByCreatedAtAndId);
-  const trees = [...(treesResult.data ?? [])].sort(compareByCreatedAtAndId);
-  const harvestRecords = [...(harvestsResult.data ?? [])].sort(compareByCreatedAtAndId);
+  orchards.sort(compareByCreatedAtAndId);
+  orchardMemberships.sort(compareByCreatedAtAndId);
+  plots.sort(compareByCreatedAtAndId);
+  varieties.sort(compareByCreatedAtAndId);
+  trees.sort(compareByCreatedAtAndId);
+  harvestRecords.sort(compareByCreatedAtAndId);
 
   const membershipsByOrchard = groupRowsByOrchard(orchardMemberships);
   const plotsByOrchard = groupRowsByOrchard(plots);

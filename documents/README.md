@@ -161,6 +161,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 
 - `README.md`
 - `large_plot_tree_scale_plan.md`
+- `large_plot_phase0_measurements.md`
 - `user_flows.md`
 
 ### `02_product_documents`

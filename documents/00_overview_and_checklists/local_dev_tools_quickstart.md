@@ -165,6 +165,7 @@ pnpm test
 pnpm seed:baseline-users
 pnpm seed:baseline-sql
 pnpm seed:baseline-reset
+pnpm seed:large-plot-fixture
 pnpm qa:baseline-status
 ```
 
@@ -196,11 +197,17 @@ Znaczenie:
 - `pnpm seed:baseline-reset`
   - robi pelny lokalny rebuild baseline: reset bazy, bootstrap `auth.users`, odpalenie SQL seedu
   - to jest najszybsza komenda, gdy chcesz odtworzyc referencyjny dataset od zera
+- `pnpm seed:large-plot-fixture`
+  - uruchamiaj po `pnpm seed:baseline-reset`
+  - dodaje lokalny, deterministyczny orchard `PERF` z dzialkami `PERF-500`, `PERF-1500` i `PERF-MIX`
+  - sluzy tylko do pomiarow wydajnosci large plots; nie jest czescia canonical baseline
+  - cleanup: uruchom ponownie `pnpm seed:baseline-reset`
 - `pnpm qa:baseline-status`
   - sprawdza, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
   - zwraca niezerowy exit code, jesli baseline nie jest jeszcze kompletny
   - podpowiada kolejny krok: bootstrap kont, rerun SQL seedu albo start smoke passa
-  - jesli widzisz liczby wieksze od referencyjnych, narzedzie zasugeruje `pnpm seed:baseline-reset`, bo lokalna baza jest zabrudzona po testach albo recznej pracy
+  - ignoruje lokalny orchard performance fixture `PERF`, ale nadal wykrywa zabrudzenia canonical baseline
+  - jesli widzisz liczby wieksze od referencyjnych w canonical baseline, narzedzie zasugeruje `pnpm seed:baseline-reset`, bo lokalna baza jest zabrudzona po testach albo recznej pracy
 
 Najbezpieczniejszy zestaw po zmianach:
 

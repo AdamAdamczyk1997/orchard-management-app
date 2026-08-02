@@ -10,6 +10,10 @@ import {
   trimmedString,
 } from "@/lib/validation/shared";
 
+export const TREE_LIST_DEFAULT_PAGE = 1;
+export const TREE_LIST_DEFAULT_PAGE_SIZE = 50;
+export const TREE_LIST_PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
 const treeConditionStatusSchema = z.enum([
   "new",
   "good",
@@ -118,6 +122,22 @@ export const treeListFiltersSchema = z.object({
     .enum(["new", "good", "warning", "critical", "removed", "all"])
     .optional(),
   is_active: z.enum(["true", "false", "all"]).optional(),
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .catch(TREE_LIST_DEFAULT_PAGE),
+  page_size: z.coerce
+    .number()
+    .int()
+    .refine(
+      (value) =>
+        TREE_LIST_PAGE_SIZE_OPTIONS.includes(
+          value as (typeof TREE_LIST_PAGE_SIZE_OPTIONS)[number],
+        ),
+      "Wybierz poprawny rozmiar strony.",
+    )
+    .catch(TREE_LIST_DEFAULT_PAGE_SIZE),
 });
 
 const bulkTreeBatchConditionStatusSchema = z.enum([

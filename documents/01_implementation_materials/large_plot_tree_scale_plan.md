@@ -1,6 +1,8 @@
 # Large plot tree scale plan
 
-Status: active plan, not implemented.
+Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination and Phase 2
+async tree picker for activity/harvest forms are implemented. PVO and report
+scale work remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -29,11 +31,12 @@ These facts are based on the current repo state, not on archive documents.
   `listTreesForPlotInOrchard()` and passes all of them to `PlotVisualOverview`.
 - `PlotVisualOverview` renders every visible tree or inferred empty position as
   a DOM element, with interactive buttons in Browse and Select modes.
-- `/trees` reads all trees for the active orchard matching filters through
-  `listTreesForOrchard()`, maps all rows, then sorts in TypeScript.
-- `ActivityForm` and `HarvestForm` receive all `treeOptions` for the orchard and
-  filter them client-side after a plot is selected.
-- `listTreeOptionsForOrchard()` selects all orchard trees before sorting.
+- `/trees` uses `listTreePageForOrchard()` with explicit `.range()`, exact count
+  and deterministic database ordering.
+- `ActivityForm` and `HarvestForm` use `TreePicker` and `GET /api/tree-options`
+  instead of receiving every tree option on initial page load.
+- `listTreeOptionsForOrchard()` still selects all orchard trees before sorting
+  and should not be used for new large-plot form selectors.
 - `getVarietyLocationsReportForOrchard()` reads all active trees for one
   variety and groups ranges in TypeScript.
 - `getHarvestLocationSummaryForOrchard()` currently resolves plot filtering by
@@ -171,23 +174,30 @@ work.
 
 Purpose: stop guessing.
 
+Fixture entrypoint implemented:
+
+- `pnpm seed:large-plot-fixture`
+- SQL source: `supabase/seeds/010_large_plot_performance_fixture.sql`
+- metadata: `scripts/shared/large-plot-fixture.mjs`
+- first measurement snapshot: `documents/01_implementation_materials/large_plot_phase0_measurements.md`
+- cleanup: `pnpm seed:baseline-reset`
+
+The fixture creates a separate local-only orchard `PERF`, which is ignored by
+`pnpm qa:baseline-status` and is not part of canonical baseline counts.
+
 ### Implementation
 
-1. Create a local-only performance fixture script, for example:
-   - `scripts/seed-large-plot-fixture.mjs`
-   - or `scripts/seed-large-plot-fixture.sql` plus a runner.
-2. The fixture should run after `pnpm seed:baseline-reset`.
-3. It should create or upsert deterministic data in `MAIN` or a separate
-   performance orchard:
-   - one rows plot with 500 trees,
-   - one rows plot with 1,500 trees,
-   - optional mixed plot with partial row coverage,
-   - several varieties distributed across rows,
-   - a few warning/critical/unverified trees.
-4. Keep fixture IDs deterministic and outside canonical baseline ranges.
-5. Do not include this fixture in `pnpm qa:baseline-status`.
-6. Add a clear cleanup path:
-   - easiest path: rerun `pnpm seed:baseline-reset`.
+1. Run `pnpm seed:baseline-reset`.
+2. Run `pnpm seed:large-plot-fixture`.
+3. Fixture data:
+   - one rows plot with 500 trees: `PERF-500`,
+   - one rows plot with 1,500 trees: `PERF-1500`,
+   - one mixed plot with partial row coverage: `PERF-MIX`,
+   - six varieties distributed across rows,
+   - deterministic warning/critical/unverified trees.
+4. Fixture IDs are deterministic and outside canonical baseline ranges.
+5. `pnpm qa:baseline-status` ignores the fixture orchard `PERF`.
+6. Cleanup path: rerun `pnpm seed:baseline-reset`.
 
 ### Measurements
 
@@ -226,9 +236,23 @@ Record before/after numbers for:
 - We know which pages degrade first.
 - We have agreed provisional thresholds for small/medium/large plots.
 
+Current Phase 0 finding:
+
+- `/trees` is the first confirmed bottleneck and should lead Phase 1.
+- Unbounded reads appear to hit a 1,000-row cap in the current Supabase/PostgREST path, so Phase 1 should address correctness and total counts, not only UI speed.
+
 ## Phase 1 - Paginated `/trees`
 
 Purpose: make the global tree list safe for large orchards.
+
+Status: implemented in the production `/trees` route.
+
+Current implementation:
+
+- `listTreePageForOrchard(orchardId, filters)` uses Supabase `.range()` and exact count.
+- `TreeListFilters` accepts `page` and `page_size`.
+- `/trees` exposes page size options and previous/next pagination links.
+- Filter form submissions reset to page 1 because the form does not submit a `page` field.
 
 ### Implementation
 
@@ -280,6 +304,28 @@ Purpose: make the global tree list safe for large orchards.
 
 Purpose: remove huge `treeOptions` payloads from activity and harvest forms.
 
+Status: implemented for activity and harvest create/edit forms.
+
+Current implementation:
+
+- `searchTreeOptionsForOrchard(orchardId, input)` supports `plot_id`, `q`,
+  `include_ids`, `active_only` and `limit`.
+- `GET /api/tree-options` resolves the active orchard server-side and never
+  accepts client-provided `orchard_id`.
+- `TreePicker` keeps the native `<select>` contract while loading options
+  asynchronously.
+- `/activities/new` hydrates PVO prefill tree IDs through `include_ids` instead
+  of loading the whole orchard.
+- Activity and harvest edit pages hydrate only the currently selected tree IDs.
+- `createActivity`/`updateActivity` relation validation now fetches only the
+  submitted tree IDs instead of all tree options.
+
+Additional fixture finding:
+
+- Account export also hit the PostgREST 1,000-row cap when `PERF` was visible
+  to `super_admin`; `getExportAccountDataForProfile()` now paginates exported
+  tables with `.range()` before grouping them into the JSON payload.
+
 ### Implementation
 
 1. Add a server-side tree option search read model:
@@ -318,8 +364,10 @@ Purpose: remove huge `treeOptions` payloads from activity and harvest forms.
 ### Tests
 
 - Unit:
-  - search input sanitization,
-  - selected ID hydration.
+  - search input sanitization is covered by
+    `tests/unit/tree-option-search.spec.ts`,
+  - selected ID hydration normalization is covered through `include_ids`
+    helper tests.
 - Integration:
   - worker can search trees in own orchard,
   - outsider cannot search foreign orchard,
@@ -656,7 +704,7 @@ When performance fixture is involved:
 
 ```bash
 pnpm seed:baseline-reset
-# run large fixture command once it exists
+pnpm seed:large-plot-fixture
 pnpm qa:baseline-status
 ```
 

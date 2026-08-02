@@ -64,6 +64,39 @@ const activityPrefillScopesSchema = z.preprocess(
     ),
 );
 
+export function getActivityPrefillTreeIdsFromSearchParams(
+  searchParams: NextSearchParams,
+) {
+  const ids = new Set<string>();
+  const treeIdParam = getSingleSearchParam(
+    searchParams[ACTIVITY_PREFILL_QUERY_PARAMS.tree_id],
+  );
+  const scopesParam = getSingleSearchParam(
+    searchParams[ACTIVITY_PREFILL_QUERY_PARAMS.scopes],
+  );
+  const parsedTreeId = treeIdParam
+    ? uuidParamSchema.safeParse(treeIdParam)
+    : null;
+
+  if (parsedTreeId?.success) {
+    ids.add(parsedTreeId.data);
+  }
+
+  const parsedScopes = scopesParam
+    ? activityPrefillScopesSchema.safeParse(scopesParam)
+    : null;
+
+  if (parsedScopes?.success) {
+    for (const scope of parsedScopes.data) {
+      if (scope.tree_id) {
+        ids.add(scope.tree_id);
+      }
+    }
+  }
+
+  return [...ids];
+}
+
 function none(): ActivityPrefillParseResult {
   return {
     status: "none",

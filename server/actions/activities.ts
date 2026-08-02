@@ -8,8 +8,8 @@ import { validateActivityScopesForPlotLayout } from "@/lib/domain/plots";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import {
   listActiveMemberOptionsForOrchard,
-  listTreeOptionsForOrchard,
   readActivityByIdForOrchard,
+  searchTreeOptionsForOrchard,
 } from "@/lib/orchard-data/activities";
 import { readPlotByIdForOrchard } from "@/lib/orchard-data/plots";
 import {
@@ -150,8 +150,14 @@ async function validateActivityRelations(input: ReturnType<typeof normalizeActiv
     };
   }
 
+  const selectedTreeIds = [
+    input.tree_id,
+    ...input.scopes.map((scope) => scope.tree_id),
+  ].filter((treeId): treeId is string => Boolean(treeId));
   const [treeOptions, memberOptions] = await Promise.all([
-    listTreeOptionsForOrchard(orchard.id),
+    searchTreeOptionsForOrchard(orchard.id, {
+      include_ids: selectedTreeIds,
+    }),
     listActiveMemberOptionsForOrchard(orchard.id),
   ]);
   const treeOptionsById = new Map(treeOptions.map((tree) => [tree.id, tree]));

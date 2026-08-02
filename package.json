@@ -20,6 +20,7 @@
     "seed:baseline-users": "node scripts/bootstrap-baseline-seed-users.mjs",
     "seed:baseline-sql": "node scripts/run-baseline-sql-seed.mjs",
     "seed:baseline-reset": "node scripts/reset-and-seed-baseline.mjs",
+    "seed:large-plot-fixture": "node scripts/seed-large-plot-fixture.mjs",
     "qa:baseline-status": "node scripts/check-baseline-qa-status.mjs"
   },
   "dependencies": {

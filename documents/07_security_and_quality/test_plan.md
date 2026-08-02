@@ -435,6 +435,23 @@ Do pelnego odtworzenia baseline od zera sluzy:
 pnpm seed:baseline-reset
 ```
 
+Do lokalnych pomiarow large plots po czystym baseline sluzy:
+
+```bash
+pnpm seed:large-plot-fixture
+```
+
+Ten fixture tworzy osobny orchard `PERF` z dzialkami `PERF-500`,
+`PERF-1500` i `PERF-MIX`. Nie jest czescia canonical baseline; `pnpm qa:baseline-status`
+ignoruje `PERF`, ale cleanup po pomiarach nadal wykonuj przez `pnpm seed:baseline-reset`.
+
+Large-plot form selector coverage:
+
+- `tests/unit/tree-option-search.spec.ts` sprawdza sanitizacje inputu search,
+  limitowanie `include_ids` i parser query dla `GET /api/tree-options`.
+- Activity/harvest create/edit forms powinny korzystac z async `TreePicker`,
+  a nie z pelnego `listTreeOptionsForOrchard()` na initial page load.
+
 Przed uruchomieniem seedu trzeba miec przygotowane konta `auth.users` dla:
 
 - `admin@orchardlog.local`
