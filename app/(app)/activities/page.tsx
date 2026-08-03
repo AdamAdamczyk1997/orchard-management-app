@@ -11,6 +11,7 @@ import {
   resolveFeedbackNotice,
 } from "@/lib/domain/feedback-notices";
 import { ActivityList } from "@/features/activities/activity-list";
+import { ActivityListTreeFilter } from "@/features/activities/activity-list-tree-filter";
 import { ActivitySeasonSummary } from "@/features/activities/activity-season-summary";
 import {
   ACTIVITY_STATUSES,
@@ -25,7 +26,6 @@ import {
   getSeasonalActivitySummaryForOrchard,
   listActivitiesForOrchard,
   listActiveMemberOptionsForOrchard,
-  listTreeOptionsForOrchard,
 } from "@/lib/orchard-data/activities";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
 import {
@@ -84,10 +84,9 @@ async function ActivitiesPageContent({
   orchardName: string;
   searchParams: Promise<NextSearchParams>;
 }) {
-  const [plotOptions, treeOptions, memberOptions, resolvedSearchParams] =
+  const [plotOptions, memberOptions, resolvedSearchParams] =
     await Promise.all([
       listPlotOptionsForOrchard(orchardId),
-      listTreeOptionsForOrchard(orchardId),
       listActiveMemberOptionsForOrchard(orchardId),
       searchParams,
     ]);
@@ -312,30 +311,11 @@ async function ActivitiesPageContent({
               type="date"
             />
           </label>
-          <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Dzialka</span>
-            <Select defaultValue={filters.plot_id ?? ""} name="plot_id">
-              <option value="">Wszystkie dzialki</option>
-              {plotOptions.map((plot) => (
-                <option key={plot.id} value={plot.id}>
-                  {plot.name}
-                  {plot.status === "archived" ? " (zarchiwizowana)" : ""}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="grid gap-2">
-            <span className="text-sm font-medium text-[#304335]">Drzewo</span>
-            <Select defaultValue={filters.tree_id ?? ""} name="tree_id">
-              <option value="">Wszystkie drzewa</option>
-              {treeOptions.map((tree) => (
-                <option key={tree.id} value={tree.id}>
-                  {tree.plot_name} - {tree.label}
-                  {tree.is_active ? "" : " (nieaktywne)"}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <ActivityListTreeFilter
+            initialPlotId={filters.plot_id}
+            initialTreeId={filters.tree_id}
+            plotOptions={plotOptions}
+          />
           <label className="grid gap-2">
             <span className="text-sm font-medium text-[#304335]">
               Typ aktywnosci

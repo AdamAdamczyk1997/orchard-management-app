@@ -140,6 +140,8 @@ Active technical plan:
   - `GET /api/tree-options` resolves active orchard server-side,
   - `TreePicker` hydrates selected values through `include_ids`,
   - activity/harvest forms no longer receive all orchard `treeOptions` on initial load.
+- `/activities` list filters use the same async tree option path for `tree_id`,
+  so the activity list no longer loads all orchard tree options on first render.
 - Phase 3 PVO scale profile and overview mode is implemented:
   - `getPlotTreeScaleProfileForOrchard()` reads lightweight tree rows through
     paginated `.range()` chunks,
@@ -152,6 +154,16 @@ Active technical plan:
   - `PlotTreeScaleOverview` row summaries link to focused row URLs,
   - focused rows reuse existing PVO marker actions below the marker limit and
     fall back to a table preview above it.
+- Phase 7 first report hardening slice is implemented for
+  `/reports/harvest-locations`:
+  - `list_harvest_location_source_records(...)` resolves plot filters through
+    SQL joins to `trees`/`plots`,
+  - `getHarvestLocationSummaryForOrchard()` no longer builds a large
+    `tree_id.in(...)` filter for large plots.
+- Phase 7 report hardening is also implemented for `/reports/variety-locations`:
+  - `getVarietyLocationsReportForOrchard()` reads active variety trees through
+    paginated `.range()` chunks,
+  - integration coverage includes more than 1,000 active trees for one variety.
 - Performance fixture plot detail routes use deterministic UUIDs, not plot
   codes. `PERF-1500` is
   `/plots/92000000-0000-4000-8000-000000000002`.
@@ -333,10 +345,11 @@ Notes:
 - `orchard_memberships.status` supports `invited`, but current invite flow activates membership immediately for an existing account.
 - Current PVO works well for regular baseline data. Medium/large first load and
   focused row detail now avoid loading the whole plot marker grid.
-- `/trees`, `ActivityForm`, `HarvestForm`, first-load PVO and focused-row PVO
+- `/trees`, `/activities` tree filtering, `ActivityForm`, `HarvestForm`,
+  first-load PVO, focused-row PVO, `/reports/harvest-locations` and
+  `/reports/variety-locations`
   have large-plot-safe first-pass read models. Remaining known scale risks are
-  report filters, long-row rendering refinements and legacy full tree option
-  reads in non-form surfaces.
+  measurement-driven index hardening and long-row rendering refinements.
 
 ## Verification Commands
 

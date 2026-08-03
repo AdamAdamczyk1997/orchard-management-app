@@ -87,6 +87,13 @@ describe("list filter state helpers", () => {
         performed_by_profile_id: "profile-1",
       }),
     ).toBe(true);
+    expect(
+      hasActiveActivityListFilters({
+        activity_type: "all",
+        status: "all",
+        tree_id: "tree-1",
+      }),
+    ).toBe(true);
   });
 
   it("treats current season harvest filters as unfiltered by default", () => {

@@ -20,6 +20,7 @@ import {
   signInTestUser,
   updateHarvestRecordAsUser,
 } from "../helpers/test-data";
+import { createAdminClient } from "../helpers/supabase";
 
 describe("harvest management flow", () => {
   const createdUserIds: string[] = [];
@@ -868,6 +869,140 @@ describe("harvest management flow", () => {
                   from_position: 4,
                   to_position: 4,
                   total_quantity_kg: 25,
+                  record_count: 1,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("resolves plot-filtered tree harvests without preloading all tree ids", async () => {
+    const owner = await createTestUser("harvest-large-plot-owner");
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("harvest-large-plot"),
+      code: "HRV-05",
+    });
+    const largePlot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Scale",
+      code: "SCALE",
+      defaultRowCount: 1,
+      defaultTreesPerRow: 1006,
+    });
+    const otherPlot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Obca",
+      code: "OTHER",
+    });
+
+    const admin = createAdminClient();
+    const fillerTrees = Array.from({ length: 1005 }, (_, index) => ({
+      orchard_id: orchard.orchard_id,
+      plot_id: largePlot.id,
+      species: "apple",
+      tree_code: `SCALE-${String(index + 1).padStart(4, "0")}`,
+      section_name: "Scale",
+      row_number: 1,
+      position_in_row: index + 1,
+      condition_status: "good",
+      location_verified: true,
+    }));
+    const { error: fillerTreesError } = await admin
+      .from("trees")
+      .insert(fillerTrees);
+
+    if (fillerTreesError) {
+      throw fillerTreesError;
+    }
+
+    const targetTree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: largePlot.id,
+      species: "apple",
+      treeCode: "SCALE-1006",
+      sectionName: "Scale",
+      rowNumber: 1,
+      positionInRow: 1006,
+      locationVerified: true,
+    });
+    const otherTree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: otherPlot.id,
+      species: "pear",
+      treeCode: "OTHER-001",
+      sectionName: "Other",
+      rowNumber: 1,
+      positionInRow: 1,
+    });
+
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: null,
+      tree_id: targetTree.id,
+      scope_level: "tree",
+      harvest_date: "2026-09-21",
+      quantity_value: 12,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: null,
+      tree_id: otherTree.id,
+      scope_level: "tree",
+      harvest_date: "2026-09-21",
+      quantity_value: 99,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+
+    const summary = await getHarvestLocationSummaryForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        plot_id: largePlot.id,
+      },
+      ownerClient,
+    );
+
+    expect(summary).toEqual({
+      season_year: 2026,
+      total_quantity_kg: 12,
+      record_count: 1,
+      precisely_located_quantity_kg: 12,
+      precisely_located_record_count: 1,
+      unresolved_quantity_kg: 0,
+      unresolved_record_count: 0,
+      orchard_level_quantity_kg: 0,
+      orchard_level_record_count: 0,
+      plots: [
+        {
+          plot_id: largePlot.id,
+          plot_name: "Kwatera Scale",
+          plot_status: "active",
+          total_quantity_kg: 12,
+          record_count: 1,
+          precisely_located_quantity_kg: 12,
+          precisely_located_record_count: 1,
+          unresolved_quantity_kg: 0,
+          unresolved_record_count: 0,
+          rows: [
+            {
+              section_name: "Scale",
+              row_number: 1,
+              total_quantity_kg: 12,
+              record_count: 1,
+              ranges: [
+                {
+                  from_position: 1006,
+                  to_position: 1006,
+                  total_quantity_kg: 12,
                   record_count: 1,
                 },
               ],

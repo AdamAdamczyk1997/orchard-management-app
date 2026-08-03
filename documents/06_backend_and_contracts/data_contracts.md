@@ -683,6 +683,11 @@ Uwagi Phase 4:
 - `HarvestLocationSummaryFilters` odpowiadaja tym samym query params na `/reports/harvest-locations`
 - `HarvestLocationSummary` rozdziela wpisy precyzyjnie zlokalizowane od wpisow bez konkretnego rzedu i zakresu
 - wpisy `tree` moga byc lokalizowane przez rekord drzewa, nawet jesli sam harvest nie ma zapisanego `plot_id`
+- source rows dla `/reports/harvest-locations` pochodza z read-only RPC
+  `list_harvest_location_source_records(...)`, ktore zwraca juz zawężone rekordy
+  dla `season_year`, opcjonalnego `plot_id` i opcjonalnego `variety_id`
+- `/reports/variety-locations` zachowuje ten sam kontrakt wyniku, ale active
+  trees dla odmiany sa pobierane paginowanymi `.range()` chunkami
 
 ## 9. Kontrakt batch create - etap 0.2
 

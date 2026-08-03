@@ -397,7 +397,7 @@ Route: `/activities`
 
 Purpose: List/filter activities and show seasonal activity summary/coverage panel.
 
-Main components: `ActivityList`, `ActivitySeasonSummary`, `FeedbackBanner`, filter forms.
+Main components: `ActivityList`, `ActivitySeasonSummary`, `ActivityListTreeFilter`, `TreePicker`, `FeedbackBanner`, filter forms.
 
 Server actions: `changeActivityStatus`, `deleteActivity` from list/detail components.
 
@@ -405,7 +405,9 @@ Database tables: `activities`, `activity_scopes`, `activity_materials`, `plots`,
 
 Related tests: `tests/unit/phase3-activities-validation.spec.ts`, `tests/integration/activity-management-flow.spec.ts`, `tests/security/activity-management-rls.spec.ts`, `tests/e2e/owner-operational-flow.spec.ts`.
 
-Status: Implemented.
+Status: Implemented. The `tree_id` filter uses async tree option search through
+`GET /api/tree-options` instead of loading all orchard tree options on first
+render.
 
 Missing functionality: no attachments and no dedicated calendar/planning board.
 
@@ -566,7 +568,8 @@ Database tables: `varieties`, `trees`, `plots`.
 
 Related tests: `tests/unit/variety-locations-report.spec.ts`, `tests/integration/variety-locations-report.spec.ts`, `tests/e2e/tree-batch-and-export.spec.ts`.
 
-Status: Implemented.
+Status: Implemented. The report reads active variety trees through paginated
+`.range()` chunks, so one variety can exceed the default PostgREST page cap.
 
 Missing functionality: no visual plot overlay in this report; ranges are textual/grouped.
 
@@ -602,11 +605,14 @@ Main components: `HarvestLocationSummaryView`.
 
 Server actions: none.
 
-Database tables: `harvest_records`, `trees`, `plots`, `varieties`.
+Database tables: `harvest_records`, `trees`, `plots`, `varieties`; RPC
+`list_harvest_location_source_records`.
 
 Related tests: `tests/unit/phase4-harvest-validation.spec.ts`, `tests/integration/harvest-management-flow.spec.ts`.
 
-Status: Implemented.
+Status: Implemented. Plot-filtered tree fallback uses
+`list_harvest_location_source_records(...)` instead of building a large
+`tree_id.in(...)` filter for every tree in the selected plot.
 
 Missing functionality: no visual grid/map rendering for report output.
 

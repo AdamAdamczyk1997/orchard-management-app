@@ -197,14 +197,17 @@ sequenceDiagram
 
 ## Read / Report Flow
 
-Report flows are application-level TypeScript aggregation helpers. No materialized SQL views were found.
+Report flows are application-level TypeScript aggregation helpers. No
+materialized SQL views were found. `/reports/harvest-locations` now uses a
+read-only source-row RPC before TypeScript aggregation so large plot filters do
+not require a giant `tree_id.in(...)` query string.
 
 | Report/view | Route | Data source | Aggregation location | Filters | Tests |
 | ----------- | ----- | ----------- | -------------------- | ------- | ----- |
 | Harvest season summary | `/reports/season-summary` | `harvest_records`, `plots`, `varieties` | `lib/domain/harvests.ts`, `lib/orchard-data/harvests.ts` | `season_year`, `plot_id`, `variety_id` | `phase4-harvest-validation.spec.ts`, `harvest-management-flow.spec.ts`, E2E owner flow |
 | Harvest timeline | `/reports/season-summary` | `harvest_records` | `aggregateHarvestTimeline()` | same season summary filters | same harvest tests |
-| Harvest locations | `/reports/harvest-locations` | `harvest_records`, `trees`, `plots`, `varieties` | `aggregateHarvestLocationSummary()` | `season_year`, `plot_id`, `variety_id` | `harvest-management-flow.spec.ts` |
-| Variety locations | `/reports/variety-locations` | active `trees`, `plots`, `varieties` | `lib/domain/variety-locations.ts` | `variety_id` | `variety-locations-report.spec.ts`, `tree-batch-and-export.spec.ts` |
+| Harvest locations | `/reports/harvest-locations` | `list_harvest_location_source_records(...)`, `harvest_records`, `trees`, `plots` | `aggregateHarvestLocationSummary()` | `season_year`, `plot_id`, `variety_id` | `harvest-management-flow.spec.ts` |
+| Variety locations | `/reports/variety-locations` | paginated active `trees`, `plots`, `varieties` | `lib/domain/variety-locations.ts` | `variety_id` | `variety-locations-report.spec.ts`, `tree-batch-and-export.spec.ts` |
 | Activity summary | `/activities` | `activities` | `getSeasonalActivitySummaryForOrchard()` | `summary_season_year`, `summary_activity_type`, optional `summary_plot_id` | `activity-management-flow.spec.ts`, `owner-operational-flow.spec.ts` |
 | Activity coverage | `/activities` | `activity_scopes`, `activities`, `trees` | `getSeasonalActivityCoverageForOrchard()` | same activity summary filters | `activity-management-flow.spec.ts`, `owner-operational-flow.spec.ts` |
 | Dashboard summary | `/dashboard` | `plots`, `trees`, `activities`, `harvest_records` | `lib/orchard-data/dashboard.ts` | active orchard only | `dashboard-summary.spec.ts`, `orchard-access.spec.ts` |

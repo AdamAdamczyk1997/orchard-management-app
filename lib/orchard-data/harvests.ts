@@ -119,6 +119,20 @@ type HarvestActivityOptionQueryRow = {
     | null;
 };
 
+type HarvestLocationSourceRpcRow = {
+  id: string;
+  scope_level: HarvestRecordSummary["scope_level"];
+  harvest_date: string;
+  quantity_kg: number | string;
+  plot_id: string | null;
+  plot_name: string | null;
+  plot_status: PlotStatus | null;
+  section_name: string | null;
+  row_number: number | null;
+  from_position: number | null;
+  to_position: number | null;
+};
+
 const harvestSelect = `
   id,
   orchard_id,
@@ -302,49 +316,23 @@ async function listHarvestLocationSourceRecordsForOrchard(
   supabaseClient?: SupabaseClient,
 ) {
   const supabase = await resolveSupabaseClient(supabaseClient);
-  let treeIdsInPlot: string[] = [];
-
-  if (filters.plot_id) {
-    const { data: treeRows, error: treeError } = await supabase
-      .from("trees")
-      .select("id")
-      .eq("orchard_id", orchardId)
-      .eq("plot_id", filters.plot_id);
-
-    if (treeError) {
-      throw treeError;
-    }
-
-    treeIdsInPlot = ((treeRows ?? []) as Array<{ id: string }>).map((row) => row.id);
-  }
-
-  let query = supabase
-    .from("harvest_records")
-    .select(harvestSelect)
-    .eq("orchard_id", orchardId)
-    .eq("season_year", filters.season_year);
-
-  if (filters.plot_id) {
-    if (treeIdsInPlot.length > 0) {
-      query = query.or(
-        `plot_id.eq.${filters.plot_id},tree_id.in.(${treeIdsInPlot.join(",")})`,
-      );
-    } else {
-      query = query.eq("plot_id", filters.plot_id);
-    }
-  }
-
-  if (filters.variety_id) {
-    query = query.eq("variety_id", filters.variety_id);
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc(
+    "list_harvest_location_source_records",
+    {
+      p_orchard_id: orchardId,
+      p_season_year: filters.season_year,
+      p_plot_id: filters.plot_id ?? null,
+      p_variety_id: filters.variety_id ?? null,
+    },
+  );
 
   if (error) {
     throw error;
   }
 
-  return ((data ?? []) as HarvestQueryRow[]).map(mapHarvestRowToLocationSourceRecord);
+  return ((data ?? []) as HarvestLocationSourceRpcRow[]).map(
+    mapHarvestLocationSourceRpcRow,
+  );
 }
 
 export async function listHarvestRecordsForOrchard(
@@ -415,67 +403,21 @@ export async function readHarvestRecordByIdForOrchard(
   } satisfies HarvestRecordDetails;
 }
 
-function mapHarvestRowToLocationSourceRecord(row: HarvestQueryRow): HarvestLocationSourceRecord {
-  const plot = pickJoinedRecord(row.plot);
-  const tree = pickJoinedRecord(row.tree);
-  const treePlot = tree ? pickJoinedRecord(tree.plot) : null;
-  const resolvedPlotId = row.plot_id ?? tree?.plot_id ?? treePlot?.id ?? null;
-  const resolvedPlotName = plot?.name ?? treePlot?.name ?? null;
-  const resolvedPlotStatus = plot?.status ?? treePlot?.status ?? null;
-
-  if (
-    row.scope_level === "location_range" &&
-    typeof row.row_number === "number" &&
-    typeof row.from_position === "number" &&
-    typeof row.to_position === "number"
-  ) {
-    return {
-      id: row.id,
-      scope_level: row.scope_level,
-      harvest_date: row.harvest_date,
-      quantity_kg: row.quantity_kg,
-      plot_id: resolvedPlotId,
-      plot_name: resolvedPlotName,
-      plot_status: resolvedPlotStatus,
-      section_name: row.section_name,
-      row_number: row.row_number,
-      from_position: row.from_position,
-      to_position: row.to_position,
-    };
-  }
-
-  if (
-    row.scope_level === "tree" &&
-    typeof tree?.row_number === "number" &&
-    typeof tree.position_in_row === "number"
-  ) {
-    return {
-      id: row.id,
-      scope_level: row.scope_level,
-      harvest_date: row.harvest_date,
-      quantity_kg: row.quantity_kg,
-      plot_id: resolvedPlotId,
-      plot_name: resolvedPlotName,
-      plot_status: resolvedPlotStatus,
-      section_name: row.section_name ?? tree.section_name,
-      row_number: tree.row_number,
-      from_position: tree.position_in_row,
-      to_position: tree.position_in_row,
-    };
-  }
-
+function mapHarvestLocationSourceRpcRow(
+  row: HarvestLocationSourceRpcRow,
+): HarvestLocationSourceRecord {
   return {
     id: row.id,
     scope_level: row.scope_level,
     harvest_date: row.harvest_date,
-    quantity_kg: row.quantity_kg,
-    plot_id: resolvedPlotId,
-    plot_name: resolvedPlotName,
-    plot_status: resolvedPlotStatus,
+    quantity_kg: Number(row.quantity_kg),
+    plot_id: row.plot_id,
+    plot_name: row.plot_name,
+    plot_status: row.plot_status,
     section_name: row.section_name,
-    row_number: null,
-    from_position: null,
-    to_position: null,
+    row_number: row.row_number,
+    from_position: row.from_position,
+    to_position: row.to_position,
   };
 }
 

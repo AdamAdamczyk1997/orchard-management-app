@@ -262,6 +262,8 @@ Uwaga Phase 5F:
 
 - raport pracuje w kontekscie jednego `active_orchard` i jednej wybranej odmiany
 - grupy raportu obejmuja tylko `trees.is_active = true`
+- active variety trees sa pobierane paginowanymi `.range()` chunkami, zeby raport
+  nie konczyl sie na domyslnym limicie strony PostgREST
 - do grup trafiaja tylko rekordy z kompletnym `row_number` oraz `position_in_row`
 - wynik grupuje dane po `plot_id + section_name + row_number`
 - kolejne pozycje w tym samym rzedzie sa scalane do zakresow
@@ -280,6 +282,9 @@ Uwaga Phase 5F:
   - bez precyzyjnej lokalizacji
   - tylko na poziomie sadu
 - wpis `tree` moze odziedziczyc `plot_id`, `section_name`, `row_number` i pozycje z rekordu drzewa
+- plot-filtered tree fallback jest realizowany przez read-only RPC
+  `list_harvest_location_source_records(...)`, ktore joinuje `harvest_records`
+  z `trees` i `plots` zamiast budowac duzy filtr `tree_id.in(...)`
 - grupy terenowe sa agregowane po `plot + section_name + row_number + from_position + to_position`
 - aktualny entry point UI:
   - `/reports/harvest-locations`

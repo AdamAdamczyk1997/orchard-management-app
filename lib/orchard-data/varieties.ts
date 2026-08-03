@@ -27,6 +27,8 @@ type VarietyLocationsTreeRow = {
     | null;
 };
 
+const VARIETY_LOCATION_TREE_PAGE_SIZE = 1000;
+
 function sanitizeSearchInput(input: string) {
   return input.replaceAll(",", " ").replaceAll("(", " ").replaceAll(")", " ");
 }
@@ -118,32 +120,13 @@ export async function getVarietyLocationsReportForOrchard(
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("trees")
-    .select(
-      `
-        id,
-        plot_id,
-        section_name,
-        row_number,
-        position_in_row,
-        location_verified,
-        plot:plots (
-          id,
-          name,
-          status
-        )
-      `,
-    )
-    .eq("orchard_id", orchardId)
-    .eq("variety_id", varietyId)
-    .eq("is_active", true);
+  const treeRows = await listActiveVarietyLocationTreeRows(
+    supabase,
+    orchardId,
+    varietyId,
+  );
 
-  if (error) {
-    throw error;
-  }
-
-  const activeTrees = ((data ?? []) as VarietyLocationsTreeRow[]).map((row) => {
+  const activeTrees = treeRows.map((row) => {
     const plot = pickJoinedRecord(row.plot);
 
     return {
@@ -181,4 +164,53 @@ export async function getVarietyLocationsReportForOrchard(
     unverified_trees_count: locatedTrees.length - verifiedTreesCount,
     groups,
   };
+}
+
+async function listActiveVarietyLocationTreeRows(
+  supabase: QueryClient,
+  orchardId: string,
+  varietyId: string,
+) {
+  const rows: VarietyLocationsTreeRow[] = [];
+
+  for (let from = 0; ; from += VARIETY_LOCATION_TREE_PAGE_SIZE) {
+    const to = from + VARIETY_LOCATION_TREE_PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("trees")
+      .select(
+        `
+          id,
+          plot_id,
+          section_name,
+          row_number,
+          position_in_row,
+          location_verified,
+          plot:plots (
+            id,
+            name,
+            status
+          )
+        `,
+      )
+      .eq("orchard_id", orchardId)
+      .eq("variety_id", varietyId)
+      .eq("is_active", true)
+      .order("plot_id", { ascending: true })
+      .order("section_name", { ascending: true })
+      .order("row_number", { ascending: true })
+      .order("position_in_row", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const pageRows = (data ?? []) as VarietyLocationsTreeRow[];
+    rows.push(...pageRows);
+
+    if (pageRows.length < VARIETY_LOCATION_TREE_PAGE_SIZE) {
+      return rows;
+    }
+  }
 }

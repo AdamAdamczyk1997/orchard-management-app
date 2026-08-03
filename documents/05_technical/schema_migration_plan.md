@@ -94,6 +94,7 @@ Rekomendowana kolejnosc plikow:
 | `032` | `032_drop_redundant_multicolumn_shadowed_indexes.sql` | usuniecie redundantnych single-column indeksow zastapionych przez bardziej trafne indeksy wielokolumnowe | `003`, `005`, `006`, `007`, `008`, `011`, `026` |
 | `033` | `033_prune_unused_and_overwide_operational_indexes.sql` | uproszczenie indeksow `bulk_tree_import_batches` i usuniecie nieuzywanych / zastapionych indeksow `activity_scopes` oraz `harvest_records` | `009`, `011`, `023`, `026`, `030` |
 | `034` | `034_wrap_auth_uid_in_profiles_update_policy.sql` | optymalizacja `auth.uid()` w polityce `UPDATE` dla `profiles` | `014` |
+| `035` | `035_create_harvest_location_report_rpc.sql` | read-only RPC `list_harvest_location_source_records(...)` dla scale-safe raportu `/reports/harvest-locations` bez duzego `tree_id.in(...)` | `011`, `013`, `014` |
 
 ### Zaleznosci pakietu
 
@@ -302,13 +303,13 @@ Pokryte scenariusze:
 
 ### Validation status of the current package
 
-- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`034`
+- wykonano statyczna walidacje kolejnosci FK, trigger dependencies i referencji helper functions dla plikow `001`-`035`
 - lokalne `supabase db reset` przechodzi dla aktualnego pakietu
 - lokalne `pnpm seed:baseline-users` tworzy albo aktualizuje komplet 6 kont seedowych wymaganych przez `001_baseline_reference_seed.sql`
 - lokalne `pnpm seed:baseline-sql` odpala referencyjny seed SQL przez Supabase CLI bez recznego SQL Editor
 - lokalne `pnpm seed:baseline-reset` spina reset bazy, bootstrap `auth.users` i odpalanie referencyjnego seedu
 - lokalne `pnpm qa:baseline-status` pozwala potwierdzic, czy baseline auth users i referencyjne dane seedowe sa gotowe do manual QA
-- lokalne `supabase db lint` przechodzi dla aktualnego pakietu `001`-`034`
+- lokalne `supabase db lint` przechodzi dla aktualnego pakietu `001`-`035`
 - `027_reharden_harvest_trigger_search_path.sql` domyka regresje, w ktorej redefinicja `public.set_harvest_derived_fields_and_validate()` w `025` nadpisala wczesniejsze ustawienie `search_path` z `017`
 - `028_reharden_activity_scope_trigger_search_path.sql` domyka analogiczna regresje dla `public.validate_activity_scope_consistency()`, zredefiniowanej w `025` bez jawnego `search_path`
 - `029_wrap_auth_uid_in_orchards_select_policy.sql` domyka follow-up wydajnosciowy dla polityki `orchards_select_member_creator_or_super_admin`, zastępując gole `auth.uid()` przez `(select auth.uid())`
@@ -317,6 +318,7 @@ Pokryte scenariusze:
 - `032_drop_redundant_multicolumn_shadowed_indexes.sql` usuwa single-column indeksy, ktore byly cieniowane przez indeksy wielokolumnowe z tym samym leading column i nie dodawaly osobnej wartosci dla aktualnych query pathow
 - `033_prune_unused_and_overwide_operational_indexes.sql` usuwa nieuzywany indeks `activity_scopes(scope_level, row_number)`, usuwa legacy indeksy `harvest_records` zastapione przez pakiet `026` i zamienia zbyt szerokie indeksy historii `bulk_tree_import_batches` na mniejsze indeksy pokrywajace same FK `orchard_id` i `plot_id`
 - `034_wrap_auth_uid_in_profiles_update_policy.sql` domyka `Auth RLS Initialization Plan` dla `profiles_update_self_or_super_admin`, zastępując gole `auth.uid()` przez `(select auth.uid())`
+- `035_create_harvest_location_report_rpc.sql` dodaje read-only RPC dla raportu lokalizacji harvest, ktore rozwiązuje tree-scoped fallback przez join do `trees`/`plots` i nie wymaga budowania `tree_id.in(...)` dla wszystkich drzew w dzialce
 - lokalne `supabase db lint --local -o json` nie zgłasza juz warningow `Function Search Path Mutable`, `Auth RLS Initialization Plan`, `Unindexed foreign keys` ani warningu o `v_membership_joined_at`
 - pakiet jest gotowy do uruchomienia lokalnie w srodowisku z PostgreSQL lub Supabase CLI
 

@@ -1,9 +1,10 @@
 # Large plot tree scale plan
 
 Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
-async tree picker for activity/harvest forms, Phase 3 PVO scale overview and
-the first Phase 4 focused PVO row detail slice are implemented. Long-row
-rendering refinements and report scale work remain.
+async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
+the first Phase 4 focused PVO row detail slice and Phase 7 report read model
+hardening for `harvest-locations` and `variety-locations` are implemented.
+Long-row rendering refinements and measurement-driven index hardening remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -46,13 +47,16 @@ These facts are based on the current repo state, not on archive documents.
   and deterministic database ordering.
 - `ActivityForm` and `HarvestForm` use `TreePicker` and `GET /api/tree-options`
   instead of receiving every tree option on initial page load.
-- `listTreeOptionsForOrchard()` still selects all orchard trees before sorting
-  and should not be used for new large-plot form selectors.
-- `getVarietyLocationsReportForOrchard()` reads all active trees for one
-  variety and groups ranges in TypeScript.
-- `getHarvestLocationSummaryForOrchard()` currently resolves plot filtering by
-  first selecting tree IDs for the plot, then building a `tree_id.in(...)`
-  filter. This can become fragile for very large plots.
+- `/activities` list filters also use the async `TreePicker` for `tree_id`,
+  so the list page no longer loads all orchard tree options on first render.
+- `listTreeOptionsForOrchard()` still exists as a legacy helper and selects all
+  orchard trees before sorting; do not use it for new large-plot selectors.
+- `getVarietyLocationsReportForOrchard()` reads active trees for one variety
+  through paginated `.range()` chunks and groups ranges in TypeScript.
+- `getHarvestLocationSummaryForOrchard()` uses
+  `list_harvest_location_source_records(...)`, a read-only SQL RPC that joins
+  `harvest_records` to `trees`/`plots` for plot filtering and tree-scoped
+  fallback without building a large `tree_id.in(...)` filter.
 - Batch preview flows already use range-based queries, which is good, but their
   UI can still become too verbose for large ranges.
 
@@ -618,33 +622,43 @@ Purpose: keep reports fast and avoid giant client-side or URL-level filters.
 
 ### Harvest Location Report
 
-Current risk:
+Status: first hardening slice implemented.
 
-- plot filter can build `tree_id.in(...)` with every tree in a large plot.
+Current implementation:
 
-Recommended fix:
+- `getHarvestLocationSummaryForOrchard()` calls
+  `list_harvest_location_source_records(...)`.
+- The RPC is orchard-scoped through `p_orchard_id` and
+  `can_read_orchard_data(p_orchard_id)`.
+- Plot filtering is resolved by SQL joins:
+  - direct `harvest_records.plot_id`,
+  - tree-scoped fallback through `trees.plot_id`.
+- The TypeScript aggregation contract remains unchanged.
+- Integration coverage includes a plot with more than 1,000 trees and a
+  tree-scoped harvest beyond the previous unbounded read cap.
 
-1. Replace the large `tree_id.in(...)` strategy with a server-side SQL RPC or
-   query that joins `harvest_records` to `trees` when resolving tree-scoped
-   records.
-2. The read model should return location source rows already scoped to:
-   - active orchard,
-   - season,
-   - optional plot,
-   - optional variety.
-3. Keep final aggregation in TypeScript unless SQL aggregation becomes clearly
-   better.
+Remaining work:
+
+1. Measure filtered report performance on the `PERF` fixture.
+2. Move more aggregation to SQL only if measurements justify it.
+3. Add indexes only after query-plan evidence.
 
 ### Variety Locations Report
 
-Current behavior:
+Status: first hardening slice implemented.
 
-- reads all active trees for one variety and groups ranges in TypeScript.
+Current implementation:
 
-Plan:
+- `getVarietyLocationsReportForOrchard()` reads active trees for one variety
+  through paginated `.range()` chunks.
+- The TypeScript grouping contract remains unchanged.
+- Integration coverage includes more than 1,000 active trees for one variety,
+  proving the report does not stop at the default PostgREST page cap.
 
-1. Keep as-is for hundreds of trees if measurements are good.
-2. If slow, move grouping closer to SQL or add paged/grouped read model.
+Remaining work:
+
+1. Measure filtered report performance on the `PERF` fixture.
+2. Move grouping closer to SQL only if measurements justify it.
 3. Keep output grouped by plot/section/row ranges, never raw giant lists.
 
 ### Tests
@@ -652,13 +666,14 @@ Plan:
 - Integration:
   - harvest location report with tree-scoped records in a large plot,
   - no leak across orchard,
-  - variety report groups contiguous ranges.
+  - variety report groups contiguous ranges beyond 1,000 active trees.
 - E2E:
   - report pages still load on performance fixture.
 
 ### Acceptance Criteria
 
-- No report builds a huge `tree_id.in(...)` string for large plots.
+- `/reports/harvest-locations` does not build a huge `tree_id.in(...)` string
+  for large plots.
 - Reports remain grouped and readable for a farmer.
 
 ## Phase 8 - Index And Query Plan Hardening

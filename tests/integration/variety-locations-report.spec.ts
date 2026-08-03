@@ -12,6 +12,7 @@ import {
   signInTestUser,
   updateTreeAsUser,
 } from "../helpers/test-data";
+import { createAdminClient } from "../helpers/supabase";
 
 describe("variety locations report", () => {
   const createdUserIds: string[] = [];
@@ -245,5 +246,83 @@ describe("variety locations report", () => {
     });
     expect(workerReport).toEqual(ownerReport);
     expect(outsiderReport).toBeNull();
+  });
+
+  it("reads all active variety trees beyond the default PostgREST page cap", async () => {
+    const owner = await createTestUser("variety-report-large-owner");
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("variety-report-large"),
+      code: "VR-02",
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Long Variety",
+      code: "VR-LONG",
+      defaultRowCount: 1,
+      defaultTreesPerRow: 1005,
+    });
+    const variety = await createVarietyAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Scale Gala",
+    });
+
+    const admin = createAdminClient();
+    const trees = Array.from({ length: 1005 }, (_, index) => ({
+      orchard_id: orchard.orchard_id,
+      plot_id: plot.id,
+      variety_id: variety.id,
+      species: "apple",
+      tree_code: `VR-LONG-${String(index + 1).padStart(4, "0")}`,
+      section_name: "A",
+      row_number: 1,
+      position_in_row: index + 1,
+      condition_status: "good",
+      location_verified: index % 2 === 0,
+    }));
+    const { error: insertError } = await admin.from("trees").insert(trees);
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    const report = await getVarietyLocationsReportForOrchard(
+      orchard.orchard_id,
+      variety.id,
+      ownerClient,
+    );
+
+    expect(report).toMatchObject({
+      variety_id: variety.id,
+      total_active_trees_count: 1005,
+      located_trees_count: 1005,
+      unlocated_trees_count: 0,
+      verified_trees_count: 503,
+      unverified_trees_count: 502,
+    });
+    expect(report?.groups).toEqual([
+      {
+        plot_id: plot.id,
+        plot_name: "Kwatera Long Variety",
+        plot_status: "active",
+        section_name: "A",
+        row_number: 1,
+        tree_count: 1005,
+        verified_trees_count: 503,
+        unverified_trees_count: 502,
+        ranges: [
+          {
+            from_position: 1,
+            to_position: 1005,
+            tree_count: 1005,
+            verified_trees_count: 503,
+            unverified_trees_count: 502,
+          },
+        ],
+      },
+    ]);
   });
 });
