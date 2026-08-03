@@ -195,7 +195,7 @@ Fixture entrypoint implemented:
 - `pnpm seed:large-plot-fixture`
 - SQL source: `supabase/seeds/010_large_plot_performance_fixture.sql`
 - metadata: `scripts/shared/large-plot-fixture.mjs`
-- first measurement snapshot: `documents/01_implementation_materials/large_plot_phase0_measurements.md`
+- measurement snapshots: `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 - cleanup: `pnpm seed:baseline-reset`
 
 The fixture creates a separate local-only orchard `PERF`, which is ignored by
@@ -853,17 +853,17 @@ These do not block Phase 0, but should be answered before PVO redesign.
    - compact visual map?
 5. Do we need offline-first behavior later?
 
-## Recommended First Slice
+## Recommended Next Slice
 
-Start with Phase 0 only.
+The Phase 0-4 first-pass work, first long-row range action refinement and Phase
+7 report read-model hardening are now in place.
 
-Reason:
+The latest local measurement snapshot points to these next options:
 
-- it is low-risk,
-- it does not change production behavior,
-- it gives real evidence for thresholds,
-- it prevents premature PVO redesign.
-
-Phase 0-4 first-pass work is now in place. The next production slice should be
-long-row fallback refinement, unless report measurements show that Phase 7 needs
-to move ahead of it.
+1. Add a deterministic long-row performance plot to the local-only `PERF`
+   fixture if browser measurements for `PlotVisualRowRangeActions` are needed.
+2. Add PERF harvest rows and measure filtered `/reports/harvest-locations`
+   output before adding harvest report indexes.
+3. Consider `/reports/variety-locations` output summarization if manual review
+   confirms that the current grouped text output is too noisy.
+4. Add indexes only after query-plan evidence.

@@ -154,3 +154,81 @@ Measurement note: the active orchard cookie was set directly to `PERF`
 request. In this local run the dashboard redirect tended to restore the
 preferred baseline orchard cookie, so the measurement pinned the cookie
 immediately before route navigation.
+
+## Post Read-Model Hardening Measurement
+
+Status: local follow-up snapshot after:
+
+- `6b4a6db feat: harden large tree read models`
+- `da654e0 feat: add long row range actions`
+
+Date: 2026-08-03.
+
+Setup:
+
+```bash
+pnpm seed:baseline-reset
+pnpm seed:large-plot-fixture
+pnpm qa:baseline-status
+pnpm dev
+```
+
+Measurement method:
+
+- local Next dev server on `http://localhost:3000`,
+- headless Chromium through Playwright,
+- logged in as `jan.owner@orchardlog.local`,
+- active orchard pinned to `PERF` by setting `ol_active_orchard`,
+- desktop viewport: `1440 x 1100`,
+- each route was warmed once, then loaded again for the recorded numbers.
+
+These numbers are still directional. They include local Next dev behavior and
+should not be treated as production latency.
+
+| Route / interaction | Elapsed | DOM nodes | Key count | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/trees?is_active=true&page_size=50` | 3,222 ms | 1,392 | 50 visible rows | Pagination remains bounded. |
+| `/trees?is_active=true&page=2&page_size=50` | 3,173 ms | 1,391 | 50 visible rows | Page 2 remains similar to page 1. |
+| `/activities` | 1,661 ms | 301 | 1 tree filter option | Activity list no longer loads all tree options initially. |
+| `/activities/new` | 1,786 ms | 225 | 1 tree option | Create form still has small initial payload. |
+| `/harvests/new` | 1,797 ms | 163 | 0 tree options | Tree picker remains hidden until tree scope is selected. |
+| `/plots/92000000-0000-4000-8000-000000000002` (`PERF-1500`) | 3,340 ms | 647 | 1 overview, 0 markers | Large plot overview still avoids full marker render. |
+| `/plots/92000000-0000-4000-8000-000000000002?section=A&row=1` | 3,281 ms | 359 | 50 markers | Focused row remains bounded for fixture rows. |
+| `/reports/variety-locations?variety_id=93000000-0000-4000-8000-000000000001` | 3,245 ms | 4,261 | 34,964 body chars | Paginated read avoids data cap, but output is the largest DOM/text surface measured. |
+| `/reports/harvest-locations?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002` | 1,955 ms | 191 | 0 table rows | SQL RPC path avoids large `tree_id.in(...)`; fixture has no harvest rows. |
+| `/activities`, select `Performance Rows 1500` in tree filter | 2,297 ms | 373 | 51 tree options | Async tree filter loads 50 trees plus empty option. |
+| `/activities/new`, select `Performance Rows 1500` | 1,261 ms | 313 | 51 tree options | Async picker remains bounded after plot selection. |
+
+Findings:
+
+1. The biggest confirmed DOM/text surface after hardening is now
+   `/reports/variety-locations` for a popular variety.
+   - It no longer risks the default PostgREST page cap because the read model
+     uses paginated `.range()` chunks.
+   - The rendered report can still become verbose because it expands many
+     grouped ranges as text.
+
+2. `/activities` list filtering is now scale-safe on initial load.
+   - The page starts with only the empty tree option.
+   - Selecting `PERF-1500` loads 50 tree options plus the empty option.
+
+3. `/reports/harvest-locations` now exercises the SQL RPC path for plot filters.
+   - This snapshot confirms the route stays small with the `PERF-1500` plot
+     filter.
+   - The current fixture does not include PERF harvest rows, so this does not
+     measure large harvest result rendering.
+
+4. `PERF-1500` does not exercise the new long-row range action UI.
+   - Its rows have 50 trees each.
+   - Long-row fallback above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT` is covered by
+     unit/integration tests, but not by the current performance fixture.
+
+Recommended next slice:
+
+1. Add a deterministic long-row performance plot to the local-only PERF fixture
+   if we want browser measurements for `PlotVisualRowRangeActions`.
+2. Add filtered report measurements with actual PERF harvest rows before adding
+   harvest report indexes.
+3. Consider report UI summarization for `/reports/variety-locations` if manual
+   review confirms the 4k-node / 35k-text output is too noisy.
+4. Do not add indexes yet; use query-plan evidence first.
