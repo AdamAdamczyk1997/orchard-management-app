@@ -153,7 +153,8 @@ Active technical plan:
     `variety_id`, `condition_status` and `location_verified`,
   - `PlotTreeScaleOverview` row summaries link to focused row URLs,
   - focused rows reuse existing PVO marker actions below the marker limit and
-    fall back to range-first Add Activity controls plus a table preview above it.
+    fall back to range-first Add Activity controls plus a table preview above it,
+  - the fallback table preview is capped separately from marker payloads.
 - Phase 7 first report hardening slice is implemented for
   `/reports/harvest-locations`:
   - `list_harvest_location_source_records(...)` resolves plot filters through
@@ -174,11 +175,11 @@ Active technical plan:
   `(plot_id, row_number, position_in_row)`. `section_name` is not part of
   `uq_trees_active_logical_location`.
 - Focused-row E2E coverage for the large plot overview -> row detail path is
-  implemented in `tests/e2e/plot-visual-operations.spec.ts` and runs when the
-  local `PERF` fixture is present.
-- The recommended next production slice is measurement-driven index/query-plan
-  hardening or deeper long-row rendering refinement if `PERF-LONG-ROW` checks
-  show the range-first fallback is not enough.
+  implemented in `tests/e2e/plot-visual-operations.spec.ts`; the same file
+  covers the `PERF-LONG-ROW` range action fallback when the local `PERF` fixture
+  is present.
+- The recommended next production slice is harvest report fixture measurement,
+  report UI summarization, or query-plan/index hardening based on evidence.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority

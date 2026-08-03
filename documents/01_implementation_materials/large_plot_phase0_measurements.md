@@ -230,11 +230,58 @@ Fixture update after this snapshot:
 - `PERF-LONG-ROW` now exists with one 350-tree row so browser measurements can
   exercise `PlotVisualRowRangeActions`.
 
+## Long-Row Fallback Measurement
+
+Status: local follow-up snapshot after:
+
+- `d30c027 test: add long row performance fixture`
+- table preview cap cleanup in `getPlotVisualRowDetailForOrchard()`
+
+Date: 2026-08-03.
+
+Setup:
+
+```bash
+pnpm seed:large-plot-fixture
+pnpm qa:baseline-status
+pnpm dev
+```
+
+Measurement method:
+
+- local Next dev server on `http://localhost:3000`,
+- headless Chromium through Playwright,
+- logged in as `jan.owner@orchardlog.local`,
+- active orchard pinned to `PERF` by setting `ol_active_orchard`,
+- desktop viewport: `1440 x 1100`,
+- each route was warmed once, then loaded again for the recorded numbers.
+
+These numbers are still directional. They include local Next dev behavior and
+should not be treated as production latency.
+
+| Route / interaction | Elapsed | DOM nodes | Key count | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/plots/92000000-0000-4000-8000-000000000004` (`PERF-LONG-ROW`) | 1,557 ms | 263 | 1 overview, 0 markers | Single-row large plot overview stays small. |
+| `/plots/92000000-0000-4000-8000-000000000004?section=A&row=1` | 2,955 ms | 1,224 | 100 table rows, 0 markers | Focused long row uses range actions and capped table preview. |
+| `PERF-LONG-ROW` range action -> `/activities/new` | 946 ms | 492 | 1 prefill message, 1 scope | Add Activity prefill stays compact for positions 1-50. |
+
+Finding:
+
+- The first measurement run exposed that the default unfiltered long-row table
+  inherited the 300-row marker payload. The read model now caps
+  `filtered_trees` with `PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT` even when
+  no filters are active.
+- After the cap, the same focused long-row route renders 100 table rows instead
+  of 300, with DOM size reduced from 3,155 to 1,224 nodes in this local run.
+- The Add Activity range href remains compact at 249 characters and resolves to
+  one `location_range` scope on `/activities/new`.
+
 Recommended next slice:
 
-1. Measure the `PERF-LONG-ROW` focused row fallback path in browser.
-2. Add filtered report measurements with actual PERF harvest rows before adding
+1. Add filtered report measurements with actual PERF harvest rows before adding
    harvest report indexes.
-3. Consider report UI summarization for `/reports/variety-locations` if manual
+2. Consider report UI summarization for `/reports/variety-locations` if manual
    review confirms the 4k-node / 35k-text output is too noisy.
+3. Keep `PERF-LONG-ROW` as regression coverage for future deeper long-row UI
+   refinements.
 4. Do not add indexes yet; use query-plan evidence first.

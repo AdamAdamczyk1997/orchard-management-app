@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { getPlotVisualRowDetailForOrchard } from "@/lib/orchard-data/trees";
-import { PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT } from "@/lib/domain/plot-visual-row-detail";
+import {
+  PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT,
+  PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT,
+} from "@/lib/domain/plot-visual-row-detail";
 import type { PlotVisualRowDetailFilters } from "@/types/contracts";
 import {
   cleanupTestUsers,
@@ -257,6 +260,12 @@ describe("plot visual row detail", () => {
 
     expect(detail.row_tree_count).toBe(PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT + 5);
     expect(detail.row_trees).toHaveLength(PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT);
+    expect(detail.filtered_tree_count).toBe(
+      PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT + 5,
+    );
+    expect(detail.filtered_trees).toHaveLength(
+      PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT,
+    );
     expect(detail.row_trees_truncated).toBe(true);
     expect(detail.filtered_trees_truncated).toBe(true);
     expect(detail.can_render_marker_visual).toBe(false);

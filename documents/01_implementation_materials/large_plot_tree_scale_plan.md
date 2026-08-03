@@ -3,10 +3,10 @@
 Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
 async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
 the first Phase 4 focused PVO row detail slice, a long-row range action
-refinement, a local long-row measurement fixture and Phase 7 report read model
-hardening for `harvest-locations` and `variety-locations` are implemented.
-Measurement-driven index hardening and deeper long-row rendering refinements
-remain.
+refinement, a local long-row measurement fixture, long-row browser measurement
+and Phase 7 report read model hardening for `harvest-locations` and
+`variety-locations` are implemented. Measurement-driven index hardening and
+deeper long-row rendering refinements remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -45,6 +45,9 @@ These facts are based on the current repo state, not on archive documents.
 - `/plots/[plotId]?section=A&row=12` renders `PlotVisualFocusedRow` from
   `getPlotVisualRowDetailForOrchard()` and reuses `PlotVisualOverview` only for
   the narrowed row when it is under the focused marker limit.
+- Focused rows above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT` use
+  `PlotVisualRowRangeActions` plus a table preview capped by
+  `PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT`.
 - Active tree logical location uniqueness is enforced by
   `uq_trees_active_logical_location` on `(plot_id, row_number, position_in_row)`;
   `section_name` is not part of that uniqueness key in the current migrations.
@@ -485,7 +488,8 @@ Current implementation:
   orchard-scoped, plot-scoped and row-scoped.
 - The row read model fetches the full focused row only up to
   `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT` and separately returns a filtered table
-  preview for active filters.
+  preview capped by `PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT`, including the
+  default no-filter case.
 - `PlotTreeScaleOverview` row summaries link to focused row URLs.
 - `PlotVisualFocusedRow` renders:
   - row metadata and filter GET form,
@@ -497,9 +501,11 @@ Current implementation:
   browse tree detail panel, range select, Add Activity from selection, Bulk
   deactivate prefill and Plant New from inferred empty ranges.
 - `tests/integration/plot-visual-row-detail.spec.ts` covers long-row fallback
-  read model behavior above the marker limit.
+  read model behavior above the marker limit and the separate table preview
+  cap.
 - `tests/e2e/plot-visual-operations.spec.ts` covers the large plot overview to
-  focused row path when the local `PERF` fixture is present.
+  focused row path and the `PERF-LONG-ROW` range action fallback when the local
+  `PERF` fixture is present.
 - Current DB uniqueness treats active logical location as
   `(plot_id, row_number, position_in_row)`, without `section_name`. Tests and
   scale helper duplicate counts now follow the migration source of truth.
@@ -863,13 +869,12 @@ These do not block Phase 0, but should be answered before PVO redesign.
 The Phase 0-4 first-pass work, first long-row range action refinement and Phase
 7 report read-model hardening are now in place.
 
-The latest local measurement snapshot and fixture update point to these next
-options:
+The latest local measurement snapshots point to these next options:
 
-1. Measure the `PERF-LONG-ROW` focused row path in browser after seeding the
-   local-only `PERF` fixture.
-2. Add PERF harvest rows and measure filtered `/reports/harvest-locations`
+1. Add PERF harvest rows and measure filtered `/reports/harvest-locations`
    output before adding harvest report indexes.
-3. Consider `/reports/variety-locations` output summarization if manual review
+2. Consider `/reports/variety-locations` output summarization if manual review
    confirms that the current grouped text output is too noisy.
+3. Keep `PERF-LONG-ROW` as regression coverage for deeper long-row UI
+   refinements.
 4. Add indexes only after query-plan evidence.

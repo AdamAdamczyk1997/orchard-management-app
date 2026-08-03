@@ -404,7 +404,7 @@ export async function getPlotVisualRowDetailForOrchard(
 
   const rowTrees = ((rowData ?? []) as TreeQueryRow[]).map(mapTreeRowToSummary);
   const rowTreeCount = rowCount ?? rowTrees.length;
-  let filteredTrees = rowTrees;
+  let filteredTrees = rowTrees.slice(0, PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT);
   let filteredTreeCount = rowTreeCount;
 
   if (hasActivePlotVisualRowDetailFilters(filters)) {
