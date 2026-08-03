@@ -442,10 +442,12 @@ pnpm seed:large-plot-fixture
 ```
 
 Ten fixture tworzy osobny orchard `PERF` z dzialkami `PERF-500`,
-`PERF-1500` i `PERF-MIX`. Nie jest czescia canonical baseline; `pnpm qa:baseline-status`
-ignoruje `PERF`, ale cleanup po pomiarach nadal wykonuj przez `pnpm seed:baseline-reset`.
+`PERF-1500`, `PERF-MIX` i `PERF-LONG-ROW`. Nie jest czescia canonical baseline;
+`pnpm qa:baseline-status` ignoruje `PERF`, ale cleanup po pomiarach nadal
+wykonuj przez `pnpm seed:baseline-reset`.
 Plot detail routes uzywaja UUID, np. `PERF-1500` to
 `/plots/92000000-0000-4000-8000-000000000002`.
+`PERF-LONG-ROW` to `/plots/92000000-0000-4000-8000-000000000004`.
 
 Large-plot form selector coverage:
 

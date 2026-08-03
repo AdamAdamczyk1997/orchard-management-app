@@ -42,7 +42,9 @@ export async function seedLargePlotFixture() {
   console.log("- /trees?is_active=true");
   console.log("- /activities/new");
   console.log("- /harvests/new");
-  console.log("- /plots/[plotId] for PERF-500, PERF-1500 and PERF-MIX plots");
+  console.log(
+    "- /plots/[plotId] for PERF-500, PERF-1500, PERF-MIX and PERF-LONG-ROW plots",
+  );
   console.log("- /reports/variety-locations");
   console.log("- /reports/harvest-locations");
   console.log("");

@@ -325,6 +325,8 @@ Implementation index:
 - The current repo contains PVO implementation for `/plots/[plotId]`; treat it as part of the active product surface.
 - `/plots/[plotId]?section=A&row=12` is implemented as focused PVO row detail;
   plot detail routes use UUIDs, not plot codes such as `PERF-1500`.
+  The local `PERF-LONG-ROW` route is
+  `/plots/92000000-0000-4000-8000-000000000004`.
 - Accept Invitation is not implemented even though membership status enum has `invited`.
 - Report aggregations are application-level TypeScript helpers, not materialized SQL views.
 - Query prefill parameters are UI defaults only; writes still go through server actions, relation validation, RLS, and DB constraints/RPC.

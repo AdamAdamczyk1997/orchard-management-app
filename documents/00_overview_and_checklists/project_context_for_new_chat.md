@@ -167,6 +167,9 @@ Active technical plan:
 - Performance fixture plot detail routes use deterministic UUIDs, not plot
   codes. `PERF-1500` is
   `/plots/92000000-0000-4000-8000-000000000002`.
+- `PERF-LONG-ROW` is
+  `/plots/92000000-0000-4000-8000-000000000004` and exists to exercise focused
+  row fallback/range actions above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT`.
 - Current migrations enforce active logical tree location uniqueness on
   `(plot_id, row_number, position_in_row)`. `section_name` is not part of
   `uq_trees_active_logical_location`.
@@ -174,8 +177,8 @@ Active technical plan:
   implemented in `tests/e2e/plot-visual-operations.spec.ts` and runs when the
   local `PERF` fixture is present.
 - The recommended next production slice is measurement-driven index/query-plan
-  hardening or deeper long-row rendering refinement if manual PERF checks show
-  the range-first fallback is not enough.
+  hardening or deeper long-row rendering refinement if `PERF-LONG-ROW` checks
+  show the range-first fallback is not enough.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority

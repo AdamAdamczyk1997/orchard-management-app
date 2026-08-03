@@ -40,14 +40,21 @@ describe("large plot performance fixture metadata", () => {
           layoutType: "mixed",
           expectedTrees: 126,
         }),
+        expect.objectContaining({
+          code: "PERF-LONG-ROW",
+          layoutType: "rows",
+          rowCount: 1,
+          treesPerRow: 350,
+          expectedTrees: 350,
+        }),
       ]),
     );
     expect(LARGE_PLOT_FIXTURE_EXPECTED_COUNTS).toMatchObject({
       orchards: 1,
       memberships: 2,
-      plots: 3,
+      plots: 4,
       varieties: 6,
-      trees: 2126,
+      trees: 2476,
     });
   });
 });

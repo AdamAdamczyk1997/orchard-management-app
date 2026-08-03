@@ -446,3 +446,61 @@ test("owner can focus one row from the large plot scale overview", async ({
   await expect(page.getByTestId("plot-visual-grid").getByText("Rzad 1")).toBeVisible();
   await expect(page.getByTestId("plot-visual-grid").getByText("Rzad 2")).toHaveCount(0);
 });
+
+test("owner can use range actions when a focused row is too long for markers", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+
+  await loginWithPassword(
+    page,
+    SEEDED_USERS.owner.email,
+    SEEDED_USERS.owner.password,
+  );
+  await waitForDashboard(page, SEEDED_USERS.owner.primaryOrchardName);
+
+  const performanceOrchardOption = page
+    .getByTestId("orchard-switcher-select")
+    .locator("option")
+    .filter({ hasText: LARGE_PLOT_FIXTURE_ORCHARD.ownerLabel });
+
+  test.skip(
+    (await performanceOrchardOption.count()) === 0,
+    "Requires pnpm seed:large-plot-fixture local PERF orchard.",
+  );
+
+  await pinActiveOrchardCookie(page, LARGE_PLOT_FIXTURE_ORCHARD.id);
+
+  await page.goto(
+    `/plots/${LARGE_PLOT_FIXTURE_PLOTS.longRow350.id}?section=A&row=1`,
+  );
+  await expect(
+    page.getByRole("heading", {
+      name: LARGE_PLOT_FIXTURE_PLOTS.longRow350.name,
+    }),
+  ).toBeVisible();
+  await expect(page.getByTestId("plot-visual-row-detail")).toBeVisible();
+  await expect(page.getByTestId("plot-visual-grid")).toHaveCount(0);
+  await expect(page.locator("[data-testid^='plot-visual-marker-']")).toHaveCount(0);
+  await expect(page.getByText("350 drzew w tym rzedzie")).toBeVisible();
+  await expect(page.getByText("Tabela rzedu")).toBeVisible();
+
+  const rangeActions = page.getByTestId("plot-visual-row-range-actions");
+  await expect(rangeActions).toBeVisible();
+  await expect(rangeActions.getByLabel("Od pozycji")).toHaveValue("1");
+  await expect(rangeActions.getByLabel("Do pozycji")).toHaveValue("50");
+
+  await rangeActions.getByRole("link", { name: "Dodaj aktywnosc" }).click();
+
+  await expect(page).toHaveURL(/\/activities\/new\?/);
+  await expect(page.getByTestId("activity-prefill-message")).toContainText(
+    "Zakres zostal uzupelniony",
+  );
+  await expect(page.locator("#plot_id")).toHaveValue(
+    LARGE_PLOT_FIXTURE_PLOTS.longRow350.id,
+  );
+  await expect(page.locator("#scope_level_0")).toHaveValue("location_range");
+  await expect(page.locator("#scope_row_number_0")).toHaveValue("1");
+  await expect(page.locator("#scope_from_position_0")).toHaveValue("1");
+  await expect(page.locator("#scope_to_position_0")).toHaveValue("50");
+});

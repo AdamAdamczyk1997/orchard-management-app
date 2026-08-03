@@ -329,6 +329,7 @@ Fixture tworzy orchard `PERF` z:
 - `PERF-500` - rows plot z 500 drzewami
 - `PERF-1500` - rows plot z 1 500 drzewami
 - `PERF-MIX` - mixed plot z czesciowo pustymi pozycjami
+- `PERF-LONG-ROW` - rows plot z jednym rzedem 350 drzew do fallbacku focused row
 
 To nie jest canonical baseline. Sluzy do pomiarow `/trees`, `/activities/new`,
 `/harvests/new`, `/plots/[plotId]` i raportow lokalizacyjnych przed zmianami
@@ -340,6 +341,9 @@ markerow. Focused row dla tej samej dzialki jest dostepny pod
 `/plots/92000000-0000-4000-8000-000000000002?section=A&row=1` i powinien
 pokazac `PlotVisualFocusedRow` z markerami tylko jednego rzedu. Male baseline PVO
 nadal powinno renderowac klasyczny `PlotVisualOverview`.
+`/plots/92000000-0000-4000-8000-000000000004?section=A&row=1`
+(`PERF-LONG-ROW`) powinien pokazac fallback tabelaryczny i
+`plot-visual-row-range-actions`, bez markerow.
 
 ```bash
 pnpm seed:baseline-reset

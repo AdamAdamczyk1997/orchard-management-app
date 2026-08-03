@@ -1,7 +1,7 @@
 # Large plot Phase 0 measurements
 
-Status: first local measurement snapshot.
-Date: 2026-06-21.
+Status: local measurement snapshots.
+Initial snapshot date: 2026-06-21.
 
 ## Setup
 
@@ -13,16 +13,18 @@ pnpm qa:baseline-status
 pnpm dev
 ```
 
-Fixture:
+Current fixture as of 2026-08-03:
 
 - orchard: `PERF` / `Sad Performance Fixture`
 - `PERF-500`: rows plot, 500 trees
 - `PERF-1500`: rows plot, 1,500 trees
 - `PERF-MIX`: mixed plot, 126 trees with inferred gaps
+- `PERF-LONG-ROW`: rows plot, one 350-tree row for focused row fallback
 - plot detail routes use deterministic fixture UUIDs, not plot codes:
   - `PERF-500`: `/plots/92000000-0000-4000-8000-000000000001`
   - `PERF-1500`: `/plots/92000000-0000-4000-8000-000000000002`
   - `PERF-MIX`: `/plots/92000000-0000-4000-8000-000000000003`
+  - `PERF-LONG-ROW`: `/plots/92000000-0000-4000-8000-000000000004`
 
 Measurement method:
 
@@ -223,10 +225,14 @@ Findings:
    - Long-row fallback above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT` is covered by
      unit/integration tests, but not by the current performance fixture.
 
+Fixture update after this snapshot:
+
+- `PERF-LONG-ROW` now exists with one 350-tree row so browser measurements can
+  exercise `PlotVisualRowRangeActions`.
+
 Recommended next slice:
 
-1. Add a deterministic long-row performance plot to the local-only PERF fixture
-   if we want browser measurements for `PlotVisualRowRangeActions`.
+1. Measure the `PERF-LONG-ROW` focused row fallback path in browser.
 2. Add filtered report measurements with actual PERF harvest rows before adding
    harvest report indexes.
 3. Consider report UI summarization for `/reports/variety-locations` if manual

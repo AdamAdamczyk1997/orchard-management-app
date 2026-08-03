@@ -199,8 +199,9 @@ Znaczenie:
   - to jest najszybsza komenda, gdy chcesz odtworzyc referencyjny dataset od zera
 - `pnpm seed:large-plot-fixture`
   - uruchamiaj po `pnpm seed:baseline-reset`
-  - dodaje lokalny, deterministyczny orchard `PERF` z dzialkami `PERF-500`, `PERF-1500` i `PERF-MIX`
+  - dodaje lokalny, deterministyczny orchard `PERF` z dzialkami `PERF-500`, `PERF-1500`, `PERF-MIX` i `PERF-LONG-ROW`
   - plot detail routes uzywaja UUID: `PERF-1500` to `/plots/92000000-0000-4000-8000-000000000002`
+  - `PERF-LONG-ROW` to `/plots/92000000-0000-4000-8000-000000000004`
   - sluzy tylko do pomiarow wydajnosci large plots; nie jest czescia canonical baseline
   - cleanup: uruchom ponownie `pnpm seed:baseline-reset`
 - `pnpm qa:baseline-status`

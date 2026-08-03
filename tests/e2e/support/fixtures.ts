@@ -69,6 +69,11 @@ export const LARGE_PLOT_FIXTURE_PLOTS = {
     code: "PERF-1500",
     name: "Performance Rows 1500",
   },
+  longRow350: {
+    id: "92000000-0000-4000-8000-000000000004",
+    code: "PERF-LONG-ROW",
+    name: "Performance Long Row 350",
+  },
 } as const;
 
 export const BASELINE_PLOTS = {

@@ -3,9 +3,10 @@
 Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
 async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
 the first Phase 4 focused PVO row detail slice, a long-row range action
-refinement and Phase 7 report read model hardening for `harvest-locations` and
-`variety-locations` are implemented. Measurement-driven index hardening and
-deeper long-row rendering refinements remain.
+refinement, a local long-row measurement fixture and Phase 7 report read model
+hardening for `harvest-locations` and `variety-locations` are implemented.
+Measurement-driven index hardening and deeper long-row rendering refinements
+remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -34,6 +35,9 @@ These facts are based on the current repo state, not on archive documents.
 - `/plots/[plotId]` expects the plot UUID in the route. Performance fixture
   codes such as `PERF-1500` are labels; the deterministic fixture route uses
   `92000000-0000-4000-8000-000000000002`.
+- The local `PERF-LONG-ROW` fixture route uses
+  `92000000-0000-4000-8000-000000000004` and has one row with 350 trees,
+  intentionally above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT`.
 - Small plots still read all trees through `listTreesForPlotInOrchard()` and
   render `PlotVisualOverview`.
 - Medium and large plots render `PlotTreeScaleOverview` instead of a full marker
@@ -209,6 +213,7 @@ The fixture creates a separate local-only orchard `PERF`, which is ignored by
    - one rows plot with 500 trees: `PERF-500`,
    - one rows plot with 1,500 trees: `PERF-1500`,
    - one mixed plot with partial row coverage: `PERF-MIX`,
+   - one rows plot with a single 350-tree row: `PERF-LONG-ROW`,
    - six varieties distributed across rows,
    - deterministic warning/critical/unverified trees.
 4. Fixture IDs are deterministic and outside canonical baseline ranges.
@@ -858,10 +863,11 @@ These do not block Phase 0, but should be answered before PVO redesign.
 The Phase 0-4 first-pass work, first long-row range action refinement and Phase
 7 report read-model hardening are now in place.
 
-The latest local measurement snapshot points to these next options:
+The latest local measurement snapshot and fixture update point to these next
+options:
 
-1. Add a deterministic long-row performance plot to the local-only `PERF`
-   fixture if browser measurements for `PlotVisualRowRangeActions` are needed.
+1. Measure the `PERF-LONG-ROW` focused row path in browser after seeding the
+   local-only `PERF` fixture.
 2. Add PERF harvest rows and measure filtered `/reports/harvest-locations`
    output before adding harvest report indexes.
 3. Consider `/reports/variety-locations` output summarization if manual review

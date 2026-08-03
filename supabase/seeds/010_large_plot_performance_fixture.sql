@@ -328,6 +328,26 @@ values
     '6 partially filled rows. Positions 5, 13 and 21 are intentionally empty in each row.',
     6,
     24
+  ),
+  (
+    '92000000-0000-4000-8000-000000000004',
+    '90000000-0000-4000-8000-000000000001',
+    'Performance Long Row 350',
+    'PERF-LONG-ROW',
+    'Local-only rows plot with one long row for focused row fallback measurements.',
+    'Performance fixture long-row block',
+    8750,
+    'loam',
+    'drip',
+    'active',
+    true,
+    'rows',
+    'north_to_south',
+    'from_row_start',
+    'Long row service lane',
+    '1 row x 350 positions. Row 1 intentionally exceeds the focused PVO marker limit.',
+    1,
+    350
   );
 
 with variety_map as (
@@ -384,6 +404,17 @@ fixture_positions as (
   from generate_series(1, 6) as rows(row_number)
   cross join generate_series(1, 24) as positions(position_in_row)
   where position_in_row not in (5, 13, 21)
+
+  union all
+
+  select
+    '92000000-0000-4000-8000-000000000004'::uuid as plot_id,
+    'PERF-LONG-ROW' as plot_code,
+    'A' as section_name,
+    1 as row_number,
+    position_in_row,
+    4000 + position_in_row as tree_number
+  from generate_series(1, 350) as positions(position_in_row)
 ),
 fixture_trees as (
   select

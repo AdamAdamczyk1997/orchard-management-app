@@ -40,6 +40,15 @@ export const LARGE_PLOT_FIXTURE_PLOTS = [
     treesPerRow: 24,
     expectedTrees: 126,
   },
+  {
+    id: "92000000-0000-4000-8000-000000000004",
+    code: "PERF-LONG-ROW",
+    name: "Performance Long Row 350",
+    layoutType: "rows",
+    rowCount: 1,
+    treesPerRow: 350,
+    expectedTrees: 350,
+  },
 ];
 
 export const LARGE_PLOT_FIXTURE_VARIETY_COUNT = 6;
