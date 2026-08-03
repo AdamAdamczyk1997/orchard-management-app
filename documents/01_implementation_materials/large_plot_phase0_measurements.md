@@ -20,6 +20,8 @@ Current fixture as of 2026-08-03:
 - `PERF-1500`: rows plot, 1,500 trees
 - `PERF-MIX`: mixed plot, 126 trees with inferred gaps
 - `PERF-LONG-ROW`: rows plot, one 350-tree row for focused row fallback
+- harvest report rows: 183 records for the 2026 season, including 150
+  `location_range`, 30 `tree`, 2 `plot` and 1 `orchard` record
 - plot detail routes use deterministic fixture UUIDs, not plot codes:
   - `PERF-500`: `/plots/92000000-0000-4000-8000-000000000001`
   - `PERF-1500`: `/plots/92000000-0000-4000-8000-000000000002`
@@ -276,12 +278,69 @@ Finding:
 - The Add Activity range href remains compact at 249 characters and resolves to
   one `location_range` scope on `/activities/new`.
 
+## Harvest Location Report Fixture Measurement
+
+Status: local follow-up snapshot after adding PERF harvest records to
+`supabase/seeds/010_large_plot_performance_fixture.sql`.
+
+Date: 2026-08-03.
+
+Setup:
+
+```bash
+pnpm seed:baseline-reset
+pnpm seed:large-plot-fixture
+pnpm qa:baseline-status
+pnpm dev
+```
+
+Fixture harvest shape:
+
+- 183 total harvest records for `PERF`,
+- 150 `location_range` records on `PERF-1500` across 30 rows x 5 ranges,
+- 30 `tree` records whose plot is resolved through the RPC tree join,
+- 2 `plot` records and 1 `orchard` record for unresolved-location coverage.
+
+Measurement method:
+
+- local Next dev server on `http://localhost:3000`,
+- headless Chromium through Playwright,
+- logged in as `jan.owner@orchardlog.local`,
+- active orchard pinned to `PERF` by setting `ol_active_orchard`,
+- desktop viewport: `1440 x 1100`,
+- each route was warmed once, then loaded again for the recorded numbers.
+
+These numbers are still directional. They include local Next dev behavior and
+should not be treated as production latency.
+
+| Route | Elapsed | DOM nodes | Key count | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/reports/harvest-locations?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002` | 2,414 ms | 2,096 | 30 row groups, 180 range blocks | RPC path now measured with real PERF harvest rows. |
+| `/reports/harvest-locations?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002&variety_id=93000000-0000-4000-8000-000000000001` | 2,118 ms | 697 | 25 row groups, 30 range blocks | Variety-filtered report stays small. |
+| `/harvests?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002` | 4,519 ms | 5,007 | 150 range blocks, 42,439 body chars | The harvest list is now the larger surface for this fixture. |
+
+Findings:
+
+1. `/reports/harvest-locations` stays bounded with actual PERF harvest rows.
+   - The plot-filtered report renders grouped rows/ranges instead of raw record
+     tables.
+   - Tree-scoped harvest records with `plot_id = null` are included through the
+     RPC tree join.
+
+2. The route that now needs the next cleanup evidence is `/harvests`.
+   - It renders a full list for the 150 direct plot-scoped range records.
+   - It also does not include the 30 tree-scoped records with `plot_id = null`
+     when filtering by plot, because the list query still filters direct
+     `harvest_records.plot_id`.
+
 Recommended next slice:
 
-1. Add filtered report measurements with actual PERF harvest rows before adding
-   harvest report indexes.
-2. Consider report UI summarization for `/reports/variety-locations` if manual
+1. Add pagination or a capped read model for `/harvests` before using it with
+   very large harvest datasets.
+2. Decide whether `/harvests` plot filtering should include tree-scoped records
+   through the same tree join semantics as `harvest-locations`.
+3. Consider report UI summarization for `/reports/variety-locations` if manual
    review confirms the 4k-node / 35k-text output is too noisy.
-3. Keep `PERF-LONG-ROW` as regression coverage for future deeper long-row UI
+4. Keep `PERF-LONG-ROW` as regression coverage for future deeper long-row UI
    refinements.
-4. Do not add indexes yet; use query-plan evidence first.
+5. Do not add indexes yet; use query-plan evidence first.

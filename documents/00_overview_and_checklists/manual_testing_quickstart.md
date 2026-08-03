@@ -330,6 +330,7 @@ Fixture tworzy orchard `PERF` z:
 - `PERF-1500` - rows plot z 1 500 drzewami
 - `PERF-MIX` - mixed plot z czesciowo pustymi pozycjami
 - `PERF-LONG-ROW` - rows plot z jednym rzedem 350 drzew do fallbacku focused row
+- 183 rekordy harvest dla sezonu 2026, glownie na `PERF-1500`
 
 To nie jest canonical baseline. Sluzy do pomiarow `/trees`, `/activities/new`,
 `/harvests/new`, `/plots/[plotId]` i raportow lokalizacyjnych przed zmianami
@@ -344,6 +345,8 @@ nadal powinno renderowac klasyczny `PlotVisualOverview`.
 `/plots/92000000-0000-4000-8000-000000000004?section=A&row=1`
 (`PERF-LONG-ROW`) powinien pokazac fallback tabelaryczny i
 `plot-visual-row-range-actions`, bez markerow.
+`/reports/harvest-locations?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002`
+powinien pokazac grouped harvest location report z danymi `PERF-1500`.
 
 ```bash
 pnpm seed:baseline-reset

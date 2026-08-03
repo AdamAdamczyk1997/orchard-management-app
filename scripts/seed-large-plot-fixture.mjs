@@ -26,6 +26,9 @@ export async function seedLargePlotFixture() {
   console.log(`- source file: ${LARGE_PLOT_FIXTURE_SQL_SEED_FILE}`);
   console.log(`- fixture orchard: ${LARGE_PLOT_FIXTURE_ORCHARD.name} (${LARGE_PLOT_FIXTURE_ORCHARD.code})`);
   console.log(`- expected trees: ${LARGE_PLOT_FIXTURE_EXPECTED_COUNTS.trees}`);
+  console.log(
+    `- expected harvest records: ${LARGE_PLOT_FIXTURE_EXPECTED_COUNTS.harvestRecords}`,
+  );
   console.log("");
 
   await runSqlFileInLocalDbContainer(LARGE_PLOT_FIXTURE_SQL_SEED_FILE, {
@@ -37,6 +40,9 @@ export async function seedLargePlotFixture() {
   console.log("");
   console.log("Created deterministic local-only fixture data:");
   console.log(formatPlotSummary());
+  console.log(
+    `- harvest records: ${LARGE_PLOT_FIXTURE_EXPECTED_COUNTS.harvestRecords} records for reports`,
+  );
   console.log("");
   console.log("Suggested measurement entry points:");
   console.log("- /trees?is_active=true");

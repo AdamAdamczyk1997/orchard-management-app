@@ -508,4 +508,160 @@ select
   is_active
 from fixture_trees;
 
+with harvest_location_ranges as (
+  select
+    row_number,
+    range_index,
+    ((row_number - 1) * 5 + range_index) as harvest_number,
+    ((range_index - 1) * 10 + 1) as from_position,
+    (range_index * 10) as to_position
+  from generate_series(1, 30) as rows(row_number)
+  cross join generate_series(1, 5) as ranges(range_index)
+),
+harvest_tree_records as (
+  select
+    row_number,
+    (150 + row_number) as harvest_number,
+    ('94000000-0000-4000-8000-' || lpad((1000 + ((row_number - 1) * 50 + 5))::text, 12, '0'))::uuid as tree_id
+  from generate_series(1, 30) as rows(row_number)
+),
+harvest_plot_records as (
+  select *
+  from (
+    values
+      (181, 1, 820.000::numeric, 'kg'::text, 'PERF-1500 plot-level calibration harvest.'),
+      (182, 2, 1.250::numeric, 't'::text, 'PERF-1500 plot-level harvest entered in tonnes.')
+  ) as plot_records(harvest_number, plot_record_index, quantity_value, quantity_unit, notes)
+),
+harvest_orchard_records as (
+  select *
+  from (
+    values
+      (183, 610.000::numeric, 'kg'::text, 'PERF orchard-level harvest without precise plot location.')
+  ) as orchard_records(harvest_number, quantity_value, quantity_unit, notes)
+),
+harvest_rows as (
+  select
+    ('95000000-0000-4000-8000-' || lpad(harvest_number::text, 12, '0'))::uuid as id,
+    '90000000-0000-4000-8000-000000000001'::uuid as orchard_id,
+    '92000000-0000-4000-8000-000000000002'::uuid as plot_id,
+    ('93000000-0000-4000-8000-' || lpad(((((row_number + range_index - 2) % 6) + 1))::text, 12, '0'))::uuid as variety_id,
+    null::uuid as tree_id,
+    null::uuid as activity_id,
+    'location_range'::text as scope_level,
+    (date '2026-09-01' + ((row_number + range_index) % 28) * interval '1 day')::date as harvest_date,
+    case
+      when row_number <= 10 then 'A'
+      when row_number <= 20 then 'B'
+      else 'C'
+    end as section_name,
+    row_number,
+    from_position,
+    to_position,
+    (42.000 + (row_number * 1.250) + (range_index * 0.750))::numeric(12,3) as quantity_value,
+    'kg'::text as quantity_unit,
+    'PERF-1500 deterministic location range harvest.'::text as notes,
+    (select id from public.profiles where email = 'pawel.worker@orchardlog.local') as created_by_profile_id
+  from harvest_location_ranges
+
+  union all
+
+  select
+    ('95000000-0000-4000-8000-' || lpad(harvest_number::text, 12, '0'))::uuid as id,
+    '90000000-0000-4000-8000-000000000001'::uuid as orchard_id,
+    null::uuid as plot_id,
+    ('93000000-0000-4000-8000-' || lpad(((((row_number + 3) % 6) + 1))::text, 12, '0'))::uuid as variety_id,
+    tree_id,
+    null::uuid as activity_id,
+    'tree'::text as scope_level,
+    (date '2026-09-10' + (row_number % 18) * interval '1 day')::date as harvest_date,
+    null::text as section_name,
+    null::integer as row_number,
+    null::integer as from_position,
+    null::integer as to_position,
+    (18.000 + (row_number * 0.500))::numeric(12,3) as quantity_value,
+    'kg'::text as quantity_unit,
+    'PERF-1500 tree-scoped harvest with plot resolved through RPC tree join.'::text as notes,
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local') as created_by_profile_id
+  from harvest_tree_records
+
+  union all
+
+  select
+    ('95000000-0000-4000-8000-' || lpad(harvest_number::text, 12, '0'))::uuid as id,
+    '90000000-0000-4000-8000-000000000001'::uuid as orchard_id,
+    '92000000-0000-4000-8000-000000000002'::uuid as plot_id,
+    '93000000-0000-4000-8000-000000000001'::uuid as variety_id,
+    null::uuid as tree_id,
+    null::uuid as activity_id,
+    'plot'::text as scope_level,
+    (date '2026-09-20' + plot_record_index * interval '1 day')::date as harvest_date,
+    null::text as section_name,
+    null::integer as row_number,
+    null::integer as from_position,
+    null::integer as to_position,
+    quantity_value,
+    quantity_unit,
+    notes,
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local') as created_by_profile_id
+  from harvest_plot_records
+
+  union all
+
+  select
+    ('95000000-0000-4000-8000-' || lpad(harvest_number::text, 12, '0'))::uuid as id,
+    '90000000-0000-4000-8000-000000000001'::uuid as orchard_id,
+    null::uuid as plot_id,
+    null::uuid as variety_id,
+    null::uuid as tree_id,
+    null::uuid as activity_id,
+    'orchard'::text as scope_level,
+    date '2026-09-29' as harvest_date,
+    null::text as section_name,
+    null::integer as row_number,
+    null::integer as from_position,
+    null::integer as to_position,
+    quantity_value,
+    quantity_unit,
+    notes,
+    (select id from public.profiles where email = 'jan.owner@orchardlog.local') as created_by_profile_id
+  from harvest_orchard_records
+)
+insert into public.harvest_records (
+  id,
+  orchard_id,
+  plot_id,
+  variety_id,
+  tree_id,
+  activity_id,
+  scope_level,
+  harvest_date,
+  section_name,
+  row_number,
+  from_position,
+  to_position,
+  quantity_value,
+  quantity_unit,
+  notes,
+  created_by_profile_id
+)
+select
+  id,
+  orchard_id,
+  plot_id,
+  variety_id,
+  tree_id,
+  activity_id,
+  scope_level,
+  harvest_date,
+  section_name,
+  row_number,
+  from_position,
+  to_position,
+  quantity_value,
+  quantity_unit,
+  notes,
+  created_by_profile_id
+from harvest_rows;
+
 commit;

@@ -53,6 +53,14 @@ export const LARGE_PLOT_FIXTURE_PLOTS = [
 
 export const LARGE_PLOT_FIXTURE_VARIETY_COUNT = 6;
 
+export const LARGE_PLOT_FIXTURE_HARVEST = {
+  seasonYear: 2026,
+  locationRangeRecords: 150,
+  treeRecords: 30,
+  plotRecords: 2,
+  orchardRecords: 1,
+};
+
 export const LARGE_PLOT_FIXTURE_EXPECTED_COUNTS = {
   orchards: 1,
   memberships: 2,
@@ -62,4 +70,9 @@ export const LARGE_PLOT_FIXTURE_EXPECTED_COUNTS = {
     (total, plot) => total + plot.expectedTrees,
     0,
   ),
+  harvestRecords:
+    LARGE_PLOT_FIXTURE_HARVEST.locationRangeRecords +
+    LARGE_PLOT_FIXTURE_HARVEST.treeRecords +
+    LARGE_PLOT_FIXTURE_HARVEST.plotRecords +
+    LARGE_PLOT_FIXTURE_HARVEST.orchardRecords,
 };

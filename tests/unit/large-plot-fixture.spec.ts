@@ -55,6 +55,7 @@ describe("large plot performance fixture metadata", () => {
       plots: 4,
       varieties: 6,
       trees: 2476,
+      harvestRecords: 183,
     });
   });
 });

@@ -5,8 +5,9 @@ async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
 the first Phase 4 focused PVO row detail slice, a long-row range action
 refinement, a local long-row measurement fixture, long-row browser measurement
 and Phase 7 report read model hardening for `harvest-locations` and
-`variety-locations` are implemented. Measurement-driven index hardening and
-deeper long-row rendering refinements remain.
+`variety-locations` are implemented. The local `PERF` fixture also includes
+harvest rows for report measurements. Measurement-driven list pagination,
+index hardening and deeper long-row rendering refinements remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -65,6 +66,9 @@ These facts are based on the current repo state, not on archive documents.
   `list_harvest_location_source_records(...)`, a read-only SQL RPC that joins
   `harvest_records` to `trees`/`plots` for plot filtering and tree-scoped
   fallback without building a large `tree_id.in(...)` filter.
+- `/reports/harvest-locations` has been measured against `PERF-1500` with 183
+  local harvest records. The grouped report stays bounded, while `/harvests`
+  remains the larger unpaginated surface for that fixture.
 - Batch preview flows already use range-based queries, which is good, but their
   UI can still become too verbose for large ranges.
 
@@ -218,7 +222,8 @@ The fixture creates a separate local-only orchard `PERF`, which is ignored by
    - one mixed plot with partial row coverage: `PERF-MIX`,
    - one rows plot with a single 350-tree row: `PERF-LONG-ROW`,
    - six varieties distributed across rows,
-   - deterministic warning/critical/unverified trees.
+   - deterministic warning/critical/unverified trees,
+   - 183 deterministic harvest records for the 2026 season.
 4. Fixture IDs are deterministic and outside canonical baseline ranges.
 5. `pnpm qa:baseline-status` ignores the fixture orchard `PERF`.
 6. Cleanup path: rerun `pnpm seed:baseline-reset`.
@@ -871,10 +876,12 @@ The Phase 0-4 first-pass work, first long-row range action refinement and Phase
 
 The latest local measurement snapshots point to these next options:
 
-1. Add PERF harvest rows and measure filtered `/reports/harvest-locations`
-   output before adding harvest report indexes.
-2. Consider `/reports/variety-locations` output summarization if manual review
+1. Add pagination or a capped read model for `/harvests` before using it with
+   very large harvest datasets.
+2. Decide whether `/harvests` plot filtering should include tree-scoped records
+   through the same tree join semantics as `harvest-locations`.
+3. Consider `/reports/variety-locations` output summarization if manual review
    confirms that the current grouped text output is too noisy.
-3. Keep `PERF-LONG-ROW` as regression coverage for deeper long-row UI
+4. Keep `PERF-LONG-ROW` as regression coverage for deeper long-row UI
    refinements.
-4. Add indexes only after query-plan evidence.
+5. Add indexes only after query-plan evidence.

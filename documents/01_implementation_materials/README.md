@@ -57,10 +57,13 @@ W planie large-plot wdrozone sa juz:
 - Phase 4 focused PVO row detail first slice.
 - Long-row range actions, lokalny `PERF-LONG-ROW` fixture i browser measurement
   tej sciezki.
+- Lokalny `PERF` harvest fixture i browser measurement
+  `/reports/harvest-locations`.
 - Focused-row E2E dla large plot overview -> row detail path.
 
-Nastepne rekomendowane prace to harvest report fixture rows, report UI
-summarization albo query-plan/index hardening, zaleznie od kolejnych pomiarow.
+Nastepne rekomendowane prace to `/harvests` pagination/read-model cleanup,
+decyzja o tree-scoped plot filtering na liscie harvest, report UI summarization
+albo query-plan/index hardening, zaleznie od kolejnych pomiarow.
 
 `Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
 

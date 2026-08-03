@@ -160,7 +160,9 @@ Active technical plan:
   - `list_harvest_location_source_records(...)` resolves plot filters through
     SQL joins to `trees`/`plots`,
   - `getHarvestLocationSummaryForOrchard()` no longer builds a large
-    `tree_id.in(...)` filter for large plots.
+    `tree_id.in(...)` filter for large plots,
+  - local `PERF` fixture includes 183 harvest records for 2026 report
+    measurements.
 - Phase 7 report hardening is also implemented for `/reports/variety-locations`:
   - `getVarietyLocationsReportForOrchard()` reads active variety trees through
     paginated `.range()` chunks,
@@ -171,6 +173,9 @@ Active technical plan:
 - `PERF-LONG-ROW` is
   `/plots/92000000-0000-4000-8000-000000000004` and exists to exercise focused
   row fallback/range actions above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT`.
+- Latest PERF harvest measurement showed `/reports/harvest-locations` stays
+  bounded with grouped output, but `/harvests?season_year=2026&plot_id=...`
+  remains a larger unpaginated list surface.
 - Current migrations enforce active logical tree location uniqueness on
   `(plot_id, row_number, position_in_row)`. `section_name` is not part of
   `uq_trees_active_logical_location`.
@@ -178,8 +183,9 @@ Active technical plan:
   implemented in `tests/e2e/plot-visual-operations.spec.ts`; the same file
   covers the `PERF-LONG-ROW` range action fallback when the local `PERF` fixture
   is present.
-- The recommended next production slice is harvest report fixture measurement,
-  report UI summarization, or query-plan/index hardening based on evidence.
+- The recommended next production slice is `/harvests` pagination/read-model
+  cleanup, deciding tree-scoped plot-filter semantics for `/harvests`, report UI
+  summarization, or query-plan/index hardening based on evidence.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority
