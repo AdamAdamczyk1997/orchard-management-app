@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPlotVisualRowFocusHref,
+  buildPlotVisualRowRangeActivityHref,
   parsePlotVisualRowFocusParams,
   toPlotVisualTreeFilters,
 } from "@/lib/domain/plot-visual-row-detail";
@@ -71,5 +72,31 @@ describe("plot visual row detail helpers", () => {
         location_verified: "verified",
       }),
     ).toBe("/plots/plot-1?row=7&section=North&lifecycle=removed&location_verified=verified");
+  });
+
+  it("builds row range activity hrefs and rejects invalid ranges", () => {
+    const href = buildPlotVisualRowRangeActivityHref({
+      plot_id: "plot-1",
+      section_name: "North",
+      row_number: 7,
+      from_position: 3,
+      to_position: 9,
+    });
+
+    expect(href).toContain("/activities/new?plot_id=plot-1");
+    expect(decodeURIComponent(href ?? "")).toContain(
+      '"scope_level":"location_range"',
+    );
+    expect(decodeURIComponent(href ?? "")).toContain('"section_name":"North"');
+    expect(decodeURIComponent(href ?? "")).toContain('"from_position":3');
+    expect(decodeURIComponent(href ?? "")).toContain('"to_position":9');
+    expect(
+      buildPlotVisualRowRangeActivityHref({
+        plot_id: "plot-1",
+        row_number: 7,
+        from_position: 9,
+        to_position: 3,
+      }),
+    ).toBeNull();
   });
 });

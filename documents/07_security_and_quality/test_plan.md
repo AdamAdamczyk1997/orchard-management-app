@@ -459,12 +459,13 @@ Large-plot PVO coverage:
 - `tests/unit/plot-tree-scale.spec.ts` sprawdza klasyfikacje `small`/`medium`/`large`
   oraz agregacje sekcji, rzedow, luk i duplikatow lokacji.
 - `tests/unit/plot-visual-row-detail.spec.ts` sprawdza parser focused row query
-  params i budowanie URL-i row focus.
+  params, budowanie URL-i row focus oraz range activity prefill.
 - `tests/integration/plot-tree-scale-profile.spec.ts` zaklada 1,005 drzew w jednej
   dzialce i potwierdza, ze `getPlotTreeScaleProfileForOrchard()` nie ucina danych
   na limicie 1,000 wierszy.
 - `tests/integration/plot-visual-row-detail.spec.ts` sprawdza orchard-scoped row
-  detail, filtrowany preview i rozdzielenie sekcji w mixed rows.
+  detail, filtrowany preview, rozdzielenie sekcji w mixed rows oraz fallback
+  powyzej limitu markerow.
 - Small baseline PVO nadal powinien przechodzic przez `PlotVisualOverview`;
   medium/large plots powinny renderowac `PlotTreeScaleOverview`, a URL z
   `section` + `row` powinien renderowac focused row detail.

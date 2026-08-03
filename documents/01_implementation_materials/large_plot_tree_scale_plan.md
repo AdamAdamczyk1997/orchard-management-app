@@ -2,9 +2,10 @@
 
 Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
 async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
-the first Phase 4 focused PVO row detail slice and Phase 7 report read model
-hardening for `harvest-locations` and `variety-locations` are implemented.
-Long-row rendering refinements and measurement-driven index hardening remain.
+the first Phase 4 focused PVO row detail slice, a long-row range action
+refinement and Phase 7 report read model hardening for `harvest-locations` and
+`variety-locations` are implemented. Measurement-driven index hardening and
+deeper long-row rendering refinements remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -485,10 +486,13 @@ Current implementation:
   - row metadata and filter GET form,
   - row-level Add Activity prefill,
   - existing `PlotVisualOverview` marker interactions for reasonably sized rows,
-  - table fallback for rows above the focused marker limit.
+  - range-first Add Activity controls plus table fallback for rows above the
+    focused marker limit.
 - Existing selection actions remain available in marker mode:
   browse tree detail panel, range select, Add Activity from selection, Bulk
   deactivate prefill and Plant New from inferred empty ranges.
+- `tests/integration/plot-visual-row-detail.spec.ts` covers long-row fallback
+  read model behavior above the marker limit.
 - `tests/e2e/plot-visual-operations.spec.ts` covers the large plot overview to
   focused row path when the local `PERF` fixture is present.
 - Current DB uniqueness treats active logical location as
@@ -513,8 +517,9 @@ Current implementation:
      `condition_status`, `location_verified`.
 5. In focused mode, render current marker-style row if row size is reasonable.
 6. For very long rows, render:
-   - compact row segments,
+   - range-first Add Activity controls,
    - a table/list fallback,
+   - compact row segments later if measurements require them,
    - or windowed markers.
 7. Preserve actions:
    - Browse tree detail,
@@ -525,17 +530,20 @@ Current implementation:
 8. For selection mode, prefer range controls for large rows:
    - start position,
    - end position,
-   - preview selected active count.
+   - pending: preview selected active count.
 
 ### Tests
 
 - Unit:
   - focused row query param parsing,
   - focused row href building,
+  - focused row range activity href building,
   - scale duplicate location semantics aligned with the DB constraint.
 - Integration:
   - row detail returns only active orchard rows,
   - row detail handles mixed sections.
+  - row detail caps marker payload and switches to fallback above the marker
+    limit.
 - E2E:
   - focus a row in large plot from `PlotTreeScaleOverview`,
   - pending: select range and prefill activity,
@@ -547,6 +555,8 @@ Current implementation:
 - Users can inspect and act on one row without loading the whole plot.
 - Current PVO behaviors remain available for focused rows.
 - Rows above the marker limit do not render an oversized marker grid.
+- Rows above the marker limit can still create activity prefill for a typed
+  location range.
 
 ## Phase 5 - Better Rendering If Measurements Require It
 

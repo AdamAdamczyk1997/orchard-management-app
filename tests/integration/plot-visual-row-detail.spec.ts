@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { getPlotVisualRowDetailForOrchard } from "@/lib/orchard-data/trees";
+import { PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT } from "@/lib/domain/plot-visual-row-detail";
 import type { PlotVisualRowDetailFilters } from "@/types/contracts";
 import {
   cleanupTestUsers,
@@ -204,5 +205,60 @@ describe("plot visual row detail", () => {
     );
     expect(crossOrchardDetail.row_tree_count).toBe(0);
     expect(crossOrchardDetail.row_trees).toEqual([]);
+  });
+
+  it("marks long rows as table fallback and caps marker payload", async () => {
+    const owner = await createTestUser("plot-row-detail-long-owner");
+    createdUserIds.push(owner.user.id);
+
+    const { client } = await signInTestUser(owner.email, owner.password);
+    const orchard = await createOrchardAsUser(client, {
+      name: createTestOrchardName("plot-row-detail-long"),
+      code: "PVO-ROW-LONG",
+    });
+    const plot = await createPlotAsUser(client, {
+      orchardId: orchard.orchard_id,
+      name: "Long Row Detail Plot",
+      code: "ROW-LONG",
+      layoutType: "rows",
+      defaultRowCount: 1,
+      defaultTreesPerRow: PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT + 5,
+    });
+    const treeRows = Array.from(
+      { length: PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT + 5 },
+      (_, index) => ({
+        orchard_id: orchard.orchard_id,
+        plot_id: plot.id,
+        species: "apple",
+        tree_code: `ROW-LONG-${String(index + 1).padStart(3, "0")}`,
+        row_number: 1,
+        position_in_row: index + 1,
+        condition_status: "good",
+        location_verified: true,
+        is_active: true,
+      }),
+    );
+    const { error } = await client.from("trees").insert(treeRows);
+
+    if (error) {
+      throw error;
+    }
+
+    const detail = await getPlotVisualRowDetailForOrchard(
+      orchard.orchard_id,
+      plot.id,
+      {
+        ...baseFilters,
+        section_name: null,
+        row_number: 1,
+      },
+      client,
+    );
+
+    expect(detail.row_tree_count).toBe(PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT + 5);
+    expect(detail.row_trees).toHaveLength(PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT);
+    expect(detail.row_trees_truncated).toBe(true);
+    expect(detail.filtered_trees_truncated).toBe(true);
+    expect(detail.can_render_marker_visual).toBe(false);
   });
 });

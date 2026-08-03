@@ -153,7 +153,7 @@ Active technical plan:
     `variety_id`, `condition_status` and `location_verified`,
   - `PlotTreeScaleOverview` row summaries link to focused row URLs,
   - focused rows reuse existing PVO marker actions below the marker limit and
-    fall back to a table preview above it.
+    fall back to range-first Add Activity controls plus a table preview above it.
 - Phase 7 first report hardening slice is implemented for
   `/reports/harvest-locations`:
   - `list_harvest_location_source_records(...)` resolves plot filters through
@@ -173,8 +173,9 @@ Active technical plan:
 - Focused-row E2E coverage for the large plot overview -> row detail path is
   implemented in `tests/e2e/plot-visual-operations.spec.ts` and runs when the
   local `PERF` fixture is present.
-- The recommended next production slice is long-row fallback refinement, unless
-  report measurements point to read model hardening first.
+- The recommended next production slice is measurement-driven index/query-plan
+  hardening or deeper long-row rendering refinement if manual PERF checks show
+  the range-first fallback is not enough.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority
@@ -336,7 +337,7 @@ Do not assume these exist:
 - future harvest entry points from the PVO map,
 - richer planning/calendar workflow beyond `upcoming_activities`,
 - report export/download artifacts,
-- long-row visual fallback refinements,
+- deeper long-row visual fallback refinements,
 - report read model hardening for very large plot filters.
 
 Notes:
@@ -349,7 +350,7 @@ Notes:
   first-load PVO, focused-row PVO, `/reports/harvest-locations` and
   `/reports/variety-locations`
   have large-plot-safe first-pass read models. Remaining known scale risks are
-  measurement-driven index hardening and long-row rendering refinements.
+  measurement-driven index hardening and deeper long-row rendering refinements.
 
 ## Verification Commands
 

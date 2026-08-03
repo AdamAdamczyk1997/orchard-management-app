@@ -3,7 +3,9 @@ import {
   DEFAULT_PLOT_VISUAL_TREE_FILTERS,
   type PlotVisualTreeFilters,
 } from "@/lib/domain/plot-visual-grid";
+import { buildActivityPrefillHref } from "@/lib/domain/activity-prefill";
 import type {
+  ActivityScopeInput,
   PlotVisualRowDetailFilters,
   PlotVisualRowLifecycleFilter,
   PlotVisualRowLocationVerifiedFilter,
@@ -21,6 +23,14 @@ export const PLOT_VISUAL_ROW_DETAIL_QUERY_PARAMS = {
   condition_status: "condition_status",
   location_verified: "location_verified",
 } as const;
+
+type PlotVisualRowRangeActivityInput = {
+  plot_id: string;
+  section_name?: string | null;
+  row_number: number;
+  from_position: number;
+  to_position: number;
+};
 
 const uuidSchema = z.string().uuid();
 const conditionStatuses = new Set<TreeConditionStatus>([
@@ -200,4 +210,37 @@ export function buildPlotVisualRowFocusHref(
   }
 
   return `/plots/${plotId}?${params.toString()}`;
+}
+
+export function buildPlotVisualRowRangeActivityHref(
+  input: PlotVisualRowRangeActivityInput,
+) {
+  const hasValidRange =
+    Number.isInteger(input.row_number) &&
+    input.row_number > 0 &&
+    Number.isInteger(input.from_position) &&
+    input.from_position > 0 &&
+    Number.isInteger(input.to_position) &&
+    input.to_position >= input.from_position;
+
+  if (!hasValidRange) {
+    return null;
+  }
+
+  const scope: ActivityScopeInput = {
+    scope_order: 1,
+    scope_level: "location_range",
+    row_number: input.row_number,
+    from_position: input.from_position,
+    to_position: input.to_position,
+  };
+
+  if (input.section_name) {
+    scope.section_name = input.section_name;
+  }
+
+  return buildActivityPrefillHref({
+    plot_id: input.plot_id,
+    scopes: [scope],
+  });
 }

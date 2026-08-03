@@ -197,7 +197,7 @@ Route: `/plots/[plotId]`
 
 Purpose: Show plot metadata, plot stats, small-plot visual grid/fallback view, large-plot scale overview, focused row detail, tree detail panel, Add Activity prefill, bulk deactivate prefill, and Plant New / batch create prefill.
 
-Main components: `PlotVisualOverview`, `PlotTreeScaleOverview`, `PlotVisualFocusedRow`, `PlotTreeDetailPanel`, `Card`, `LinkButton`.
+Main components: `PlotVisualOverview`, `PlotTreeScaleOverview`, `PlotVisualFocusedRow`, `PlotVisualRowRangeActions`, `PlotTreeDetailPanel`, `Card`, `LinkButton`.
 
 Server actions: none on page; CTAs link to `/activities/new`, `/trees/batch/deactivate`, and `/trees/batch/new`.
 
@@ -205,9 +205,9 @@ Database tables: `plots`, `trees`.
 
 Related tests: `tests/unit/plot-visual-grid.spec.ts`, `tests/unit/plot-tree-scale.spec.ts`, `tests/unit/plot-visual-row-detail.spec.ts`, `tests/unit/plot-selection.spec.ts`, `tests/unit/activity-prefill.spec.ts`, `tests/unit/phase6-tree-batch-validation.spec.ts`, `tests/integration/plot-tree-scale-profile.spec.ts`, `tests/integration/plot-visual-row-detail.spec.ts`, `tests/e2e/plot-visual-operations.spec.ts`.
 
-Status: Implemented through current PVO scale slices. Small plots keep the full marker grid; medium/large plots render `PlotTreeScaleOverview` from a paginated scale profile instead of loading every full tree summary. Query params `section` + `row` open focused row detail and reuse existing marker actions for a narrowed row.
+Status: Implemented through current PVO scale slices. Small plots keep the full marker grid; medium/large plots render `PlotTreeScaleOverview` from a paginated scale profile instead of loading every full tree summary. Query params `section` + `row` open focused row detail and reuse existing marker actions for a narrowed row. Rows above the focused marker limit expose range-first Add Activity controls and a capped table preview instead of rendering an oversized marker grid.
 
-Missing functionality: long-row rendering refinements and future harvest entry points from the visual map are still pending.
+Missing functionality: deeper long-row rendering refinements, range active-count preview and future harvest entry points from the visual map are still pending.
 
 Source file: `app/(app)/plots/[plotId]/page.tsx`.
 

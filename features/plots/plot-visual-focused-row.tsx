@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { Select } from "@/components/ui/select";
+import { PlotVisualRowRangeActions } from "@/features/plots/plot-visual-row-range-actions";
 import { PlotVisualOverview } from "@/features/plots/plot-visual-overview";
 import { buildActivityPrefillHref } from "@/lib/domain/activity-prefill";
 import { getTreeConditionLabel } from "@/lib/domain/labels";
@@ -289,6 +290,12 @@ export function PlotVisualFocusedRow({
               podglad tabelaryczny.
             </p>
           </div>
+          <PlotVisualRowRangeActions
+            plotId={plot.id}
+            rowNumber={detail.row_number}
+            rowTreeCount={detail.row_tree_count}
+            sectionName={detail.section_name}
+          />
           <RowTreePreviewTable detail={detail} />
         </div>
       )}
