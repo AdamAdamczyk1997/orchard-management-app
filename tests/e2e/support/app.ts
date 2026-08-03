@@ -52,6 +52,23 @@ export async function switchActiveOrchard(
   await expect(page.locator("header h1")).toHaveText(expectedOrchardName);
 }
 
+export async function pinActiveOrchardCookie(page: Page, orchardId: string) {
+  const currentUrl = page.url() === "about:blank" ? "http://localhost:3000" : page.url();
+  const origin = new URL(currentUrl).origin;
+
+  await page.context().addCookies([
+    {
+      name: "ol_active_orchard",
+      value: orchardId,
+      url: origin,
+      httpOnly: true,
+      secure: origin.startsWith("https://"),
+      sameSite: "Lax",
+      expires: Math.floor(Date.now() / 1000) + 60 * 60,
+    },
+  ]);
+}
+
 export async function expectFeedback(page: Page, message: string) {
   await expect(page.getByTestId("feedback-banner")).toContainText(message, {
     timeout: 30_000,

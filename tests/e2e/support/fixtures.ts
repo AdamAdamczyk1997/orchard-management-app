@@ -56,6 +56,21 @@ export const BASELINE_ORCHARDS = {
   },
 } as const;
 
+export const LARGE_PLOT_FIXTURE_ORCHARD = {
+  id: "90000000-0000-4000-8000-000000000001",
+  code: "PERF",
+  name: "Sad Performance Fixture",
+  ownerLabel: "Sad Performance Fixture (Wlasciciel)",
+} as const;
+
+export const LARGE_PLOT_FIXTURE_PLOTS = {
+  rows1500: {
+    id: "92000000-0000-4000-8000-000000000002",
+    code: "PERF-1500",
+    name: "Performance Rows 1500",
+  },
+} as const;
+
 export const BASELINE_PLOTS = {
   plot_main_north: {
     id: "20000000-0000-4000-8000-000000000001",

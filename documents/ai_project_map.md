@@ -134,7 +134,7 @@ Structure:
 
 - plots create/list/edit/archive/restore
 - plot layout settings
-- plot detail with Plot Visual Operations
+- plot detail with Plot Visual Operations and large-plot scale overview
 - varieties create/list/edit/search
 - trees create/list/edit/filter
 - batch create trees with preview/confirmation
@@ -323,6 +323,11 @@ Implementation index:
 - Current code is source of truth when active documentation and code disagree.
 - `documents/archive/` is historical and should not be used as implementation truth.
 - The current repo contains PVO implementation for `/plots/[plotId]`; treat it as part of the active product surface.
+- `/plots/[plotId]?section=A&row=12` is implemented as focused PVO row detail;
+  plot detail routes use UUIDs, not plot codes such as `PERF-1500`.
 - Accept Invitation is not implemented even though membership status enum has `invited`.
 - Report aggregations are application-level TypeScript helpers, not materialized SQL views.
 - Query prefill parameters are UI defaults only; writes still go through server actions, relation validation, RLS, and DB constraints/RPC.
+- Current migrations enforce active tree logical location uniqueness on
+  `(plot_id, row_number, position_in_row)`; `section_name` is not part of
+  `uq_trees_active_logical_location`.

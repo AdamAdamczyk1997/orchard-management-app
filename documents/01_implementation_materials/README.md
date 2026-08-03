@@ -53,9 +53,12 @@ W planie large-plot wdrozone sa juz:
 
 - Phase 1 `/trees` pagination,
 - Phase 2 async `TreePicker` dla activity/harvest create/edit forms.
+- Phase 3 PVO scale overview dla medium/large plots.
+- Phase 4 focused PVO row detail first slice.
+- Focused-row E2E dla large plot overview -> row detail path.
 
-Nastepne rekomendowane prace to PVO scale profile / overview mode albo raportowe
-read modele, zależnie od kolejnych pomiarow.
+Nastepne rekomendowane prace to long-row refinement albo raportowe read modele,
+zaleznie od kolejnych pomiarow.
 
 `Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
 

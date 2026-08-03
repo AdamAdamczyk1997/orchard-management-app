@@ -1,15 +1,30 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  buildPlotTreeScaleProfile,
+  type PlotTreeScaleSourceRow,
+} from "@/lib/domain/plot-tree-scale";
+import {
+  PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT,
+  PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT,
+  hasActivePlotVisualRowDetailFilters,
+} from "@/lib/domain/plot-visual-row-detail";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   TREE_LIST_DEFAULT_PAGE,
   TREE_LIST_DEFAULT_PAGE_SIZE,
 } from "@/lib/validation/trees";
 import type {
+  PlotTreeScaleProfile,
+  PlotVisualRowDetail,
+  PlotVisualRowDetailFilters,
   PlotStatus,
   TreeListFilters,
   TreeListPage,
   TreeSummary,
   VarietySummary,
 } from "@/types/contracts";
+
+type QueryClient = SupabaseClient;
 
 type TreeQueryRow = {
   id: string;
@@ -46,6 +61,10 @@ type TreeQueryRow = {
     | Array<{ id: string; name: string; species: VarietySummary["species"] }>
     | null;
 };
+
+type PlotTreeScaleQueryRow = PlotTreeScaleSourceRow;
+
+const PLOT_TREE_SCALE_PAGE_SIZE = 1000;
 
 const treeSelect = `
   id,
@@ -193,6 +212,10 @@ function normalizeTreeListPageSize(filters: TreeListFilters) {
   return filters.page_size ?? TREE_LIST_DEFAULT_PAGE_SIZE;
 }
 
+async function resolveSupabaseClient(supabaseClient?: QueryClient) {
+  return supabaseClient ?? createSupabaseServerClient();
+}
+
 export async function listTreesForOrchard(
   orchardId: string,
   filters: TreeListFilters = {},
@@ -310,6 +333,160 @@ export async function listTreesForPlotInOrchard(
   plotId: string,
 ) {
   return listTreesForOrchard(orchardId, { plot_id: plotId });
+}
+
+export async function getPlotTreeScaleProfileForOrchard(
+  orchardId: string,
+  plotId: string,
+  supabaseClient?: QueryClient,
+): Promise<PlotTreeScaleProfile> {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  const rows: PlotTreeScaleQueryRow[] = [];
+
+  for (let from = 0; ; from += PLOT_TREE_SCALE_PAGE_SIZE) {
+    const to = from + PLOT_TREE_SCALE_PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("trees")
+      .select(
+        "id, plot_id, section_name, row_number, position_in_row, condition_status, location_verified, is_active",
+      )
+      .eq("orchard_id", orchardId)
+      .eq("plot_id", plotId)
+      .order("section_name", { ascending: true, nullsFirst: false })
+      .order("row_number", { ascending: true, nullsFirst: false })
+      .order("position_in_row", { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const pageRows = (data ?? []) as PlotTreeScaleQueryRow[];
+    rows.push(...pageRows);
+
+    if (pageRows.length < PLOT_TREE_SCALE_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return buildPlotTreeScaleProfile(plotId, rows);
+}
+
+export async function getPlotVisualRowDetailForOrchard(
+  orchardId: string,
+  plotId: string,
+  filters: PlotVisualRowDetailFilters,
+  supabaseClient?: QueryClient,
+): Promise<PlotVisualRowDetail> {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  let rowQuery = supabase
+    .from("trees")
+    .select(treeSelect, { count: "exact" })
+    .eq("orchard_id", orchardId)
+    .eq("plot_id", plotId)
+    .eq("row_number", filters.row_number);
+
+  rowQuery = filters.section_name
+    ? rowQuery.eq("section_name", filters.section_name)
+    : rowQuery.is("section_name", null);
+
+  const { data: rowData, error: rowError, count: rowCount } = await rowQuery
+    .order("position_in_row", { ascending: true, nullsFirst: false })
+    .order("tree_code", { ascending: true, nullsFirst: false })
+    .order("display_name", { ascending: true, nullsFirst: false })
+    .order("id", { ascending: true })
+    .range(0, PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT - 1);
+
+  if (rowError) {
+    throw rowError;
+  }
+
+  const rowTrees = ((rowData ?? []) as TreeQueryRow[]).map(mapTreeRowToSummary);
+  const rowTreeCount = rowCount ?? rowTrees.length;
+  let filteredTrees = rowTrees;
+  let filteredTreeCount = rowTreeCount;
+
+  if (hasActivePlotVisualRowDetailFilters(filters)) {
+    let filteredQuery = supabase
+      .from("trees")
+      .select(treeSelect, { count: "exact" })
+      .eq("orchard_id", orchardId)
+      .eq("plot_id", plotId)
+      .eq("row_number", filters.row_number);
+
+    filteredQuery = filters.section_name
+      ? filteredQuery.eq("section_name", filters.section_name)
+      : filteredQuery.is("section_name", null);
+
+    if (filters.lifecycle === "active") {
+      filteredQuery = filteredQuery
+        .eq("is_active", true)
+        .neq("condition_status", "removed");
+    }
+
+    if (filters.lifecycle === "removed") {
+      filteredQuery = filteredQuery.or(
+        "is_active.eq.false,condition_status.eq.removed",
+      );
+    }
+
+    if (filters.variety_id === "unassigned") {
+      filteredQuery = filteredQuery.is("variety_id", null);
+    } else if (filters.variety_id !== "all") {
+      filteredQuery = filteredQuery.eq("variety_id", filters.variety_id);
+    }
+
+    if (filters.condition_status !== "all") {
+      filteredQuery = filteredQuery.eq(
+        "condition_status",
+        filters.condition_status,
+      );
+    }
+
+    if (filters.location_verified === "verified") {
+      filteredQuery = filteredQuery.eq("location_verified", true);
+    }
+
+    if (filters.location_verified === "unverified") {
+      filteredQuery = filteredQuery.eq("location_verified", false);
+    }
+
+    const {
+      data: filteredData,
+      error: filteredError,
+      count: filteredCount,
+    } = await filteredQuery
+      .order("position_in_row", { ascending: true, nullsFirst: false })
+      .order("tree_code", { ascending: true, nullsFirst: false })
+      .order("display_name", { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(0, PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT - 1);
+
+    if (filteredError) {
+      throw filteredError;
+    }
+
+    filteredTrees = ((filteredData ?? []) as TreeQueryRow[]).map(
+      mapTreeRowToSummary,
+    );
+    filteredTreeCount = filteredCount ?? filteredTrees.length;
+  }
+
+  return {
+    plot_id: plotId,
+    section_name: filters.section_name,
+    row_number: filters.row_number,
+    filters,
+    row_tree_count: rowTreeCount,
+    row_trees: rowTrees,
+    row_trees_truncated: rowTrees.length < rowTreeCount,
+    filtered_tree_count: filteredTreeCount,
+    filtered_trees: filteredTrees,
+    filtered_trees_truncated: filteredTrees.length < filteredTreeCount,
+    can_render_marker_visual:
+      rowTreeCount <= PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT,
+  };
 }
 
 export async function readTreeByIdForOrchard(orchardId: string, treeId: string) {

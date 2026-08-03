@@ -334,6 +334,13 @@ To nie jest canonical baseline. Sluzy do pomiarow `/trees`, `/activities/new`,
 `/harvests/new`, `/plots/[plotId]` i raportow lokalizacyjnych przed zmianami
 skalujacymi. `qa:baseline-status` ignoruje `PERF`, a cleanup wykonasz przez:
 
+Aktualnie `/plots/92000000-0000-4000-8000-000000000002` (`PERF-1500`) powinien
+pokazac `PlotTreeScaleOverview` z podsumowaniem sekcji i rzedow, bez pelnej mapy
+markerow. Focused row dla tej samej dzialki jest dostepny pod
+`/plots/92000000-0000-4000-8000-000000000002?section=A&row=1` i powinien
+pokazac `PlotVisualFocusedRow` z markerami tylko jednego rzedu. Male baseline PVO
+nadal powinno renderowac klasyczny `PlotVisualOverview`.
+
 ```bash
 pnpm seed:baseline-reset
 ```

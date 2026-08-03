@@ -444,6 +444,8 @@ pnpm seed:large-plot-fixture
 Ten fixture tworzy osobny orchard `PERF` z dzialkami `PERF-500`,
 `PERF-1500` i `PERF-MIX`. Nie jest czescia canonical baseline; `pnpm qa:baseline-status`
 ignoruje `PERF`, ale cleanup po pomiarach nadal wykonuj przez `pnpm seed:baseline-reset`.
+Plot detail routes uzywaja UUID, np. `PERF-1500` to
+`/plots/92000000-0000-4000-8000-000000000002`.
 
 Large-plot form selector coverage:
 
@@ -451,6 +453,23 @@ Large-plot form selector coverage:
   limitowanie `include_ids` i parser query dla `GET /api/tree-options`.
 - Activity/harvest create/edit forms powinny korzystac z async `TreePicker`,
   a nie z pelnego `listTreeOptionsForOrchard()` na initial page load.
+
+Large-plot PVO coverage:
+
+- `tests/unit/plot-tree-scale.spec.ts` sprawdza klasyfikacje `small`/`medium`/`large`
+  oraz agregacje sekcji, rzedow, luk i duplikatow lokacji.
+- `tests/unit/plot-visual-row-detail.spec.ts` sprawdza parser focused row query
+  params i budowanie URL-i row focus.
+- `tests/integration/plot-tree-scale-profile.spec.ts` zaklada 1,005 drzew w jednej
+  dzialce i potwierdza, ze `getPlotTreeScaleProfileForOrchard()` nie ucina danych
+  na limicie 1,000 wierszy.
+- `tests/integration/plot-visual-row-detail.spec.ts` sprawdza orchard-scoped row
+  detail, filtrowany preview i rozdzielenie sekcji w mixed rows.
+- Small baseline PVO nadal powinien przechodzic przez `PlotVisualOverview`;
+  medium/large plots powinny renderowac `PlotTreeScaleOverview`, a URL z
+  `section` + `row` powinien renderowac focused row detail.
+- `tests/e2e/plot-visual-operations.spec.ts` sprawdza large plot overview ->
+  focused row detail path, kiedy lokalny fixture `PERF` jest obecny.
 
 Przed uruchomieniem seedu trzeba miec przygotowane konta `auth.users` dla:
 

@@ -19,6 +19,10 @@ Fixture:
 - `PERF-500`: rows plot, 500 trees
 - `PERF-1500`: rows plot, 1,500 trees
 - `PERF-MIX`: mixed plot, 126 trees with inferred gaps
+- plot detail routes use deterministic fixture UUIDs, not plot codes:
+  - `PERF-500`: `/plots/92000000-0000-4000-8000-000000000001`
+  - `PERF-1500`: `/plots/92000000-0000-4000-8000-000000000002`
+  - `PERF-MIX`: `/plots/92000000-0000-4000-8000-000000000003`
 
 Measurement method:
 
@@ -39,9 +43,9 @@ not a final performance benchmark.
 | `/trees?is_active=true` | 13,233 ms | 22,140 | Unbounded list render; 1,014 links and 301k body text chars. |
 | `/activities/new` | 1,314 ms | 208 | Initial DOM is small; code still fetches `treeOptions` server-side. |
 | `/harvests/new` | 1,401 ms | 150 | Initial DOM is small; code still fetches `treeOptions` server-side. |
-| `/plots/PERF-500` | 1,312 ms | 1,257 | 500 plot markers and 504 buttons. |
-| `/plots/PERF-1500` | 1,542 ms | 2,315 | Only 1,000 plot markers rendered despite 1,500 fixture trees. |
-| `/plots/PERF-MIX` | 1,033 ms | 517 | 144 plot markers including inferred empty positions. |
+| `/plots/92000000-0000-4000-8000-000000000001` (`PERF-500`) | 1,312 ms | 1,257 | 500 plot markers and 504 buttons. |
+| `/plots/92000000-0000-4000-8000-000000000002` (`PERF-1500`) | 1,542 ms | 2,315 | Only 1,000 plot markers rendered despite 1,500 fixture trees. |
+| `/plots/92000000-0000-4000-8000-000000000003` (`PERF-MIX`) | 1,033 ms | 517 | 144 plot markers including inferred empty positions. |
 | `/reports/variety-locations` | 870 ms | 134 | No variety filter selected in this first pass. |
 | `/reports/harvest-locations` | 1,003 ms | 174 | No plot filter selected in this first pass. |
 
@@ -121,3 +125,32 @@ same local fixture and desktop viewport produced:
 This confirms that Phase 2 removes the initial 2,126-tree option payload from
 activity and harvest form loads. The remaining large-plot risks are PVO
 full-marker rendering and report queries that still need filtered measurements.
+
+## Phase 3 Follow-Up Measurement
+
+After adding `getPlotTreeScaleProfileForOrchard()` and medium/large
+`PlotTreeScaleOverview`, the same local fixture and desktop viewport produced:
+
+| Route | Elapsed | DOM nodes | Overview | Markers | Notes |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `/plots/92000000-0000-4000-8000-000000000002` (`PERF-1500`) | 3,554 ms | 647 | 1 | 0 | Large plot overview mode; full marker grid intentionally not rendered. |
+
+The original Phase 0 measurement for the `PERF-1500` plot was faster in local
+dev at 1,542 ms, but it rendered 2,315 DOM nodes and only 1,000 markers despite
+the fixture containing 1,500 trees. Phase 3 trades that unsafe truncated marker
+view for a complete row/section summary with no marker explosion.
+
+## Phase 4 Follow-Up Measurement
+
+After adding focused row detail, the same local fixture and desktop viewport
+produced:
+
+| Route | Elapsed | DOM nodes | Row detail | Grid | Markers | Notes |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `/plots/92000000-0000-4000-8000-000000000002?section=A&row=1` | 3,603 ms | 359 | 1 | 1 | 50 | Focused row mode for `PERF-1500`; one 50-tree row rendered with existing PVO marker interactions. |
+
+Measurement note: the active orchard cookie was set directly to `PERF`
+(`ol_active_orchard=90000000-0000-4000-8000-000000000001`) before the measured
+request. In this local run the dashboard redirect tended to restore the
+preferred baseline orchard cookie, so the measurement pinned the cookie
+immediately before route navigation.

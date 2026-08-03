@@ -53,8 +53,10 @@ import type {
 } from "@/types/contracts";
 
 type PlotVisualOverviewProps = {
+  initialFilters?: PlotVisualTreeFilters;
   layoutType: PlotLayoutType;
   plotId: string;
+  showFilters?: boolean;
   trees: TreeSummary[];
 };
 
@@ -1034,13 +1036,13 @@ function PlotVisualModeToolbar({
 }
 
 export function PlotVisualOverview({
+  initialFilters = DEFAULT_PLOT_VISUAL_TREE_FILTERS,
   layoutType,
   plotId,
+  showFilters = true,
   trees,
 }: PlotVisualOverviewProps) {
-  const [filters, setFilters] = useState<PlotVisualTreeFilters>(
-    DEFAULT_PLOT_VISUAL_TREE_FILTERS,
-  );
+  const [filters, setFilters] = useState<PlotVisualTreeFilters>(initialFilters);
   const [mode, setMode] = useState<PlotSelectionMode>("browse");
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
   const [selectedTreeIds, setSelectedTreeIds] = useState<string[]>([]);
@@ -1099,6 +1101,10 @@ export function PlotVisualOverview({
   const plantRangeHref = plantRangePrefill
     ? buildBulkTreeBatchPrefillHref(plantRangePrefill)
     : null;
+
+  useEffect(() => {
+    setFilters(initialFilters);
+  }, [initialFilters]);
 
   useEffect(() => {
     if (
@@ -1358,15 +1364,17 @@ export function PlotVisualOverview({
 
   return (
     <div className="grid gap-4">
-      <PlotVisualFilters
-        conditionOptions={conditionOptions}
-        filteredCount={filteredTrees.length}
-        filters={filters}
-        onChange={updateFilter}
-        onReset={resetFilters}
-        totalCount={trees.length}
-        varietyOptions={varietyOptions}
-      />
+      {showFilters ? (
+        <PlotVisualFilters
+          conditionOptions={conditionOptions}
+          filteredCount={filteredTrees.length}
+          filters={filters}
+          onChange={updateFilter}
+          onReset={resetFilters}
+          totalCount={trees.length}
+          varietyOptions={varietyOptions}
+        />
+      ) : null}
 
       <PlotVisualModeToolbar
         canSelectEmptyPositions={canSelectEmptyPositions}

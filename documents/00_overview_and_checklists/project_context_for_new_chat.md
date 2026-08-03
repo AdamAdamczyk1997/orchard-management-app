@@ -104,6 +104,10 @@ PVO current state:
 
 - `/plots` has operational plot cards with active tree count, removed/inactive count and dominant varieties.
 - `/plots/[plotId]` has grid/fallback visual overview for `rows`, `mixed` and `irregular` plots.
+- Medium/large `/plots/[plotId]` now uses `PlotTreeScaleOverview` instead of a
+  full marker grid on first load.
+- `/plots/[plotId]?section=A&row=12` now opens focused row detail through
+  `PlotVisualFocusedRow` and `getPlotVisualRowDetailForOrchard()`.
 - The plot detail view supports local filters, Browse mode, tree detail panel, Select mode and selection compression.
 - Add Activity from selection pre-fills `/activities/new` safely through query parsing and active-orchard option validation.
 - Structural actions from the plot map pre-fill `/trees/batch/deactivate` and `/trees/batch/new`.
@@ -136,8 +140,29 @@ Active technical plan:
   - `GET /api/tree-options` resolves active orchard server-side,
   - `TreePicker` hydrates selected values through `include_ids`,
   - activity/harvest forms no longer receive all orchard `treeOptions` on initial load.
-- The recommended next production slice is Phase 3 PVO scale profile and overview mode,
-  unless measurements point to report read model hardening first.
+- Phase 3 PVO scale profile and overview mode is implemented:
+  - `getPlotTreeScaleProfileForOrchard()` reads lightweight tree rows through
+    paginated `.range()` chunks,
+  - small plots still render full `PlotVisualOverview`,
+  - medium/large plots render section and row summaries through
+    `PlotTreeScaleOverview`.
+- Phase 4 focused PVO row detail first slice is implemented:
+  - `parsePlotVisualRowFocusParams()` parses `section`, `row`, `lifecycle`,
+    `variety_id`, `condition_status` and `location_verified`,
+  - `PlotTreeScaleOverview` row summaries link to focused row URLs,
+  - focused rows reuse existing PVO marker actions below the marker limit and
+    fall back to a table preview above it.
+- Performance fixture plot detail routes use deterministic UUIDs, not plot
+  codes. `PERF-1500` is
+  `/plots/92000000-0000-4000-8000-000000000002`.
+- Current migrations enforce active logical tree location uniqueness on
+  `(plot_id, row_number, position_in_row)`. `section_name` is not part of
+  `uq_trees_active_logical_location`.
+- Focused-row E2E coverage for the large plot overview -> row detail path is
+  implemented in `tests/e2e/plot-visual-operations.spec.ts` and runs when the
+  local `PERF` fixture is present.
+- The recommended next production slice is long-row fallback refinement, unless
+  report measurements point to read model hardening first.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority
@@ -188,7 +213,11 @@ For large plot / tree-scale performance work:
 
 - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
 - `app/(app)/plots/[plotId]/page.tsx`
+- `features/plots/plot-tree-scale-overview.tsx`
+- `features/plots/plot-visual-focused-row.tsx`
 - `features/plots/plot-visual-overview.tsx`
+- `lib/domain/plot-tree-scale.ts`
+- `lib/domain/plot-visual-row-detail.ts`
 - `lib/domain/plot-visual-grid.ts`
 - `lib/orchard-data/trees.ts`
 - `lib/orchard-data/activities.ts`
@@ -244,8 +273,12 @@ PVO-specific:
 
 - `app/(app)/plots/page.tsx`
 - `app/(app)/plots/[plotId]/page.tsx`
+- `features/plots/plot-tree-scale-overview.tsx`
+- `features/plots/plot-visual-focused-row.tsx`
 - `features/plots/plot-visual-overview.tsx`
 - `features/plots/plot-tree-detail-panel.tsx`
+- `lib/domain/plot-tree-scale.ts`
+- `lib/domain/plot-visual-row-detail.ts`
 - `lib/domain/plot-visual-grid.ts`
 - `lib/domain/plot-selection.ts`
 - `lib/domain/activity-prefill.ts`
@@ -253,6 +286,10 @@ PVO-specific:
 - `lib/validation/activity-prefill.ts`
 - `lib/validation/tree-batch-prefill.ts`
 - `tests/e2e/plot-visual-operations.spec.ts`
+- `tests/integration/plot-tree-scale-profile.spec.ts`
+- `tests/integration/plot-visual-row-detail.spec.ts`
+- `tests/unit/plot-tree-scale.spec.ts`
+- `tests/unit/plot-visual-row-detail.spec.ts`
 
 Large plot scale-specific:
 
@@ -262,7 +299,11 @@ Large plot scale-specific:
 - `lib/orchard-data/activities.ts`
 - `lib/orchard-data/harvests.ts`
 - `app/(app)/plots/[plotId]/page.tsx`
+- `features/plots/plot-tree-scale-overview.tsx`
+- `features/plots/plot-visual-focused-row.tsx`
 - `features/plots/plot-visual-overview.tsx`
+- `lib/domain/plot-tree-scale.ts`
+- `lib/domain/plot-visual-row-detail.ts`
 - `features/activities/activity-form.tsx`
 - `features/harvests/harvest-form.tsx`
 - `scripts/seed-large-plot-fixture.mjs`
@@ -282,19 +323,20 @@ Do not assume these exist:
 - restore counterpart to account export,
 - future harvest entry points from the PVO map,
 - richer planning/calendar workflow beyond `upcoming_activities`,
-- report export/download artifacts.
-- large-plot performance measurements from `large_plot_tree_scale_plan.md`,
-- PVO large-plot overview/focus mode,
+- report export/download artifacts,
+- long-row visual fallback refinements,
 - report read model hardening for very large plot filters.
 
 Notes:
 
 - `manager` and `viewer` exist in schema/types, but current product/UI behavior is centered on `owner`, `worker`, `super_admin` and outsider.
 - `orchard_memberships.status` supports `invited`, but current invite flow activates membership immediately for an existing account.
-- Current PVO works well for regular baseline data. It has not yet been changed for hundreds or thousands of trees in one plot.
-- `/trees`, `ActivityForm` and `HarvestForm` have large-plot-safe first-pass read models.
-  Remaining known scale risks are PVO full-marker rendering, report filters and legacy
-  full tree option reads in non-form surfaces.
+- Current PVO works well for regular baseline data. Medium/large first load and
+  focused row detail now avoid loading the whole plot marker grid.
+- `/trees`, `ActivityForm`, `HarvestForm`, first-load PVO and focused-row PVO
+  have large-plot-safe first-pass read models. Remaining known scale risks are
+  report filters, long-row rendering refinements and legacy full tree option
+  reads in non-form surfaces.
 
 ## Verification Commands
 

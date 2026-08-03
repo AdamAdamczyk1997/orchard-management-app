@@ -432,6 +432,88 @@ export type TreeListPage = {
   total_pages: number;
 };
 
+export type PlotVisualRowLifecycleFilter = "all" | "active" | "removed";
+export type PlotVisualRowLocationVerifiedFilter =
+  | "all"
+  | "verified"
+  | "unverified";
+
+export type PlotVisualRowDetailFilters = {
+  section_name: string | null;
+  row_number: number;
+  lifecycle: PlotVisualRowLifecycleFilter;
+  variety_id: "all" | "unassigned" | string;
+  condition_status: TreeConditionStatus | "all";
+  location_verified: PlotVisualRowLocationVerifiedFilter;
+};
+
+export type PlotVisualRowDetail = {
+  plot_id: string;
+  section_name: string | null;
+  row_number: number;
+  filters: PlotVisualRowDetailFilters;
+  row_tree_count: number;
+  row_trees: TreeSummary[];
+  row_trees_truncated: boolean;
+  filtered_tree_count: number;
+  filtered_trees: TreeSummary[];
+  filtered_trees_truncated: boolean;
+  can_render_marker_visual: boolean;
+};
+
+export type PlotTreeScaleClass = "small" | "medium" | "large";
+
+export type PlotTreeScaleRowSummary = {
+  key: string;
+  section_name: string | null;
+  row_number: number;
+  total_trees: number;
+  active_trees: number;
+  removed_or_inactive_trees: number;
+  warning_trees: number;
+  critical_trees: number;
+  unverified_trees: number;
+  occupied_positions: number;
+  from_position: number | null;
+  to_position: number | null;
+  missing_positions_in_span: number;
+  duplicate_active_locations: number;
+};
+
+export type PlotTreeScaleSectionSummary = {
+  key: string;
+  section_name: string | null;
+  row_count: number;
+  total_trees: number;
+  active_trees: number;
+  removed_or_inactive_trees: number;
+  warning_trees: number;
+  critical_trees: number;
+  unverified_trees: number;
+  from_row_number: number | null;
+  to_row_number: number | null;
+  duplicate_active_locations: number;
+};
+
+export type PlotTreeScaleProfile = {
+  plot_id: string;
+  scale_class: PlotTreeScaleClass;
+  should_render_full_visual: boolean;
+  total_trees: number;
+  active_trees: number;
+  removed_or_inactive_trees: number;
+  located_trees: number;
+  unlocated_trees: number;
+  unverified_trees: number;
+  warning_trees: number;
+  critical_trees: number;
+  row_count: number;
+  max_row_length: number;
+  duplicate_active_location_count: number;
+  sections: PlotTreeScaleSectionSummary[];
+  rows: PlotTreeScaleRowSummary[];
+};
+
 export type BulkTreeImportBatchStatus = "draft" | "done" | "failed";
 
 export type BulkTreeBatchConditionStatus = Exclude<TreeConditionStatus, "removed">;

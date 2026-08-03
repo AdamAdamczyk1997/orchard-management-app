@@ -1,10 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   loginWithPassword,
+  pinActiveOrchardCookie,
   switchActiveOrchard,
   waitForDashboard,
 } from "./support/app";
-import { SEEDED_USERS, uniqueName } from "./support/fixtures";
+import {
+  LARGE_PLOT_FIXTURE_ORCHARD,
+  LARGE_PLOT_FIXTURE_PLOTS,
+  SEEDED_USERS,
+  uniqueName,
+} from "./support/fixtures";
 
 async function openPlot(page: Page, plotName: string) {
   await page.goto("/plots");
@@ -383,4 +389,60 @@ test("owner can prefill batch create from an inferred empty plot position", asyn
     "Planowanych pozycji:",
   );
   await expect(page.getByTestId("bulk-tree-batch-preview")).toContainText("1");
+});
+
+test("owner can focus one row from the large plot scale overview", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+
+  await loginWithPassword(
+    page,
+    SEEDED_USERS.owner.email,
+    SEEDED_USERS.owner.password,
+  );
+  await waitForDashboard(page, SEEDED_USERS.owner.primaryOrchardName);
+
+  const performanceOrchardOption = page
+    .getByTestId("orchard-switcher-select")
+    .locator("option")
+    .filter({ hasText: LARGE_PLOT_FIXTURE_ORCHARD.ownerLabel });
+
+  test.skip(
+    (await performanceOrchardOption.count()) === 0,
+    "Requires pnpm seed:large-plot-fixture local PERF orchard.",
+  );
+
+  await pinActiveOrchardCookie(page, LARGE_PLOT_FIXTURE_ORCHARD.id);
+
+  await page.goto(`/plots/${LARGE_PLOT_FIXTURE_PLOTS.rows1500.id}`);
+  await expect(page.locator("header h1")).toHaveText(
+    LARGE_PLOT_FIXTURE_ORCHARD.name,
+  );
+  await expect(
+    page.getByRole("heading", { name: LARGE_PLOT_FIXTURE_PLOTS.rows1500.name }),
+  ).toBeVisible();
+  await expect(page.getByTestId("plot-tree-scale-overview")).toBeVisible();
+  await expect(page.getByTestId("plot-visual-row-detail")).toHaveCount(0);
+  await expect(page.getByTestId("plot-visual-grid")).toHaveCount(0);
+  await expect(page.locator("[data-testid^='plot-visual-marker-']")).toHaveCount(0);
+
+  const firstRow = page
+    .locator("tbody tr")
+    .filter({ hasText: "Sekcja A, rzad 1" })
+    .first();
+  await expect(firstRow).toContainText("50");
+  await firstRow.getByRole("link", { name: "Otworz" }).click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`/plots/${LARGE_PLOT_FIXTURE_PLOTS.rows1500.id}\\?row=1&section=A$`),
+  );
+  await expect(page.getByTestId("plot-visual-row-detail")).toBeVisible();
+  await expect(page.getByTestId("plot-tree-scale-overview")).toHaveCount(0);
+  await expect(page.getByTestId("plot-visual-grid")).toBeVisible();
+  await expect(page.getByText("Fokus rzedu: Sekcja A, rzad 1")).toBeVisible();
+  await expect(page.getByText("50 drzew w tym rzedzie")).toBeVisible();
+  await expect(page.locator("[data-testid^='plot-visual-marker-']")).toHaveCount(50);
+  await expect(page.getByTestId("plot-visual-grid").getByText("Rzad 1")).toBeVisible();
+  await expect(page.getByTestId("plot-visual-grid").getByText("Rzad 2")).toHaveCount(0);
 });

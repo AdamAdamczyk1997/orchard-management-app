@@ -1,8 +1,9 @@
 # Large plot tree scale plan
 
-Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination and Phase 2
-async tree picker for activity/harvest forms are implemented. PVO and report
-scale work remain.
+Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
+async tree picker for activity/harvest forms, Phase 3 PVO scale overview and
+the first Phase 4 focused PVO row detail slice are implemented. Long-row
+rendering refinements and report scale work remain.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -27,10 +28,20 @@ surfaces one by one.
 
 These facts are based on the current repo state, not on archive documents.
 
-- `/plots/[plotId]` reads all trees in the plot through
-  `listTreesForPlotInOrchard()` and passes all of them to `PlotVisualOverview`.
-- `PlotVisualOverview` renders every visible tree or inferred empty position as
-  a DOM element, with interactive buttons in Browse and Select modes.
+- `/plots/[plotId]` first reads `getPlotTreeScaleProfileForOrchard()`.
+- `/plots/[plotId]` expects the plot UUID in the route. Performance fixture
+  codes such as `PERF-1500` are labels; the deterministic fixture route uses
+  `92000000-0000-4000-8000-000000000002`.
+- Small plots still read all trees through `listTreesForPlotInOrchard()` and
+  render `PlotVisualOverview`.
+- Medium and large plots render `PlotTreeScaleOverview` instead of a full marker
+  grid, so they avoid unbounded `TreeSummary` payloads and DOM marker output.
+- `/plots/[plotId]?section=A&row=12` renders `PlotVisualFocusedRow` from
+  `getPlotVisualRowDetailForOrchard()` and reuses `PlotVisualOverview` only for
+  the narrowed row when it is under the focused marker limit.
+- Active tree logical location uniqueness is enforced by
+  `uq_trees_active_logical_location` on `(plot_id, row_number, position_in_row)`;
+  `section_name` is not part of that uniqueness key in the current migrations.
 - `/trees` uses `listTreePageForOrchard()` with explicit `.range()`, exact count
   and deterministic database ordering.
 - `ActivityForm` and `HarvestForm` use `TreePicker` and `GET /api/tree-options`
@@ -388,6 +399,23 @@ Additional fixture finding:
 
 Purpose: make `/plots/[plotId]` safe before changing rendering deeply.
 
+Status: implemented as the first PVO scale pass.
+
+Current implementation:
+
+- `getPlotTreeScaleProfileForOrchard(orchardId, plotId)` reads lightweight tree
+  columns in paginated `.range()` chunks.
+- `buildPlotTreeScaleProfile()` classifies plots as:
+  - `small`: up to 200 trees,
+  - `medium`: 201-800 trees,
+  - `large`: 801+ trees.
+- `/plots/[plotId]` renders full `PlotVisualOverview` only when
+  `should_render_full_visual` is true.
+- Medium/large plots render `PlotTreeScaleOverview` with section and row
+  summaries, count badges and CTAs to tree search/activity creation.
+- `tests/integration/plot-tree-scale-profile.spec.ts` covers a 1,005-tree plot
+  to catch PostgREST truncation.
+
 ### Implementation
 
 1. Add `getPlotTreeScaleProfileForOrchard(orchardId, plotId)`.
@@ -428,13 +456,40 @@ Purpose: make `/plots/[plotId]` safe before changing rendering deeply.
 
 ### Acceptance Criteria
 
-- Large plot detail page avoids unbounded tree fetch and marker render.
-- Existing baseline PVO tests continue to pass.
+- Large plot detail page avoids unbounded full tree fetch and marker render.
+- Existing baseline PVO tests continue to pass for small plots.
 - Sadownik sees useful row-level information instead of a frozen map.
 
 ## Phase 4 - Focused PVO Row Detail
 
 Purpose: allow precise work after overview.
+
+Status: first focused row slice implemented.
+
+Current implementation:
+
+- `parsePlotVisualRowFocusParams()` normalizes shareable query params:
+  `section`, `row`, `lifecycle`, `variety_id`, `condition_status`,
+  `location_verified`.
+- `getPlotVisualRowDetailForOrchard(orchardId, plotId, filters)` is
+  orchard-scoped, plot-scoped and row-scoped.
+- The row read model fetches the full focused row only up to
+  `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT` and separately returns a filtered table
+  preview for active filters.
+- `PlotTreeScaleOverview` row summaries link to focused row URLs.
+- `PlotVisualFocusedRow` renders:
+  - row metadata and filter GET form,
+  - row-level Add Activity prefill,
+  - existing `PlotVisualOverview` marker interactions for reasonably sized rows,
+  - table fallback for rows above the focused marker limit.
+- Existing selection actions remain available in marker mode:
+  browse tree detail panel, range select, Add Activity from selection, Bulk
+  deactivate prefill and Plant New from inferred empty ranges.
+- `tests/e2e/plot-visual-operations.spec.ts` covers the large plot overview to
+  focused row path when the local `PERF` fixture is present.
+- Current DB uniqueness treats active logical location as
+  `(plot_id, row_number, position_in_row)`, without `section_name`. Tests and
+  scale helper duplicate counts now follow the migration source of truth.
 
 ### Implementation
 
@@ -450,7 +505,8 @@ Purpose: allow precise work after overview.
 3. Return only one row or a small filtered subset.
 4. Page URL should be shareable:
    - `/plots/[plotId]?section=A&row=12`
-   - exact query names can be finalized during implementation.
+   - implemented query names: `section`, `row`, `lifecycle`, `variety_id`,
+     `condition_status`, `location_verified`.
 5. In focused mode, render current marker-style row if row size is reasonable.
 6. For very long rows, render:
    - compact row segments,
@@ -471,21 +527,22 @@ Purpose: allow precise work after overview.
 
 - Unit:
   - focused row query param parsing,
-  - selection compression with large rows,
-  - empty inferred range logic on focused row.
+  - focused row href building,
+  - scale duplicate location semantics aligned with the DB constraint.
 - Integration:
   - row detail returns only active orchard rows,
   - row detail handles mixed sections.
 - E2E:
-  - focus a row in large plot,
-  - select range and prefill activity,
-  - select empty range and prefill batch create,
-  - removed tree stays disabled for Add Activity.
+  - focus a row in large plot from `PlotTreeScaleOverview`,
+  - pending: select range and prefill activity,
+  - pending: select empty range and prefill batch create,
+  - pending: removed tree stays disabled for Add Activity.
 
 ### Acceptance Criteria
 
 - Users can inspect and act on one row without loading the whole plot.
 - Current PVO behaviors remain available for focused rows.
+- Rows above the marker limit do not render an oversized marker grid.
 
 ## Phase 5 - Better Rendering If Measurements Require It
 
@@ -782,5 +839,6 @@ Reason:
 - it gives real evidence for thresholds,
 - it prevents premature PVO redesign.
 
-After Phase 0, implement Phase 1 and Phase 2 before deep PVO changes. Those two
-will improve daily work immediately and reduce payload pressure across the app.
+Phase 0-4 first-pass work is now in place. The next production slice should be
+long-row fallback refinement, unless report measurements show that Phase 7 needs
+to move ahead of it.
