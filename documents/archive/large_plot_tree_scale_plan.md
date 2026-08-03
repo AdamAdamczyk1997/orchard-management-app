@@ -1,13 +1,20 @@
 # Large plot tree scale plan
 
-Status: active plan. Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2
-async tree picker for activity/harvest forms, Phase 3 PVO scale overview,
-the first Phase 4 focused PVO row detail slice, a long-row range action
-refinement, a local long-row measurement fixture, long-row browser measurement
-and Phase 7 report read model hardening for `harvest-locations` and
-`variety-locations` are implemented. The local `PERF` fixture also includes
-harvest rows for report measurements. Measurement-driven list pagination,
-index hardening and deeper long-row rendering refinements remain.
+Status: archived closeout snapshot. This plan is no longer an active source of
+truth; use the current code, migrations, tests, active maps and
+`documents/01_implementation_materials/large_plot_phase0_measurements.md` for
+current behavior.
+
+Archived on: 2026-08-03.
+
+Closeout summary: Phase 0 fixture, Phase 1 `/trees` pagination, Phase 2 async
+tree picker for activity/harvest forms, Phase 3 PVO scale overview, the first
+Phase 4 focused PVO row detail slice, long-row range action refinement, local
+long-row fixture/browser measurement, Phase 7 report read model hardening for
+`harvest-locations` and `variety-locations`, and `/harvests` pagination/read
+model cleanup are implemented. Remaining ideas such as report summarization,
+query-plan/index evidence and deeper long-row rendering refinements are
+follow-up backlog, not an active execution plan.
 Scope: make OrchardLog / Sadownik+ work well when one plot contains hundreds
 or low thousands of trees.
 
@@ -66,9 +73,14 @@ These facts are based on the current repo state, not on archive documents.
   `list_harvest_location_source_records(...)`, a read-only SQL RPC that joins
   `harvest_records` to `trees`/`plots` for plot filtering and tree-scoped
   fallback without building a large `tree_id.in(...)` filter.
-- `/reports/harvest-locations` has been measured against `PERF-1500` with 183
-  local harvest records. The grouped report stays bounded, while `/harvests`
-  remains the larger unpaginated surface for that fixture.
+- `/harvests` uses `listHarvestRecordPageForOrchard()` and read-only SQL RPCs
+  `count_harvest_record_list_rows(...)` and
+  `list_harvest_record_list_rows(...)` so the list page is paginated and plot
+  filters include tree-scoped harvest records through `trees.plot_id`.
+- `/reports/harvest-locations` and `/harvests` have been measured against
+  `PERF-1500` with 183 local harvest records. The grouped report stays
+  bounded, and the harvest list now pages raw records instead of rendering the
+  full filtered result set at once.
 - Batch preview flows already use range-based queries, which is good, but their
   UI can still become too verbose for large ranges.
 
@@ -869,19 +881,18 @@ These do not block Phase 0, but should be answered before PVO redesign.
    - compact visual map?
 5. Do we need offline-first behavior later?
 
-## Recommended Next Slice
+## Closeout Follow-Ups
 
-The Phase 0-4 first-pass work, first long-row range action refinement and Phase
-7 report read-model hardening are now in place.
+The Phase 0-4 first-pass work, first long-row range action refinement, Phase 7
+report read-model hardening and `/harvests` pagination/read-model cleanup are
+now in place. This section is historical context only.
 
-The latest local measurement snapshots point to these next options:
+Remaining optional follow-ups are:
 
-1. Add pagination or a capped read model for `/harvests` before using it with
-   very large harvest datasets.
-2. Decide whether `/harvests` plot filtering should include tree-scoped records
-   through the same tree join semantics as `harvest-locations`.
-3. Consider `/reports/variety-locations` output summarization if manual review
+1. Consider `/reports/variety-locations` output summarization if manual review
    confirms that the current grouped text output is too noisy.
-4. Keep `PERF-LONG-ROW` as regression coverage for deeper long-row UI
+2. Keep `PERF-LONG-ROW` as regression coverage for deeper long-row UI
    refinements.
-5. Add indexes only after query-plan evidence.
+3. Add indexes only after query-plan evidence.
+4. Revisit batch preview output for very large ranges when product usage
+   shows it is the next limiting surface.

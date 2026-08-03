@@ -192,6 +192,8 @@ describe("phase 4 harvest validation", () => {
       date_to: undefined,
       plot_id: undefined,
       variety_id: undefined,
+      page: 1,
+      page_size: 50,
     });
   });
 
@@ -203,6 +205,8 @@ describe("phase 4 harvest validation", () => {
         date_to: "2025-09-30",
         plot_id: VALID_PLOT_ID,
         variety_id: "invalid-value",
+        page: "3",
+        page_size: "100",
       },
       2026,
     );
@@ -213,6 +217,8 @@ describe("phase 4 harvest validation", () => {
       date_to: "2025-09-30",
       plot_id: VALID_PLOT_ID,
       variety_id: undefined,
+      page: 3,
+      page_size: 100,
     });
   });
 

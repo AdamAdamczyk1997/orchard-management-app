@@ -445,7 +445,8 @@ Ten fixture tworzy osobny orchard `PERF` z dzialkami `PERF-500`,
 `PERF-1500`, `PERF-MIX` i `PERF-LONG-ROW`. Nie jest czescia canonical baseline;
 `pnpm qa:baseline-status` ignoruje `PERF`, ale cleanup po pomiarach nadal
 wykonuj przez `pnpm seed:baseline-reset`. Fixture zawiera tez 183 rekordy
-harvest dla sezonu 2026, uzywane do pomiarow `/reports/harvest-locations`.
+harvest dla sezonu 2026, uzywane do pomiarow `/reports/harvest-locations` i
+paginated `/harvests`.
 Plot detail routes uzywaja UUID, np. `PERF-1500` to
 `/plots/92000000-0000-4000-8000-000000000002`.
 `PERF-LONG-ROW` to `/plots/92000000-0000-4000-8000-000000000004`.
@@ -456,6 +457,16 @@ Large-plot form selector coverage:
   limitowanie `include_ids` i parser query dla `GET /api/tree-options`.
 - Activity/harvest create/edit forms powinny korzystac z async `TreePicker`,
   a nie z pelnego `listTreeOptionsForOrchard()` na initial page load.
+
+Large-plot harvest list coverage:
+
+- `tests/unit/harvest-pagination.spec.ts` sprawdza URL-e pagination i format
+  zakresu wynikow.
+- `tests/integration/harvest-management-flow.spec.ts` sprawdza
+  `listHarvestRecordPageForOrchard()`, total count, page slices oraz plot
+  filtering obejmujacy tree-scoped harvest records przez `trees.plot_id`.
+- Lokalny `PERF-1500` pomiar `/harvests?season_year=2026&plot_id=...` powinien
+  pokazywac 182 rekordy w paginated output, z domyslnym `page_size=50`.
 
 Large-plot PVO coverage:
 

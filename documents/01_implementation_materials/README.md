@@ -39,9 +39,13 @@ Historyczny `implementation_master_plan.md` zostal przeniesiony do `documents/ar
 ## Aktywne plany implementacyjne
 
 Na ten moment nie ma aktywnego execution master planu dla calego produktu.
-Aktywny plan techniczny dla skalowania duzych dzialek znajduje sie w:
+Plan techniczny dla skalowania duzych dzialek zostal domkniety i przeniesiony
+do archiwum:
 
-- [large_plot_tree_scale_plan.md](./large_plot_tree_scale_plan.md)
+- [large_plot_tree_scale_plan.md](../archive/large_plot_tree_scale_plan.md)
+
+Aktywny lokalny zapis pomiarow dla tego obszaru zostaje tutaj:
+
 - [large_plot_phase0_measurements.md](./large_plot_phase0_measurements.md)
 
 Phase 0 ma lokalny fixture do pomiarow:
@@ -59,11 +63,12 @@ W planie large-plot wdrozone sa juz:
   tej sciezki.
 - Lokalny `PERF` harvest fixture i browser measurement
   `/reports/harvest-locations`.
+- `/harvests` pagination/read-model cleanup z tree-scoped plot filtering.
 - Focused-row E2E dla large plot overview -> row detail path.
 
-Nastepne rekomendowane prace to `/harvests` pagination/read-model cleanup,
-decyzja o tree-scoped plot filtering na liscie harvest, report UI summarization
-albo query-plan/index hardening, zaleznie od kolejnych pomiarow.
+Nastepne rekomendowane prace nie sa juz jednym aktywnym planem. Traktuj je jako
+backlog do potwierdzenia z userem: report UI summarization, query-plan/index
+hardening, deeper long-row rendering refinements albo nowy product slice.
 
 `Plot Visual Operations MVP` zostal domkniety automatycznie i jego dokumenty planistyczne sa teraz materialem historycznym.
 
@@ -83,6 +88,7 @@ Zamkniete notatki z wczesnych vertical slice zostaly przeniesione do archiwum:
 - [plot_visual_operations_implementation_master_plan.md](../archive/plot_visual_operations_implementation_master_plan.md)
 - [phase_1_auth_onboarding_vertical_slice.md](../archive/phase_1_auth_onboarding_vertical_slice.md)
 - [phase_2_core_orchard_structure_vertical_slice.md](../archive/phase_2_core_orchard_structure_vertical_slice.md)
+- [large_plot_tree_scale_plan.md](../archive/large_plot_tree_scale_plan.md)
 
 ## Ważna zasada
 

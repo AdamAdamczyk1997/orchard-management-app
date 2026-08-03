@@ -484,11 +484,15 @@ Main components: `HarvestList`, `FeedbackBanner`, filter form.
 
 Server actions: `deleteHarvestRecord` from list/detail components.
 
-Database tables: `harvest_records`, `plots`, `varieties`.
+Database tables: `harvest_records`, `trees`, `plots`, `varieties`; read-only
+RPCs `count_harvest_record_list_rows(...)` and
+`list_harvest_record_list_rows(...)`.
 
-Related tests: `tests/unit/phase4-harvest-validation.spec.ts`, `tests/integration/harvest-management-flow.spec.ts`, `tests/security/harvest-management-rls.spec.ts`, `tests/e2e/owner-operational-flow.spec.ts`.
+Related tests: `tests/unit/phase4-harvest-validation.spec.ts`, `tests/unit/harvest-pagination.spec.ts`, `tests/integration/harvest-management-flow.spec.ts`, `tests/security/harvest-management-rls.spec.ts`, `tests/e2e/owner-operational-flow.spec.ts`.
 
-Status: Implemented.
+Status: Implemented with paginated list read model, exact total count, 25/50/100
+page-size options and plot filtering that includes tree-scoped records through
+`trees.plot_id`.
 
 Missing functionality: no export/report download UI for harvest reports.
 

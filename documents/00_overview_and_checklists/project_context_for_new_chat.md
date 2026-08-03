@@ -27,8 +27,8 @@ This file is not a full specification. It is an orientation layer over:
 - Do not design from zero. Base work on the current repo, active docs, migrations, seeds, tests and already implemented vertical slices.
 - Before proposing a new slice, identify whether the user is asking for QA, cleanup, docs, a bug fix, or a real product feature.
 - Keep `orchard_id` trusted only server-side. Client query params and forms may prefill UI state, but writes must still go through validation, server actions, RLS and DB constraints.
-- If the user asks about large plots, hundreds of trees, performance, pagination, async tree selectors or PVO scaling, start from `documents/01_implementation_materials/large_plot_tree_scale_plan.md`.
-- The large-plot scale plan is active; Phase 0 fixture exists, but measurements and production scale changes are not completed behavior.
+- If the user asks about large plots, hundreds of trees, performance, pagination, async tree selectors or PVO scaling, start from the current code, `documents/01_implementation_materials/large_plot_phase0_measurements.md`, `documents/ui_implementation_map.md` and `documents/ai_project_map.md`.
+- The first large-plot scale plan is closed and archived at `documents/archive/large_plot_tree_scale_plan.md`; use it only as historical context.
 
 ## Startup Prompt
 
@@ -47,7 +47,7 @@ Najpierw przeczytaj:
 - documents/ai_project_map.md
 - documents/ui_implementation_map.md
 - documents/01_implementation_materials/README.md
-- documents/01_implementation_materials/large_plot_tree_scale_plan.md
+- documents/01_implementation_materials/large_plot_phase0_measurements.md
 
 Potem zorientuj sie w repo:
 - sprawdz `git status --short`, bo worktree moze byc brudny,
@@ -67,8 +67,8 @@ Szczegolnie zwracaj uwage na:
 - aktualny pakiet migracji Supabase,
 - workflow baseline: `pnpm seed:baseline-reset` -> `pnpm qa:baseline-status`,
 - gate jakosci: `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`,
-- aktywny plan skalowania duzych dzialek: `documents/01_implementation_materials/large_plot_tree_scale_plan.md`,
-- zarchiwizowane dokumenty PVO, baseline enrichment i stare handoffy nie sa aktywnym planem.
+- zamkniety plan skalowania duzych dzialek: `documents/archive/large_plot_tree_scale_plan.md`,
+- zarchiwizowane dokumenty PVO, large-plot scale, baseline enrichment i stare handoffy nie sa aktywnym planem.
 ```
 
 ## Current Product State
@@ -125,11 +125,13 @@ Baseline seed enrichment current state:
   - `tests/unit/baseline-qa.spec.ts`
 - If baseline counts change, update seed SQL, shared baseline metadata, baseline QA tests and minimal docs together.
 
-Active technical plan:
+Current scale/performance state:
 
 - There is no active execution master plan for the whole product.
-- There is an active technical plan for large plots and tree-scale performance:
-  - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- The first large-plot and tree-scale performance plan is closed:
+  - historical plan: `documents/archive/large_plot_tree_scale_plan.md`
+  - active measurement snapshots:
+    `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 - Phase 0 fixture entrypoint is implemented:
   - `pnpm seed:large-plot-fixture`
   - `supabase/seeds/010_large_plot_performance_fixture.sql`
@@ -167,15 +169,22 @@ Active technical plan:
   - `getVarietyLocationsReportForOrchard()` reads active variety trees through
     paginated `.range()` chunks,
   - integration coverage includes more than 1,000 active trees for one variety.
+- `/harvests` pagination/read-model cleanup is implemented:
+  - `listHarvestRecordPageForOrchard()` reads one page plus total count,
+  - `count_harvest_record_list_rows(...)` and
+    `list_harvest_record_list_rows(...)` resolve plot filtering through direct
+    `harvest_records.plot_id` and tree-scoped fallback through `trees.plot_id`,
+  - default UI page size is 50, with 25/50/100 options.
 - Performance fixture plot detail routes use deterministic UUIDs, not plot
   codes. `PERF-1500` is
   `/plots/92000000-0000-4000-8000-000000000002`.
 - `PERF-LONG-ROW` is
   `/plots/92000000-0000-4000-8000-000000000004` and exists to exercise focused
   row fallback/range actions above `PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT`.
-- Latest PERF harvest measurement showed `/reports/harvest-locations` stays
-  bounded with grouped output, but `/harvests?season_year=2026&plot_id=...`
-  remains a larger unpaginated list surface.
+- Latest PERF harvest measurements show `/reports/harvest-locations` stays
+  bounded with grouped output, and `/harvests?season_year=2026&plot_id=...`
+  now pages 182 plot-related harvest records instead of rendering the full
+  filtered set at once.
 - Current migrations enforce active logical tree location uniqueness on
   `(plot_id, row_number, position_in_row)`. `section_name` is not part of
   `uq_trees_active_logical_location`.
@@ -183,9 +192,10 @@ Active technical plan:
   implemented in `tests/e2e/plot-visual-operations.spec.ts`; the same file
   covers the `PERF-LONG-ROW` range action fallback when the local `PERF` fixture
   is present.
-- The recommended next production slice is `/harvests` pagination/read-model
-  cleanup, deciding tree-scoped plot-filter semantics for `/harvests`, report UI
-  summarization, or query-plan/index hardening based on evidence.
+- No single large-plot execution plan is active now. Remaining known follow-ups
+  are report UI summarization, query-plan/index hardening based on evidence,
+  deeper long-row rendering refinements, or a new product slice chosen with the
+  user.
 - Do not put large-scale performance data into the canonical baseline seed.
 
 ## Active Documentation Priority
@@ -198,7 +208,7 @@ Start here:
 4. `documents/ai_project_map.md`
 5. `documents/ui_implementation_map.md`
 6. `documents/01_implementation_materials/README.md`
-7. `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+7. `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 8. `documents/00_overview_and_checklists/app_high_level_overview.md`
 
 For domain and backend work:
@@ -234,14 +244,17 @@ For testing and QA:
 
 For large plot / tree-scale performance work:
 
-- `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 - `app/(app)/plots/[plotId]/page.tsx`
+- `app/(app)/harvests/page.tsx`
 - `features/plots/plot-tree-scale-overview.tsx`
 - `features/plots/plot-visual-focused-row.tsx`
 - `features/plots/plot-visual-overview.tsx`
+- `features/harvests/harvest-list.tsx`
 - `lib/domain/plot-tree-scale.ts`
 - `lib/domain/plot-visual-row-detail.ts`
 - `lib/domain/plot-visual-grid.ts`
+- `lib/domain/harvest-pagination.ts`
 - `lib/orchard-data/trees.ts`
 - `lib/orchard-data/activities.ts`
 - `lib/orchard-data/harvests.ts`
@@ -316,11 +329,13 @@ PVO-specific:
 
 Large plot scale-specific:
 
-- `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
+- `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 - `app/(app)/trees/page.tsx`
+- `app/(app)/harvests/page.tsx`
 - `lib/orchard-data/trees.ts`
 - `lib/orchard-data/activities.ts`
 - `lib/orchard-data/harvests.ts`
+- `lib/domain/harvest-pagination.ts`
 - `app/(app)/plots/[plotId]/page.tsx`
 - `features/plots/plot-tree-scale-overview.tsx`
 - `features/plots/plot-visual-focused-row.tsx`
@@ -348,7 +363,7 @@ Do not assume these exist:
 - richer planning/calendar workflow beyond `upcoming_activities`,
 - report export/download artifacts,
 - deeper long-row visual fallback refinements,
-- report read model hardening for very large plot filters.
+- report UI summarization for very verbose grouped outputs.
 
 Notes:
 
@@ -357,10 +372,11 @@ Notes:
 - Current PVO works well for regular baseline data. Medium/large first load and
   focused row detail now avoid loading the whole plot marker grid.
 - `/trees`, `/activities` tree filtering, `ActivityForm`, `HarvestForm`,
-  first-load PVO, focused-row PVO, `/reports/harvest-locations` and
-  `/reports/variety-locations`
+  first-load PVO, focused-row PVO, `/reports/harvest-locations`,
+  `/reports/variety-locations` and `/harvests`
   have large-plot-safe first-pass read models. Remaining known scale risks are
-  measurement-driven index hardening and deeper long-row rendering refinements.
+  report output summarization, measurement-driven index hardening and deeper
+  long-row rendering refinements.
 
 ## Verification Commands
 
@@ -387,7 +403,7 @@ Remember:
 - Integration and E2E tests may mutate local baseline data.
 - Before manual seeded QA, run `pnpm seed:baseline-reset` and confirm `pnpm qa:baseline-status`.
 - For docs-only edits, `git diff --check` can be enough unless links, generated docs or code snippets need deeper validation.
-- For large-plot performance work, start with the plan's Phase 0 fixture and measurements before changing UI strategy.
+- For large-plot performance work, start with the PERF fixture and current measurement snapshots before changing UI strategy.
 - After running `pnpm seed:large-plot-fixture`, reset baseline again before manual seeded QA.
 
 ## How To Choose The Next Step
@@ -397,7 +413,7 @@ Remember:
 3. If the request touches implementation, inspect the existing slice before proposing changes.
 4. If the request touches docs, update active entry points and avoid making archive docs normative.
 5. If the request touches DB/RLS/security, verify migrations, policies, seed data and tests before changing code.
-6. If the request touches large plots/performance/PVO scaling, follow `large_plot_tree_scale_plan.md` and prefer Phase 0 measurement work before production UI rewrites.
+6. If the request touches large plots/performance/PVO scaling, use the current measurement snapshots, code and tests; the old `large_plot_tree_scale_plan.md` is archived context only.
 7. Keep changes scoped and update tests/docs when behavior changes.
 8. Before final response, report what changed and which checks ran.
 
@@ -411,6 +427,7 @@ Useful archived snapshots:
 - `documents/archive/plot_visual_operations_roadmap.md`
 - `documents/archive/plot_visual_operations_implementation_master_plan.md`
 - `documents/archive/baseline_seed_enrichment_plan.md`
+- `documents/archive/large_plot_tree_scale_plan.md`
 - `documents/archive/implementation_master_plan.md`
 
 These files explain how the project got here, but they are not active implementation plans.

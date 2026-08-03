@@ -333,8 +333,8 @@ Fixture tworzy orchard `PERF` z:
 - 183 rekordy harvest dla sezonu 2026, glownie na `PERF-1500`
 
 To nie jest canonical baseline. Sluzy do pomiarow `/trees`, `/activities/new`,
-`/harvests/new`, `/plots/[plotId]` i raportow lokalizacyjnych przed zmianami
-skalujacymi. `qa:baseline-status` ignoruje `PERF`, a cleanup wykonasz przez:
+`/harvests/new`, `/harvests`, `/plots/[plotId]` i raportow lokalizacyjnych.
+`qa:baseline-status` ignoruje `PERF`, a cleanup wykonasz przez:
 
 Aktualnie `/plots/92000000-0000-4000-8000-000000000002` (`PERF-1500`) powinien
 pokazac `PlotTreeScaleOverview` z podsumowaniem sekcji i rzedow, bez pelnej mapy
@@ -347,6 +347,9 @@ nadal powinno renderowac klasyczny `PlotVisualOverview`.
 `plot-visual-row-range-actions`, bez markerow.
 `/reports/harvest-locations?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002`
 powinien pokazac grouped harvest location report z danymi `PERF-1500`.
+`/harvests?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002&page_size=50`
+powinien pokazac paginated list z zakresem `1-50 z 182` i linkiem do kolejnej
+strony.
 
 ```bash
 pnpm seed:baseline-reset

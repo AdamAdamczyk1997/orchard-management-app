@@ -3,6 +3,7 @@ import {
   getHarvestLocationSummaryForOrchard,
   getHarvestSeasonSummaryForOrchard,
   getHarvestTimelineForOrchard,
+  listHarvestRecordPageForOrchard,
   listHarvestRecordsForOrchard,
   readHarvestRecordByIdForOrchard,
 } from "@/lib/orchard-data/harvests";
@@ -235,6 +236,129 @@ describe("harvest management flow", () => {
 
     expect(recordsAfterDelete).toHaveLength(1);
     expect(recordsAfterDelete[0]?.id).toBe(firstRecord.id);
+  });
+
+  it("paginates harvest list records and includes tree-scoped rows in plot filters", async () => {
+    const owner = await createTestUser("harvest-page-owner");
+
+    createdUserIds.push(owner.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("harvest-page"),
+      code: "HRV-PAGE",
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Page",
+      code: "PAGE-01",
+    });
+    const otherPlot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Kwatera Other",
+      code: "PAGE-02",
+    });
+    const tree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: plot.id,
+      species: "apple",
+      treeCode: "PAGE-TREE-1",
+      displayName: "Tree scoped harvest target",
+      rowNumber: 1,
+      positionInRow: 7,
+    });
+    const otherTree = await createTreeAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      plotId: otherPlot.id,
+      species: "pear",
+      treeCode: "PAGE-OTHER-1",
+      rowNumber: 1,
+      positionInRow: 1,
+    });
+
+    const directOld = await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plot.id,
+      scope_level: "plot",
+      harvest_date: "2026-09-21",
+      quantity_value: 80,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    const directNew = await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: plot.id,
+      scope_level: "location_range",
+      harvest_date: "2026-09-22",
+      row_number: 1,
+      from_position: 1,
+      to_position: 3,
+      quantity_value: 120,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    const treeScoped = await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: null,
+      tree_id: tree.id,
+      scope_level: "tree",
+      harvest_date: "2026-09-23",
+      quantity_value: 24,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+    await createHarvestRecordAsUser(ownerClient, {
+      orchard_id: orchard.orchard_id,
+      plot_id: null,
+      tree_id: otherTree.id,
+      scope_level: "tree",
+      harvest_date: "2026-09-24",
+      quantity_value: 99,
+      quantity_unit: "kg",
+      created_by_profile_id: owner.user.id,
+    });
+
+    const firstPage = await listHarvestRecordPageForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        plot_id: plot.id,
+        page: 1,
+        page_size: 2,
+      },
+      ownerClient,
+    );
+    const secondPage = await listHarvestRecordPageForOrchard(
+      orchard.orchard_id,
+      {
+        season_year: 2026,
+        plot_id: plot.id,
+        page: 2,
+        page_size: 2,
+      },
+      ownerClient,
+    );
+
+    expect(firstPage).toMatchObject({
+      total_count: 3,
+      total_pages: 2,
+      page: 1,
+      page_size: 2,
+    });
+    expect(firstPage.rows.map((record) => record.id)).toEqual([
+      treeScoped.id,
+      directNew.id,
+    ]);
+    expect(firstPage.rows[0]).toMatchObject({
+      id: treeScoped.id,
+      plot_id: plot.id,
+      plot_name: "Kwatera Page",
+      tree_display_name: "Tree scoped harvest target",
+      row_number: 1,
+      from_position: 7,
+      to_position: 7,
+    });
+    expect(secondPage.rows.map((record) => record.id)).toEqual([directOld.id]);
   });
 
   it("rejects unsupported units and tree/plot mismatches", async () => {

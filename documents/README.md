@@ -105,6 +105,8 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - Zamkniete dokumenty planistyczne `Plot Visual Operations MVP` sa trzymane w:
   - `archive/plot_visual_operations_roadmap.md`
   - `archive/plot_visual_operations_implementation_master_plan.md`
+- Zamkniety plan skalowania duzych dzialek jest trzymany w:
+  - `archive/large_plot_tree_scale_plan.md`
 - Dokumenty w archiwum nie sa podstawa do migracji, API, RLS, ekranow ani testow.
 - Jesli pojawi sie konflikt miedzy aktywnym dokumentem a plikiem archiwalnym, pierwszenstwo ma dokument aktywny.
 
@@ -160,7 +162,6 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 ### `01_implementation_materials`
 
 - `README.md`
-- `large_plot_tree_scale_plan.md`
 - `large_plot_phase0_measurements.md`
 - `user_flows.md`
 
@@ -241,5 +242,6 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `plot_visual_operations_roadmap.md`
 - `plot_visual_operations_implementation_master_plan.md`
 - `baseline_seed_enrichment_plan.md`
+- `large_plot_tree_scale_plan.md`
 - `phase_1_auth_onboarding_vertical_slice.md`
 - `phase_2_core_orchard_structure_vertical_slice.md`

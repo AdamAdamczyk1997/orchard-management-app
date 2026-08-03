@@ -151,6 +151,7 @@ Activities:
 Harvest:
 
 - create/list/detail/edit/delete
+- paginated `/harvests` list with exact count and tree-scoped plot filtering
 - normalized `quantity_kg`
 - season summary report
 - harvest locations report
@@ -230,6 +231,7 @@ Start here for domain logic:
 - `lib/domain/tree-batch-prefill.ts`
 - `lib/domain/activities.ts`
 - `lib/domain/harvests.ts`
+- `lib/domain/harvest-pagination.ts`
 - `lib/domain/variety-locations.ts`
 
 Start here for validation:
@@ -260,6 +262,8 @@ Start here for SQL:
 - `supabase/migrations/023_create_tree_batch_tools.sql`
 - `supabase/migrations/024_extend_plots_with_layout_settings.sql`
 - `supabase/migrations/025_add_plot_layout_guards_for_activity_and_harvest_locations.sql`
+- `supabase/migrations/035_create_harvest_location_report_rpc.sql`
+- `supabase/migrations/036_create_harvest_list_page_rpcs.sql`
 
 ## Important Directories
 

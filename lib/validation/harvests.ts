@@ -14,6 +14,27 @@ import {
 const harvestScopeLevelSchema = z.enum(HARVEST_SCOPE_LEVELS);
 const harvestQuantityUnitSchema = z.enum(HARVEST_QUANTITY_UNITS);
 
+export const HARVEST_LIST_DEFAULT_PAGE = 1;
+export const HARVEST_LIST_DEFAULT_PAGE_SIZE = 50;
+export const HARVEST_LIST_PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
+const harvestListPageSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .catch(HARVEST_LIST_DEFAULT_PAGE);
+const harvestListPageSizeSchema = z.coerce
+  .number()
+  .int()
+  .refine(
+    (value) =>
+      HARVEST_LIST_PAGE_SIZE_OPTIONS.includes(
+        value as (typeof HARVEST_LIST_PAGE_SIZE_OPTIONS)[number],
+      ),
+    "Wybierz poprawny rozmiar strony.",
+  )
+  .catch(HARVEST_LIST_DEFAULT_PAGE_SIZE);
+
 const requiredPositiveNumberInput = z.preprocess((value) => {
   if (typeof value === "string") {
     const trimmed = value.trim();
@@ -58,6 +79,8 @@ type HarvestListSearchInput = {
   date_to?: unknown;
   plot_id?: unknown;
   variety_id?: unknown;
+  page?: unknown;
+  page_size?: unknown;
 };
 
 type HarvestSeasonSummarySearchInput = {
@@ -260,6 +283,8 @@ export const harvestListFiltersSchema = z
     date_to: optionalDateInput(),
     plot_id: optionalUuidString("Wybierz poprawna dzialke."),
     variety_id: optionalUuidString("Wybierz poprawna odmiane."),
+    page: harvestListPageSchema,
+    page_size: harvestListPageSizeSchema,
   })
   .superRefine((value, context) => {
     if (value.date_from && value.date_to && value.date_to < value.date_from) {
@@ -287,6 +312,9 @@ export function resolveHarvestListFilters(
       optionalUuidString("Wybierz poprawna odmiane."),
       input.variety_id,
     ),
+    page: parseOptionalField(harvestListPageSchema, input.page),
+    page_size:
+      parseOptionalField(harvestListPageSizeSchema, input.page_size),
   };
 }
 

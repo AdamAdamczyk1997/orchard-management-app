@@ -200,11 +200,13 @@ sequenceDiagram
 Report flows are application-level TypeScript aggregation helpers. No
 materialized SQL views were found. `/reports/harvest-locations` now uses a
 read-only source-row RPC before TypeScript aggregation so large plot filters do
-not require a giant `tree_id.in(...)` query string.
+not require a giant `tree_id.in(...)` query string. `/harvests` also uses
+read-only pagination RPCs for exact counts and tree-scoped plot filtering.
 
 | Report/view | Route | Data source | Aggregation location | Filters | Tests |
 | ----------- | ----- | ----------- | -------------------- | ------- | ----- |
 | Harvest season summary | `/reports/season-summary` | `harvest_records`, `plots`, `varieties` | `lib/domain/harvests.ts`, `lib/orchard-data/harvests.ts` | `season_year`, `plot_id`, `variety_id` | `phase4-harvest-validation.spec.ts`, `harvest-management-flow.spec.ts`, E2E owner flow |
+| Harvest list | `/harvests` | `count_harvest_record_list_rows(...)`, `list_harvest_record_list_rows(...)` | page read model in `lib/orchard-data/harvests.ts` | `season_year`, `date_from`, `date_to`, `plot_id`, `variety_id`, `page`, `page_size` | `phase4-harvest-validation.spec.ts`, `harvest-pagination.spec.ts`, `harvest-management-flow.spec.ts` |
 | Harvest timeline | `/reports/season-summary` | `harvest_records` | `aggregateHarvestTimeline()` | same season summary filters | same harvest tests |
 | Harvest locations | `/reports/harvest-locations` | `list_harvest_location_source_records(...)`, `harvest_records`, `trees`, `plots` | `aggregateHarvestLocationSummary()` | `season_year`, `plot_id`, `variety_id` | `harvest-management-flow.spec.ts` |
 | Variety locations | `/reports/variety-locations` | paginated active `trees`, `plots`, `varieties` | `lib/domain/variety-locations.ts` | `variety_id` | `variety-locations-report.spec.ts`, `tree-batch-and-export.spec.ts` |

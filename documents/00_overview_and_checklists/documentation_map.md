@@ -22,6 +22,8 @@ Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 6. [ui_implementation_map.md](../ui_implementation_map.md)
 
 Historyczny execution index `implementation_master_plan.md` oraz zamkniete dokumenty `Plot Visual Operations MVP` zostaly przeniesione do `documents/archive/`.
+Zamkniety plan skalowania duzych dzialek takze jest juz w archiwum; aktywne
+fakty o tym obszarze sa w mapach i pomiarach.
 
 ### Dla szybkich map architektury
 
@@ -82,9 +84,18 @@ Historyczny execution index `implementation_master_plan.md` oraz zamkniete dokum
 ### Planowane aktywne slice'y
 
 - Brak jednego aktywnego execution master planu dla calego produktu.
-- Aktywny plan techniczny dla skalowania dzialek z setkami drzew:
-  - `documents/01_implementation_materials/large_plot_tree_scale_plan.md`
-- Phase 0 ma lokalny fixture `pnpm seed:large-plot-fixture` i snapshoty w `documents/01_implementation_materials/large_plot_phase0_measurements.md`; `/trees` pagination, async tree picker dla activity/harvest forms, PVO scale overview, focused PVO row detail first slice, long-row range actions, `PERF-LONG-ROW` fixture/browser measurement, harvest report fixture/browser measurement oraz focused-row E2E sa wdrozone, a kolejne kroki to `/harvests` pagination/read-model cleanup, report summarization i query-plan evidence.
+- Plan skalowania duzych dzialek zostal domkniety i zarchiwizowany:
+  - `documents/archive/large_plot_tree_scale_plan.md`
+- Aktywne snapshoty pomiarow zostaja w
+  `documents/01_implementation_materials/large_plot_phase0_measurements.md`.
+- Wdrozone sa: `/trees` pagination, async tree picker dla activity/harvest
+  forms, async tree filter na `/activities`, PVO scale overview, focused PVO
+  row detail, long-row range actions, `PERF-LONG-ROW` fixture/browser
+  measurement, harvest report read model, variety locations paginated read,
+  `/harvests` pagination/read-model cleanup oraz focused-row E2E.
+- Kolejne prace to nie jeden aktywny plan, tylko backlog do ustalenia z userem:
+  report UI summarization, query-plan/index evidence, deeper long-row rendering
+  refinements albo inny nowy slice.
 - Kolejny slice trzeba ustalic z userem na podstawie aktualnego repo, aktywnych map projektu i biezacego celu.
 
 ### Swiadomie odlozone

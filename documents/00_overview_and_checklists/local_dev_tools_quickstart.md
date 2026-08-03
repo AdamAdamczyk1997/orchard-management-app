@@ -200,7 +200,7 @@ Znaczenie:
 - `pnpm seed:large-plot-fixture`
   - uruchamiaj po `pnpm seed:baseline-reset`
   - dodaje lokalny, deterministyczny orchard `PERF` z dzialkami `PERF-500`, `PERF-1500`, `PERF-MIX` i `PERF-LONG-ROW`
-  - dodaje tez 183 rekordy harvest dla sezonu 2026 do pomiarow raportow
+  - dodaje tez 183 rekordy harvest dla sezonu 2026 do pomiarow raportow i `/harvests`
   - plot detail routes uzywaja UUID: `PERF-1500` to `/plots/92000000-0000-4000-8000-000000000002`
   - `PERF-LONG-ROW` to `/plots/92000000-0000-4000-8000-000000000004`
   - sluzy tylko do pomiarow wydajnosci large plots; nie jest czescia canonical baseline

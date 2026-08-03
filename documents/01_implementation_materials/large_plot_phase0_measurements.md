@@ -344,3 +344,77 @@ Recommended next slice:
 4. Keep `PERF-LONG-ROW` as regression coverage for future deeper long-row UI
    refinements.
 5. Do not add indexes yet; use query-plan evidence first.
+
+## Harvest List Pagination Follow-Up Measurement
+
+Status: local closeout snapshot after `/harvests` pagination/read-model cleanup.
+
+Date: 2026-08-03.
+
+Setup:
+
+```bash
+pnpm seed:baseline-reset
+pnpm seed:large-plot-fixture
+pnpm qa:baseline-status
+pnpm dev
+```
+
+Implementation under test:
+
+- `/harvests` uses `listHarvestRecordPageForOrchard()`.
+- The list page calls read-only SQL RPCs
+  `count_harvest_record_list_rows(...)` and
+  `list_harvest_record_list_rows(...)`.
+- Plot filtering now includes:
+  - direct `harvest_records.plot_id`,
+  - tree-scoped fallback through `trees.plot_id`.
+- Default UI page size is 50, with 25/50/100 page-size options.
+
+Measurement method:
+
+- local Next dev server on `http://localhost:3000`,
+- headless Chromium through Playwright,
+- logged in as `jan.owner@orchardlog.local`,
+- active orchard pinned to `PERF` by setting `ol_active_orchard`,
+- desktop viewport: `1440 x 1100`,
+- each route was warmed once, then loaded again for the recorded numbers.
+
+These numbers are still directional. They include local Next dev behavior and
+should not be treated as production latency.
+
+| Route | Elapsed | DOM nodes | Key count | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/harvests?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002&page_size=50` | 2,772 ms | 1,823 | `Pokazano 1-50 z 182 wpisow` | First page, 50 rows, 4 total pages. |
+| `/harvests?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002&page=2&page_size=50` | 2,346 ms | 1,833 | `Pokazano 51-100 z 182 wpisow` | Second page stays bounded. |
+| `/harvests?season_year=2026&plot_id=92000000-0000-4000-8000-000000000002&page_size=100` | 3,893 ms | 3,443 | `Pokazano 1-100 z 182 wpisow` | Larger page size remains usable but costs almost twice the DOM of page size 50. |
+
+Findings:
+
+1. `/harvests` no longer renders all plot-filtered PERF harvest rows in one
+   page.
+   - The previous local snapshot for the same plot filter was 4,519 ms,
+     5,007 DOM nodes and 42,439 body text chars.
+   - Page size 50 now renders about 1.8k DOM nodes and about 15k body text
+     chars in this local run.
+
+2. `/harvests` plot-filter semantics now match `/reports/harvest-locations`.
+   - The filtered total is 182 records:
+     - 150 `location_range` records on `PERF-1500`,
+     - 30 `tree` records resolved through `trees.plot_id`,
+     - 2 direct `plot` records.
+   - The one orchard-scoped fixture record is intentionally excluded by the
+     plot filter.
+
+3. `page_size=50` is the safer default for the current list UI.
+   - `page_size=100` is available for denser review.
+   - It roughly doubles DOM/text output compared with page size 50 in this
+     measurement.
+
+Closeout follow-ups:
+
+- Consider `/reports/variety-locations` UI summarization if manual review
+  confirms the grouped text output is too noisy.
+- Add indexes only after query-plan evidence for measured slow queries.
+- Keep `PERF-LONG-ROW` as regression coverage for future deeper long-row UI
+  refinements.

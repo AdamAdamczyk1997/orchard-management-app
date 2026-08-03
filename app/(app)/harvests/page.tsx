@@ -13,7 +13,7 @@ import {
 } from "@/lib/domain/feedback-notices";
 import { hasActiveHarvestListFilters } from "@/lib/domain/list-filters";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
-import { listHarvestRecordsForOrchard } from "@/lib/orchard-data/harvests";
+import { listHarvestRecordPageForOrchard } from "@/lib/orchard-data/harvests";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
 import { listVarietyOptionsForOrchard } from "@/lib/orchard-data/varieties";
 import {
@@ -22,7 +22,11 @@ import {
   type NextSearchParams,
   toUrlSearchParams,
 } from "@/lib/utils/search-params";
-import { resolveHarvestListFilters } from "@/lib/validation/harvests";
+import {
+  HARVEST_LIST_DEFAULT_PAGE_SIZE,
+  HARVEST_LIST_PAGE_SIZE_OPTIONS,
+  resolveHarvestListFilters,
+} from "@/lib/validation/harvests";
 
 type HarvestsPageProps = {
   searchParams: Promise<NextSearchParams>;
@@ -72,11 +76,13 @@ async function HarvestsPageContent({
       date_to: getSingleSearchParam(resolvedSearchParams.date_to),
       plot_id: getSingleSearchParam(resolvedSearchParams.plot_id),
       variety_id: getSingleSearchParam(resolvedSearchParams.variety_id),
+      page: getSingleSearchParam(resolvedSearchParams.page),
+      page_size: getSingleSearchParam(resolvedSearchParams.page_size),
     },
     currentYear,
   );
 
-  const harvestRecords = await listHarvestRecordsForOrchard(orchardId, filters);
+  const harvestPage = await listHarvestRecordPageForOrchard(orchardId, filters);
   const hasActiveFilters = hasActiveHarvestListFilters(filters, currentYear);
   const dismissHref = buildPathWithSearchParams(
     "/harvests",
@@ -105,6 +111,15 @@ async function HarvestsPageContent({
   if (filters.variety_id) {
     currentSearchParams.set("variety_id", filters.variety_id);
   }
+
+  if (filters.page && filters.page > 1) {
+    currentSearchParams.set("page", String(filters.page));
+  }
+
+  currentSearchParams.set(
+    "page_size",
+    String(filters.page_size ?? HARVEST_LIST_DEFAULT_PAGE_SIZE),
+  );
 
   const redirectTo = buildPathWithSearchParams(
     "/harvests",
@@ -230,6 +245,23 @@ async function HarvestsPageContent({
               ))}
             </Select>
           </label>
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-[#304335]">
+              Na stronie
+            </span>
+            <Select
+              defaultValue={String(
+                filters.page_size ?? HARVEST_LIST_DEFAULT_PAGE_SIZE,
+              )}
+              name="page_size"
+            >
+              {HARVEST_LIST_PAGE_SIZE_OPTIONS.map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize} wpisow
+                </option>
+              ))}
+            </Select>
+          </label>
           <div className="flex flex-wrap items-end gap-3 lg:col-span-3">
             <Button className="w-full sm:w-auto" type="submit" variant="secondary">
               Zastosuj
@@ -244,9 +276,16 @@ async function HarvestsPageContent({
       <HarvestList
         clearHref="/harvests"
         createHref="/harvests/new"
-        harvestRecords={harvestRecords}
+        harvestRecords={harvestPage.rows}
         hasActiveFilters={hasActiveFilters}
+        page={harvestPage.page}
+        pageSize={harvestPage.page_size}
         redirectTo={redirectTo}
+        totalCount={harvestPage.total_count}
+        totalPages={harvestPage.total_pages}
+        urlSearchParams={toUrlSearchParams(resolvedSearchParams, {
+          excludeKeys: [FEEDBACK_NOTICE_QUERY_PARAM],
+        })}
       />
     </div>
   );

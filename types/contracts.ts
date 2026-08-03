@@ -850,6 +850,16 @@ export type HarvestRecordListFilters = {
   date_to?: string;
   plot_id?: string;
   variety_id?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type HarvestRecordListPage = {
+  rows: HarvestRecordSummary[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 };
 
 export type HarvestActivityOption = {

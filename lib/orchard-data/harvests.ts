@@ -11,6 +11,7 @@ import type {
   HarvestActivityOption,
   HarvestLocationSummaryFilters,
   HarvestRecordDetails,
+  HarvestRecordListPage,
   HarvestRecordListFilters,
   HarvestRecordSummary,
   HarvestSeasonSummaryFilters,
@@ -18,6 +19,10 @@ import type {
   PlotStatus,
   VarietySummary,
 } from "@/types/contracts";
+import {
+  HARVEST_LIST_DEFAULT_PAGE,
+  HARVEST_LIST_DEFAULT_PAGE_SIZE,
+} from "@/lib/validation/harvests";
 
 type HarvestQueryRow = {
   id: string;
@@ -131,6 +136,36 @@ type HarvestLocationSourceRpcRow = {
   row_number: number | null;
   from_position: number | null;
   to_position: number | null;
+};
+
+type HarvestRecordListRpcRow = {
+  id: string;
+  orchard_id: string;
+  plot_id: string | null;
+  variety_id: string | null;
+  tree_id: string | null;
+  activity_id: string | null;
+  scope_level: HarvestRecordSummary["scope_level"];
+  harvest_date: string;
+  season_year: number;
+  section_name: string | null;
+  row_number: number | null;
+  from_position: number | null;
+  to_position: number | null;
+  quantity_value: number | string;
+  quantity_unit: HarvestRecordSummary["quantity_unit"];
+  quantity_kg: number | string;
+  notes: string | null;
+  created_by_profile_id: string;
+  created_at: string;
+  updated_at: string;
+  plot_name: string | null;
+  plot_status: PlotStatus | null;
+  variety_name: string | null;
+  variety_species: VarietySummary["species"] | null;
+  tree_display_name: string | null;
+  activity_title: string | null;
+  created_by_display: string | null;
 };
 
 const harvestSelect = `
@@ -255,6 +290,14 @@ function sortHarvestSummaries(left: HarvestRecordSummary, right: HarvestRecordSu
   }
 
   return (right.created_at ?? "").localeCompare(left.created_at ?? "");
+}
+
+function normalizeHarvestListPage(filters: HarvestRecordListFilters) {
+  return filters.page ?? HARVEST_LIST_DEFAULT_PAGE;
+}
+
+function normalizeHarvestListPageSize(filters: HarvestRecordListFilters) {
+  return filters.page_size ?? HARVEST_LIST_DEFAULT_PAGE_SIZE;
 }
 
 const listHarvestSummarySourceRecordsCached = cache(
@@ -418,6 +461,94 @@ function mapHarvestLocationSourceRpcRow(
     row_number: row.row_number,
     from_position: row.from_position,
     to_position: row.to_position,
+  };
+}
+
+function mapHarvestRecordListRpcRow(
+  row: HarvestRecordListRpcRow,
+): HarvestRecordSummary {
+  return {
+    id: row.id,
+    orchard_id: row.orchard_id,
+    plot_id: row.plot_id,
+    variety_id: row.variety_id,
+    tree_id: row.tree_id,
+    activity_id: row.activity_id,
+    scope_level: row.scope_level,
+    harvest_date: row.harvest_date,
+    season_year: row.season_year,
+    section_name: row.section_name,
+    row_number: row.row_number,
+    from_position: row.from_position,
+    to_position: row.to_position,
+    quantity_value: Number(row.quantity_value),
+    quantity_unit: row.quantity_unit,
+    quantity_kg: Number(row.quantity_kg),
+    notes: row.notes,
+    plot_name: row.plot_name,
+    variety_name: row.variety_name,
+    variety_species: row.variety_species,
+    tree_display_name: row.tree_display_name,
+    activity_title: row.activity_title,
+    created_by_display: row.created_by_display,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function buildHarvestRecordListRpcArgs(
+  orchardId: string,
+  filters: HarvestRecordListFilters,
+) {
+  return {
+    p_orchard_id: orchardId,
+    p_season_year: filters.season_year,
+    p_date_from: filters.date_from ?? null,
+    p_date_to: filters.date_to ?? null,
+    p_plot_id: filters.plot_id ?? null,
+    p_variety_id: filters.variety_id ?? null,
+  };
+}
+
+export async function listHarvestRecordPageForOrchard(
+  orchardId: string,
+  filters: HarvestRecordListFilters,
+  supabaseClient?: SupabaseClient,
+): Promise<HarvestRecordListPage> {
+  const supabase = await resolveSupabaseClient(supabaseClient);
+  const page = normalizeHarvestListPage(filters);
+  const pageSize = normalizeHarvestListPageSize(filters);
+  const from = (page - 1) * pageSize;
+  const baseArgs = buildHarvestRecordListRpcArgs(orchardId, filters);
+
+  const [countResult, rowsResult] = await Promise.all([
+    supabase.rpc("count_harvest_record_list_rows", baseArgs),
+    supabase.rpc("list_harvest_record_list_rows", {
+      ...baseArgs,
+      p_limit: pageSize,
+      p_offset: from,
+    }),
+  ]);
+
+  if (countResult.error) {
+    throw countResult.error;
+  }
+
+  if (rowsResult.error) {
+    throw rowsResult.error;
+  }
+
+  const totalCount = Number(countResult.data ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return {
+    rows: ((rowsResult.data ?? []) as HarvestRecordListRpcRow[]).map(
+      mapHarvestRecordListRpcRow,
+    ),
+    total_count: totalCount,
+    page,
+    page_size: pageSize,
+    total_pages: totalPages,
   };
 }
 
