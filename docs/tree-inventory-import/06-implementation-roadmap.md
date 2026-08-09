@@ -41,7 +41,7 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 6:
+Status after Phase 7:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
@@ -49,6 +49,7 @@ Status after Phase 6:
 - Phase 4 is complete.
 - Phase 5 is complete.
 - Phase 6 is complete.
+- Phase 7 is complete.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -87,25 +88,34 @@ Status after Phase 6:
 - Phase 6 added database guards for cross-orchard plot, variety, staged
   position and created-tree audit references. No import-only columns were added
   to `trees`.
-- Phase 6 did not add upload UI, DB/domain preview services, variety resolution
-  services, confirm transactions or parser-to-staging app code.
+- The Phase 7 server-side preview service exists in
+  `lib/tree-inventory-import/preview.server.ts`. It accepts canonical JSON plus
+  file metadata, revalidates active orchard, plot, current orchard-local
+  varieties and current tree locations, groups variety candidates, writes Phase
+  6 staging rows and produces diagnostics/summary/status output.
+- Phase 7 detects active tree conflicts, keeps inactive historical tree context
+  non-blocking, rejects unsupported layouts/cross-orchard context/stale variety
+  IDs/species mismatches, treats current DB varieties as authority and stages
+  exact current matches for `new_candidate` rows as suggested owner mappings
+  instead of auto-creating varieties.
+- Phase 7 did not add upload UI, parser-to-staging app composition, owner
+  variety resolution actions, confirm transactions or final `trees` writes.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
   `docs/tree-inventory-import/09-phase-3-completion-report.md` and
   `docs/tree-inventory-import/10-phase-4-completion-report.md` and
   `docs/tree-inventory-import/11-phase-5-completion-report.md` and
-  `docs/tree-inventory-import/12-phase-6-completion-report.md`.
+  `docs/tree-inventory-import/12-phase-6-completion-report.md` and
+  `docs/tree-inventory-import/13-phase-7-completion-report.md`.
 
 Next planned step:
 
-- Phase 7 - Domain/database preview validation services.
-- Phase 7 may accept canonical payloads server-side, validate them against the
-  current orchard/plot/variety/tree state, persist preview results in the Phase
-  6 staging tables, group unresolved variety candidates and produce preview
-  summary data.
-- Do not start upload UI, variety resolution UI/services or confirm before
-  their dedicated phases.
+- Phase 8 - Upload and preview UI.
+- Phase 8 may compose template download, XLSX upload, parser, normalizer and
+  the Phase 7 preview service into a user-facing preview workflow.
+- Do not start owner variety resolution UI/services or confirm before their
+  dedicated phases.
 
 ## 2. Verified repository assumptions
 

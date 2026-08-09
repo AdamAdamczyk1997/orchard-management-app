@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  stageTreeInventoryPreviewForOrchard,
+} from "@/lib/tree-inventory-import/preview.server";
+import {
+  TREE_INVENTORY_CANONICAL_CONTRACT_VERSION,
+  TREE_INVENTORY_XLSX_CONTRACT_VERSION,
+  type TreeInventoryCanonicalImport,
+} from "@/lib/tree-inventory-import/contracts";
+import {
   addWorkerMembership,
   cleanupTestUsers,
   createOrchardAsUser,
@@ -16,6 +24,124 @@ const CONTRACT_VERSION = "tree_inventory_v1";
 
 function hashWith(fill: string) {
   return fill.repeat(64);
+}
+
+function buildPreviewCanonical(input: {
+  orchardId: string;
+  plotId: string;
+  varietyName?: string | null;
+}): TreeInventoryCanonicalImport {
+  const varietyName = input.varietyName ?? null;
+
+  return {
+    xlsx_contract_version: TREE_INVENTORY_XLSX_CONTRACT_VERSION,
+    canonical_contract_version: TREE_INVENTORY_CANONICAL_CONTRACT_VERSION,
+    import_id: null,
+    file_hash: hashWith("9"),
+    generated_context: {
+      orchard_id: input.orchardId,
+      plot_id: input.plotId,
+      plot_layout_type: "rows",
+    },
+    requested_behavior: {
+      import_mode: "incremental_create",
+      conflict_strategy: "reject",
+      allow_new_varieties: false,
+    },
+    segments: [
+      {
+        source: {
+          sheet: "NASADZENIA",
+          row_number: 2,
+          row_key: "S1",
+          raw_values: {
+            segment_key: "S1",
+            row_number: 1,
+            from_position: 1,
+            to_position: 1,
+            variety_confidence: varietyName ? "new_candidate" : "unknown",
+            variety_name: varietyName,
+          },
+        },
+        segment_key: "S1",
+        location: {
+          plot_id: input.plotId,
+          section_name: null,
+          row_number: 1,
+          from_position: 1,
+          to_position: 1,
+        },
+        tree_defaults: {
+          species: "apple",
+          variety_id: null,
+          variety_name: varietyName,
+          variety: {
+            status: varietyName ? "new_candidate" : "unknown",
+            raw_name: varietyName,
+            raw_variety_id: null,
+            resolved_variety_id: null,
+          },
+          condition_status: "good",
+          planted_at: null,
+          rootstock: null,
+          pollinator_info: null,
+          location_verified: false,
+          notes: null,
+        },
+        import_only: {
+          variety_confidence: varietyName ? "new_candidate" : "unknown",
+          planted_year: null,
+          planted_year_from: null,
+          planted_year_to: null,
+          raw_values: {},
+        },
+      },
+    ],
+    exceptions: [],
+    expanded_positions: [
+      {
+        source: {
+          sheet: "NASADZENIA",
+          row_number: 2,
+          row_key: "S1",
+        },
+        segment_key: "S1",
+        exception_key: null,
+        location: {
+          plot_id: input.plotId,
+          section_name: null,
+          row_number: 1,
+          position_in_row: 1,
+        },
+        planned_action: "create_tree",
+        tree: {
+          species: "apple",
+          variety_id: null,
+          variety_name: varietyName,
+          variety: {
+            status: varietyName ? "new_candidate" : "unknown",
+            raw_name: varietyName,
+            raw_variety_id: null,
+            resolved_variety_id: null,
+          },
+          condition_status: "good",
+          planted_at: null,
+          rootstock: null,
+          pollinator_info: null,
+          location_verified: false,
+          notes: null,
+        },
+        import_only: {
+          variety_confidence: varietyName ? "new_candidate" : "unknown",
+          planted_year: null,
+          planted_year_from: null,
+          planted_year_to: null,
+          raw_values: {},
+        },
+      },
+    ],
+    diagnostics: [],
+  };
 }
 
 async function createInventoryImport(
@@ -323,5 +449,101 @@ describe("tree inventory import RLS", () => {
 
     expect(crossOrchardImport.data).toBeNull();
     expect(crossOrchardImport.error?.code).toBe("23514");
+  });
+
+  it("allows owner and worker preview service calls while blocking outsider and revoked member previews", async () => {
+    const owner = await createTestUser("tree-inventory-preview-rls-owner");
+    const worker = await createTestUser("tree-inventory-preview-rls-worker");
+    const outsider = await createTestUser("tree-inventory-preview-rls-outsider");
+    createdUserIds.push(owner.user.id, worker.user.id, outsider.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const workerClient = (await signInTestUser(worker.email, worker.password)).client;
+    const outsiderClient = (await signInTestUser(outsider.email, outsider.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("tree-inventory-preview-rls"),
+      code: "TIP-RLS",
+    });
+    const membership = await addWorkerMembership({
+      orchardId: orchard.orchard_id,
+      workerProfileId: worker.user.id,
+      invitedByProfileId: owner.user.id,
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Preview RLS Plot",
+    });
+
+    const ownerPreview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+        }),
+        file: { file_hash: hashWith("5") },
+      },
+      ownerClient,
+    );
+    const workerPreview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+          varietyName: "Worker Candidate",
+        }),
+        file: { file_hash: hashWith("6") },
+      },
+      workerClient,
+    );
+    const outsiderPreview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+        }),
+        file: { file_hash: hashWith("7") },
+      },
+      outsiderClient,
+    );
+
+    await updateMembershipAsAdmin({
+      membershipId: membership.id,
+      patch: { status: "revoked" },
+    });
+
+    const revokedPreview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+        }),
+        file: { file_hash: hashWith("8") },
+      },
+      workerClient,
+    );
+    const ownerVisibleImports = await ownerClient
+      .from("inventory_imports")
+      .select("id, status")
+      .eq("orchard_id", orchard.orchard_id);
+
+    expect(ownerPreview.import_id).toBeTruthy();
+    expect(ownerPreview.status).toBe("ready_for_owner_confirm");
+    expect(workerPreview.import_id).toBeTruthy();
+    expect(workerPreview.status).toBe("awaiting_variety_resolution");
+    expect(outsiderPreview.import_id).toBeNull();
+    expect(outsiderPreview.status).toBe("failed");
+    expect(outsiderPreview.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "UNTRUSTED_CONTEXT", severity: "error" }),
+      ]),
+    );
+    expect(revokedPreview.import_id).toBeNull();
+    expect(revokedPreview.status).toBe("failed");
+    expect(ownerVisibleImports.error).toBeNull();
+    expect(ownerVisibleImports.data).toHaveLength(2);
   });
 });
