@@ -41,13 +41,14 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 5:
+Status after Phase 6:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
 - Phase 3 is complete.
 - Phase 4 is complete.
 - Phase 5 is complete.
+- Phase 6 is complete.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -72,23 +73,39 @@ Status after Phase 5:
   resolution, expands segments into logical positions, applies MVP exceptions,
   detects overlaps, gaps, outside exceptions, conflicting exceptions and expanded
   position limits, and keeps all diagnostics deterministic.
-- Phase 5 did not add DB validation, variety ownership checks, active tree
-  conflict checks, staging, upload UI, preview, confirm, migrations, RLS or RPC
-  behavior.
+- The Phase 6 staging/audit schema exists through
+  `037_create_tree_inventory_import_staging.sql`:
+  - `inventory_imports`
+  - `inventory_import_source_rows`
+  - `inventory_import_variety_candidates`
+  - `inventory_import_positions`
+  - `inventory_import_created_trees`
+- Phase 6 RLS uses the existing orchard helper semantics plus staging helpers:
+  active members and `super_admin` can read, owner/worker/`super_admin` can
+  stage open imports, confirmed/final audit writes are owner/`super_admin`
+  guarded, and revoked members lose access.
+- Phase 6 added database guards for cross-orchard plot, variety, staged
+  position and created-tree audit references. No import-only columns were added
+  to `trees`.
+- Phase 6 did not add upload UI, DB/domain preview services, variety resolution
+  services, confirm transactions or parser-to-staging app code.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
   `docs/tree-inventory-import/09-phase-3-completion-report.md` and
   `docs/tree-inventory-import/10-phase-4-completion-report.md` and
-  `docs/tree-inventory-import/11-phase-5-completion-report.md`.
+  `docs/tree-inventory-import/11-phase-5-completion-report.md` and
+  `docs/tree-inventory-import/12-phase-6-completion-report.md`.
 
 Next planned step:
 
-- Phase 6 - Staging and audit schema with RLS.
-- Phase 6 may introduce persistent staging/audit tables, RLS policies and
-  indexes for import attempts.
-- Do not start DB/domain preview services, upload UI, variety resolution or
-  confirm before their dedicated phases.
+- Phase 7 - Domain/database preview validation services.
+- Phase 7 may accept canonical payloads server-side, validate them against the
+  current orchard/plot/variety/tree state, persist preview results in the Phase
+  6 staging tables, group unresolved variety candidates and produce preview
+  summary data.
+- Do not start upload UI, variety resolution UI/services or confirm before
+  their dedicated phases.
 
 ## 2. Verified repository assumptions
 

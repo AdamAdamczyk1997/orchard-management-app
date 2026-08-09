@@ -26,7 +26,7 @@ but the database remains the final enforcement layer.
 | UI/layout checks | Redirect unauthenticated users, require active orchard for `(app)`, show owner-only settings where appropriate | `app/(app)/layout.tsx`, `app/(account)/layout.tsx`, `components/layouts/protected-app-shell.tsx` |
 | Server action checks | Require session or active orchard, validate owner-only mutations, normalize redirects | `server/actions/*`, `lib/orchard-context/require-active-orchard.ts` |
 | Validation and relation checks | Parse form data, verify related records belong to active orchard before writes | `lib/validation/*`, `lib/orchard-data/*`, `lib/domain/*` |
-| Supabase RLS | Enforce table-level read/write/delete boundaries for authenticated users | `supabase/migrations/014_enable_rls_and_v1_policies.sql`, follow-up hardening migrations |
+| Supabase RLS | Enforce table-level read/write/delete boundaries for authenticated users | `supabase/migrations/014_enable_rls_and_v1_policies.sql`, follow-up hardening migrations, `037_create_tree_inventory_import_staging.sql` |
 | Helper functions | Centralize membership, owner, worker and `super_admin` predicates | `supabase/migrations/012_add_core_integrity_and_rls_helpers.sql`, `013_create_v1_security_helpers.sql` |
 | RPC/security-definer functions | Keep multi-row mutations atomic while checking auth and orchard permissions | `015_create_orchard_with_owner_membership_rpc.sql`, `016_create_invite_orchard_member_rpc.sql`, `018_create_activity_mutation_rpcs.sql`, `023_create_tree_batch_tools.sql` |
 | Security tests | Verify RLS isolation for owner, worker, outsider and child rows | `tests/security/*` |
@@ -58,6 +58,9 @@ but the database remains the final enforcement layer.
 | `can_bootstrap_orchard_owner(uuid, uuid, text, text)` | Allows first owner membership for newly created orchard | `orchard_memberships_insert_bootstrap_or_manage` | Requires target profile to equal `auth.uid()`, role `owner`, status `active`, and no existing memberships. |
 | `can_read_activity_children(uuid)` | Allows child-row reads through parent `activities.orchard_id` | `activity_scopes` and `activity_materials` SELECT policies | Child rows do not carry direct `orchard_id`. |
 | `can_write_activity_children(uuid)` | Allows child-row writes through parent `activities.orchard_id` | `activity_scopes` and `activity_materials` write policies | Protects scope/material mutations through parent access. |
+| `can_read_inventory_import(uuid)` | Allows child-row reads through parent `inventory_imports.orchard_id` | Tree inventory source rows, variety candidates, positions and created-tree audit SELECT policies | Child rows inherit orchard scope through the staged import. |
+| `can_write_inventory_import(uuid)` | Allows staging child-row writes while the parent import is not `confirming` or `confirmed`; owners/`super_admin` can still manage final imports | Tree inventory source rows and positions write policies; candidate insert/delete policies | Keeps worker staging open without allowing worker mutation of confirmed imports. |
+| `can_manage_inventory_import(uuid)` | Allows owner/`super_admin` management through parent import orchard | Variety candidate update and created-tree audit write policies | Used for owner-only resolution/final audit boundaries before confirm RPC exists. |
 | `guard_profile_self_service_update()` | Prevents non-admin edits to immutable/profile-sensitive fields | `profiles` update trigger | Blocks profile `id`, `email`, `system_role`, `created_at` changes unless `super_admin`. |
 
 ## Table Policy Matrix
@@ -78,10 +81,16 @@ such as `019`, `020`, `021`, `022`, `029`, and `034`.
 | `activity_materials` | via parent activity read access | via parent activity write access | via parent activity write access | via parent activity write access | `can_read_activity_children`, `can_write_activity_children` | `activity-management-rls.spec.ts` | Ownership is inherited through `activities`. |
 | `harvest_records` | active member/`super_admin` | owner/worker/`super_admin` | owner/worker/`super_admin` | owner/worker/`super_admin` | `can_read_orchard_data`, `can_write_orchard_operational_data` | `harvest-management-rls.spec.ts` | Trigger validates scope consistency and derives `season_year`/`quantity_kg`. |
 | `bulk_tree_import_batches` | active member/`super_admin` | owner/worker/`super_admin` | owner/worker/`super_admin` | owner/worker/`super_admin` | `bulk_tree_import_batches_*`, `can_write_orchard_operational_data` | `tree-batch-rls.spec.ts` | Created by `create_bulk_tree_batch()` and read by batch flows. |
+| `inventory_imports` | active member/`super_admin` | owner/worker/`super_admin` for staging statuses; `confirming`/`confirmed` require owner/`super_admin` | owner/worker/`super_admin` for open staging; `confirming`/`confirmed` require owner/`super_admin` | owner/`super_admin` | `can_read_orchard_data`, `can_write_orchard_operational_data`, `can_manage_orchard` | `tree-inventory-import-rls.spec.ts`, `tree-inventory-staging.spec.ts` | Trigger validates that `plot_id` belongs to `orchard_id`; no final tree mutation exists. |
+| `inventory_import_source_rows` | via parent import read access | via parent import staging write access | via parent import staging write access | via parent import staging write access | `can_read_inventory_import`, `can_write_inventory_import` | `tree-inventory-import-rls.spec.ts`, `tree-inventory-staging.spec.ts` | Stores source provenance and raw/normalized JSON per workbook row. |
+| `inventory_import_variety_candidates` | via parent import read access | via parent import staging write access | owner/`super_admin` through parent import | via parent import staging write access | `can_read_inventory_import`, `can_write_inventory_import`, `can_manage_inventory_import` | `tree-inventory-import-rls.spec.ts`, `tree-inventory-staging.spec.ts` | Trigger blocks suggested/resolved varieties from another orchard. |
+| `inventory_import_positions` | via parent import read access | via parent import staging write access | via parent import staging write access | via parent import staging write access | `can_read_inventory_import`, `can_write_inventory_import` | `tree-inventory-import-rls.spec.ts`, `tree-inventory-staging.spec.ts` | Trigger validates parent plot, source row, candidate, variety and existing tree ownership. |
+| `inventory_import_created_trees` | via parent import read access | owner/`super_admin` through parent import | owner/`super_admin` through parent import | owner/`super_admin` through parent import | `can_read_inventory_import`, `can_manage_inventory_import` | `tree-inventory-import-rls.spec.ts`, `tree-inventory-staging.spec.ts` | Audit mapping only; created in later confirm flow, not Phase 6. |
 
 ## Special Cases
 
 - Child tables `activity_scopes` and `activity_materials` do not carry direct `orchard_id`; they are protected through parent `activities`.
+- Child tables for Tree Inventory staging do not carry direct `orchard_id`; they are protected through parent `inventory_imports` and database triggers enforce cross-orchard plot, variety, position and tree references.
 - `harvest_records` can be scoped to `orchard`, `plot`, `variety`, `location_range`, or `tree`. Database triggers validate cross-orchard/cross-plot mismatches and normalize quantity.
 - `super_admin` is implemented through `profiles.system_role = 'super_admin'` and `is_super_admin()`. It can access account export without active orchard, but normal operational app pages still require active orchard context.
 - `orchard_memberships.status` supports `invited`, `active`, and `revoked`. Active orchard resolution and RLS helper membership checks use only `active`.
@@ -118,5 +127,6 @@ flowchart TD
 - `supabase/migrations/023_create_tree_batch_tools.sql`
 - `supabase/migrations/029_wrap_auth_uid_in_orchards_select_policy.sql`
 - `supabase/migrations/034_wrap_auth_uid_in_profiles_update_policy.sql`
+- `supabase/migrations/037_create_tree_inventory_import_staging.sql`
 - `types/contracts.ts`
 - `tests/security/*`

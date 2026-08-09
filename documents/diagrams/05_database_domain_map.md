@@ -16,20 +16,35 @@ erDiagram
   ORCHARDS ||--o{ ACTIVITIES : "orchard_id"
   ORCHARDS ||--o{ HARVEST_RECORDS : "orchard_id"
   ORCHARDS ||--o{ BULK_TREE_IMPORT_BATCHES : "orchard_id"
+  ORCHARDS ||--o{ INVENTORY_IMPORTS : "orchard_id"
 
   PLOTS ||--o{ TREES : "plot_id"
   PLOTS ||--o{ ACTIVITIES : "plot_id"
   PLOTS ||--o{ HARVEST_RECORDS : "plot_id"
   PLOTS ||--o{ BULK_TREE_IMPORT_BATCHES : "plot_id"
+  PLOTS ||--o{ INVENTORY_IMPORTS : "plot_id"
+  PLOTS ||--o{ INVENTORY_IMPORT_POSITIONS : "plot_id"
 
   VARIETIES ||--o{ TREES : "variety_id"
   VARIETIES ||--o{ HARVEST_RECORDS : "variety_id"
   VARIETIES ||--o{ BULK_TREE_IMPORT_BATCHES : "variety_id"
+  VARIETIES ||--o{ INVENTORY_IMPORT_VARIETY_CANDIDATES : "suggested_variety_id"
+  VARIETIES ||--o{ INVENTORY_IMPORT_VARIETY_CANDIDATES : "resolved_variety_id"
+  VARIETIES ||--o{ INVENTORY_IMPORT_POSITIONS : "variety_id"
 
   TREES ||--o{ ACTIVITIES : "tree_id"
   TREES ||--o{ ACTIVITY_SCOPES : "tree_id"
   TREES ||--o{ HARVEST_RECORDS : "tree_id"
+  TREES ||--o{ INVENTORY_IMPORT_POSITIONS : "existing_tree_id"
+  TREES ||--o{ INVENTORY_IMPORT_CREATED_TREES : "tree_id"
   BULK_TREE_IMPORT_BATCHES ||--o{ TREES : "planted_batch_id"
+  INVENTORY_IMPORTS ||--o{ INVENTORY_IMPORT_SOURCE_ROWS : "import_id"
+  INVENTORY_IMPORTS ||--o{ INVENTORY_IMPORT_VARIETY_CANDIDATES : "import_id"
+  INVENTORY_IMPORTS ||--o{ INVENTORY_IMPORT_POSITIONS : "import_id"
+  INVENTORY_IMPORTS ||--o{ INVENTORY_IMPORT_CREATED_TREES : "import_id"
+  INVENTORY_IMPORT_SOURCE_ROWS ||--o{ INVENTORY_IMPORT_POSITIONS : "source_row_id"
+  INVENTORY_IMPORT_VARIETY_CANDIDATES ||--o{ INVENTORY_IMPORT_POSITIONS : "variety_candidate_id"
+  INVENTORY_IMPORT_POSITIONS ||--o{ INVENTORY_IMPORT_CREATED_TREES : "position_id"
 
   ACTIVITIES ||--o{ ACTIVITY_SCOPES : "activity_id"
   ACTIVITIES ||--o{ ACTIVITY_MATERIALS : "activity_id"
@@ -39,6 +54,10 @@ erDiagram
   PROFILES ||--o{ ACTIVITIES : "created_by_profile_id"
   PROFILES ||--o{ HARVEST_RECORDS : "created_by_profile_id"
   PROFILES ||--o{ BULK_TREE_IMPORT_BATCHES : "created_by_profile_id"
+  PROFILES ||--o{ INVENTORY_IMPORTS : "created_by_profile_id"
+  PROFILES ||--o{ INVENTORY_IMPORTS : "confirmed_by_profile_id"
+  PROFILES ||--o{ INVENTORY_IMPORT_VARIETY_CANDIDATES : "resolved_by_profile_id"
+  PROFILES ||--o{ INVENTORY_IMPORT_CREATED_TREES : "created_by_profile_id"
 
   PROFILES {
     uuid id PK
@@ -113,11 +132,47 @@ erDiagram
     integer row_number
     text status
   }
+  INVENTORY_IMPORTS {
+    uuid id PK
+    uuid orchard_id FK
+    uuid plot_id FK
+    text status
+    text file_hash
+  }
+  INVENTORY_IMPORT_SOURCE_ROWS {
+    uuid id PK
+    uuid import_id FK
+    text row_kind
+    integer source_row_number
+  }
+  INVENTORY_IMPORT_VARIETY_CANDIDATES {
+    uuid id PK
+    uuid import_id FK
+    text candidate_key
+    text resolution_status
+  }
+  INVENTORY_IMPORT_POSITIONS {
+    uuid id PK
+    uuid import_id FK
+    uuid plot_id FK
+    integer row_number
+    integer position_in_row
+  }
+  INVENTORY_IMPORT_CREATED_TREES {
+    uuid id PK
+    uuid import_id FK
+    uuid tree_id FK
+  }
 ```
 
 ## Explanation
 
 `orchard` is the business ownership container. Most operational tables carry `orchard_id` directly. `activity_scopes` and `activity_materials` inherit ownership through their parent `activities`.
+
+Tree Inventory staging is plot-scoped through `inventory_imports`. Source rows,
+variety candidates, positions and created-tree audit rows inherit orchard access
+through the parent import, with database triggers enforcing cross-orchard
+references for plot, variety and tree links.
 
 Important integrity details:
 

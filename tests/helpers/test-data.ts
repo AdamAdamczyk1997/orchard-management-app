@@ -671,6 +671,15 @@ export async function cleanupTestUsers(userIds: string[]) {
       throw deleteTreeBatchesError;
     }
 
+    const { error: deleteInventoryImportsError } = await admin
+      .from("inventory_imports")
+      .delete()
+      .in("orchard_id", orchardIds);
+
+    if (deleteInventoryImportsError) {
+      throw deleteInventoryImportsError;
+    }
+
     const { error: deletePlotsError } = await admin
       .from("plots")
       .delete()
