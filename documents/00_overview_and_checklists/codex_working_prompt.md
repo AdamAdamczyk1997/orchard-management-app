@@ -18,6 +18,9 @@ Pracujemy nad aplikacją OrchardLog / Sadownik+.
 - gdy brakuje ważnego założenia, wskaż je jasno,
 - wychwytuj niespójności, ryzyka i edge case'y,
 - zwracaj uwagę na model danych, integralność relacji, walidację i bezpieczeństwo,
+- po każdej zmianie sprawdzaj, czy trzeba zaktualizować dokumentację, checklisty,
+  roadmapy albo prompt roboczy, i aktualizuj je razem z kodem, jeśli zmieniają
+  się kontrakty, zachowanie, proces QA, zakres fazy lub ustalenia projektowe,
 - rozmawiamy po polsku,
 - kod, nazwy techniczne, nazwy plików, DTO, encje, endpointy i SQL tworzymy po angielsku,
 - pisz odpowiedzi konkretnie i technicznie.
