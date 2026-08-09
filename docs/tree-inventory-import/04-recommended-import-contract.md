@@ -4,6 +4,12 @@
 
 To jest rekomendacja projektowa, nie implementacja. Nie tworzy nowych endpointow, migracji ani bibliotek. Kontrakt jest dopasowany do aktualnego modelu `orchards`, `plots`, `varieties`, `trees`, RLS i obecnych bulk workflows.
 
+Aktualizacja po Phase 5: TypeScript canonical JSON v1 jest juz finalizowany w
+kodzie. Przy polach odmian nalezy uwzgledniac `variety` reference z
+`status`, `raw_name`, `raw_variety_id` i `resolved_variety_id`; stare pola
+`variety_id`/`variety_name` zostaja wygodnym odbiciem dla obecnego modelu
+`trees`, ale nie sa jedynym nosnikiem stanu resolution.
+
 ## Rekomendowany zakres MVP
 
 MVP importu powinien byc waski:
@@ -169,6 +175,12 @@ Proponowany ksztalt wewnetrzny:
         "species": "Apple",
         "variety_id": "uuid",
         "variety_name": "Szampion",
+        "variety": {
+          "status": "known",
+          "raw_name": "Szampion",
+          "raw_variety_id": "uuid",
+          "resolved_variety_id": "uuid"
+        },
         "condition_status": "good",
         "planted_at": null,
         "rootstock": null,

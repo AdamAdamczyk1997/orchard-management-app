@@ -41,11 +41,13 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 3:
+Status after Phase 5:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
 - Phase 3 is complete.
+- Phase 4 is complete.
+- Phase 5 is complete.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -59,21 +61,34 @@ Status after Phase 3:
   `NASADZENIA`, `WYJATKI` and `SLOWNIKI` worksheets with metadata,
   orchard-local dictionaries, hidden/protected technical fields and dropdown
   validation.
-- Phase 3 did not add a download route, production parser, upload UI, staging,
-  preview, confirm, migrations, RLS or RPC behavior.
+- The server-side `tree_inventory_v1` parser exists. It reads XLSX buffers into
+  raw source-preserving metadata, segment, exception and dictionary rows,
+  preserves sheet/row/column/address/raw values, keeps formulas as untrusted raw
+  objects, validates required sheets/headers, enforces workbook size limits and
+  rejects unsupported `xlsx_contract_version` through structured diagnostics.
+- The pure `tree_inventory_v1` normalizer exists. It converts raw parser output
+  into canonical JSON, trims and parses primitive fields, represents
+  `known`/`unknown`/`uncertain`/`new_candidate` variety references before DB
+  resolution, expands segments into logical positions, applies MVP exceptions,
+  detects overlaps, gaps, outside exceptions, conflicting exceptions and expanded
+  position limits, and keeps all diagnostics deterministic.
+- Phase 5 did not add DB validation, variety ownership checks, active tree
+  conflict checks, staging, upload UI, preview, confirm, migrations, RLS or RPC
+  behavior.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
-  `docs/tree-inventory-import/09-phase-3-completion-report.md`.
+  `docs/tree-inventory-import/09-phase-3-completion-report.md` and
+  `docs/tree-inventory-import/10-phase-4-completion-report.md` and
+  `docs/tree-inventory-import/11-phase-5-completion-report.md`.
 
 Next planned step:
 
-- Phase 4 - XLSX parser with raw source preservation.
-- Phase 4 may parse generated/filled `tree_inventory_v1` workbooks into raw
-  source-preserving representations with diagnostics, including raw variety
-  names and variety status cells.
-- Do not start normalizer, DB/domain preview, staging, upload UI or confirm
-  before their dedicated phases.
+- Phase 6 - Staging and audit schema with RLS.
+- Phase 6 may introduce persistent staging/audit tables, RLS policies and
+  indexes for import attempts.
+- Do not start DB/domain preview services, upload UI, variety resolution or
+  confirm before their dedicated phases.
 
 ## 2. Verified repository assumptions
 

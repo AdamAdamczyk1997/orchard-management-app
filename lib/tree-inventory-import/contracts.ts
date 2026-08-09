@@ -279,6 +279,7 @@ export const TREE_INVENTORY_DIAGNOSTIC_CODES = [
   "SEGMENT_OVERLAP",
   "EXCEPTION_OUTSIDE_SEGMENT",
   "CONFLICTING_EXCEPTIONS",
+  "ROW_POSITION_GAP",
   "VARIETY_NOT_FOUND",
   "VARIETY_SPECIES_MISMATCH",
   "PLOT_LAYOUT_UNSUPPORTED",
@@ -386,12 +387,20 @@ export type TreeInventoryTreeDefaults = {
   species: string;
   variety_id: string | null;
   variety_name: string | null;
+  variety: TreeInventoryVarietyReference;
   condition_status: TreeConditionStatus;
   planted_at: string | null;
   rootstock: string | null;
   pollinator_info: string | null;
   location_verified: boolean;
   notes: string | null;
+};
+
+export type TreeInventoryVarietyReference = {
+  status: TreeInventoryVarietyConfidence;
+  raw_name: string | null;
+  raw_variety_id: string | null;
+  resolved_variety_id: string | null;
 };
 
 export type TreeInventoryImportOnlyFields = {
@@ -414,6 +423,7 @@ export type TreeInventoryExceptionOverride = {
   species?: string;
   variety_id?: string | null;
   variety_name?: string | null;
+  variety?: TreeInventoryVarietyReference;
   variety_confidence?: TreeInventoryVarietyConfidence;
   condition_status?: TreeConditionStatus;
   planted_at?: string | null;
