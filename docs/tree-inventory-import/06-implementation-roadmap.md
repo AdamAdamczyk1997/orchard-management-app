@@ -41,7 +41,7 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 7:
+Status after Phase 8:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
@@ -50,6 +50,7 @@ Status after Phase 7:
 - Phase 5 is complete.
 - Phase 6 is complete.
 - Phase 7 is complete.
+- Phase 8 is complete.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -98,8 +99,18 @@ Status after Phase 7:
   IDs/species mismatches, treats current DB varieties as authority and stages
   exact current matches for `new_candidate` rows as suggested owner mappings
   instead of auto-creating varieties.
-- Phase 7 did not add upload UI, parser-to-staging app composition, owner
-  variety resolution actions, confirm transactions or final `trees` writes.
+- The Phase 8 upload/preview UI exists under `/trees/import`. It lets active
+  orchard members download a one-plot `tree_inventory_v1` XLSX template, upload
+  a completed workbook, run server-side parse/normalize/stage, and review
+  summary counts, diagnostics, variety candidates and active conflicts.
+- Phase 8 composes the Phase 3 template generator, Phase 4 parser, Phase 5
+  normalizer and Phase 7 preview service through
+  `server/actions/tree-inventory-import.ts`.
+- Phase 8 keeps confirm disabled for everyone. Workers can upload/preview but
+  see that confirm is owner-only; owners see that blocking variety candidates
+  require Phase 8A resolution and final confirm requires Phase 9.
+- Phase 8 did not add owner variety resolution actions, confirm transactions or
+  final `trees` writes.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
@@ -107,15 +118,16 @@ Status after Phase 7:
   `docs/tree-inventory-import/10-phase-4-completion-report.md` and
   `docs/tree-inventory-import/11-phase-5-completion-report.md` and
   `docs/tree-inventory-import/12-phase-6-completion-report.md` and
-  `docs/tree-inventory-import/13-phase-7-completion-report.md`.
+  `docs/tree-inventory-import/13-phase-7-completion-report.md` and
+  `docs/tree-inventory-import/14-phase-8-completion-report.md`.
 
 Next planned step:
 
-- Phase 8 - Upload and preview UI.
-- Phase 8 may compose template download, XLSX upload, parser, normalizer and
-  the Phase 7 preview service into a user-facing preview workflow.
-- Do not start owner variety resolution UI/services or confirm before their
-  dedicated phases.
+- Phase 8A - Variety Resolution workflow.
+- Phase 8A may add owner/super_admin resolution actions for staged
+  `new_candidate` and `uncertain` variety groups.
+- Do not start Phase 9 final DB confirm before required variety resolution is
+  implemented and verified.
 
 ## 2. Verified repository assumptions
 
@@ -2992,7 +3004,7 @@ true:
 - [ ] `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test` and
       relevant `pnpm test:e2e` pass for release.
 
-## 17. Recommended prompt/task for Phase 4
+## 17. Recommended prompt/task for Phase 8A
 
 Use this as the next implementation prompt:
 
@@ -3012,35 +3024,37 @@ Najpierw przeczytaj:
 
 Sprawdz `git status --short`. Nie cofaj cudzych zmian.
 
-Wykonaj tylko Phase 4 z roadmapy:
-"XLSX parser with raw source preservation".
+Wykonaj tylko Phase 8A z roadmapy:
+"Variety Resolution workflow".
 
 Zakres:
-- dodaj server-only parser dla `tree_inventory_v1`;
-- parsuj `METADANE`, `NASADZENIA`, `WYJATKI` i `SLOWNIKI` do raw source-preserving representation;
-- zachowaj `sheet`, `row`, `column`, `raw_value`, puste komorki, formulas jako nietrusted input;
-- zachowaj surowe `species`, `variety_name`, `variety_status` i hidden dictionary metadata;
-- dodaj structured parser diagnostics;
-- dodaj fixture workbooks i targeted parser unit tests;
-- egzekwuj workbook size/version/header/sheet checks;
-- nie normalizuj variety/species;
-- nie resolve'uj varieties;
-- nie wykonuj DB calls;
-- nie tworz migracji;
-- nie modyfikuj RLS/RPC/UI;
-- nie implementuj normalizera, staging, preview, variety resolution ani confirm.
+- dodaj backend/service actions do rozstrzygania staged variety candidates;
+- owner/super_admin moze mapowac candidate do istniejacej orchard-local variety;
+- owner/super_admin moze wybrac explicit create-new-at-confirm bez tworzenia `varieties` przed confirm;
+- owner/super_admin moze oznaczyc dozwolona grupe jako unknown, zachowujac `variety_id=null`;
+- dla `uncertain` zachowaj jawne decyzje zgodnie z roadmapa;
+- worker moze widziec unresolved/new varieties, ale nie moze finalizowac resolution;
+- rewaliduj mapping targets wzgledem current DB i active orchard;
+- aktualizuj staged preview status, kiedy blocking candidates sa rozstrzygniete;
+- dodaj integration/security/E2E tests zgodnie z Phase 8A;
+- zaktualizuj dokumentacje/checkpoint;
+- nie tworz finalnych `trees`;
+- nie implementuj Phase 9 confirm transaction;
+- nie dodawaj silent fuzzy matching;
+- nie tworz `varieties` przed confirm w preferowanej sciezce MVP;
+- nie zmieniaj RLS/migracji, chyba ze Phase 6 faktycznie nie ma wymaganego pola resolution i wtedy zatrzymaj sie/zaraportuj conflict.
 
-Przed zmianami uruchom bazowa weryfikacje z Phase 4.
+Przed zmianami uruchom bazowa weryfikacje z Phase 8A.
 Po zmianach uruchom:
 - pnpm typecheck
 - pnpm lint
-- pnpm test -- tests/unit/phase6-tree-batch-validation.spec.ts
-- pnpm test -- tests/unit/tree-inventory-parser.spec.ts
-- targeted new unit tests
+- pnpm test -- tests/integration/tree-inventory-variety-resolution.spec.ts
+- pnpm test -- tests/security/tree-inventory-import-rls.spec.ts
+- pnpm test:e2e -- tests/e2e/tree-inventory-import.spec.ts
 - git diff --check
 - git status --short
 
 Jesli trafisz na stop condition z roadmapy, zatrzymaj sie i zaraportuj.
-Na koniec podaj checkpoint report zgodny z Phase 4 completion report format.
-Nie przechodz do Phase 5.
+Na koniec podaj checkpoint report zgodny z Phase 8A completion report format.
+Nie przechodz do Phase 9.
 ```

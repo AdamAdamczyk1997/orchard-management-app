@@ -16,6 +16,11 @@ import {
   type TreeInventoryVarietyConfidence,
 } from "@/lib/tree-inventory-import/contracts";
 import { TREE_INVENTORY_IMPORT_LIMITS } from "@/lib/tree-inventory-import/limits";
+import type {
+  TreeInventoryPreviewResult,
+  TreeInventoryPreviewStatus,
+  TreeInventoryPreviewSummary,
+} from "@/lib/tree-inventory-import/upload-preview-contract";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlotLayoutType, PlotStatus, TreeConditionStatus } from "@/types/contracts";
 
@@ -32,42 +37,6 @@ export type TreeInventoryPreviewFileMetadata = {
 export type TreeInventoryPreviewInput = {
   canonical: TreeInventoryCanonicalImport;
   file?: TreeInventoryPreviewFileMetadata;
-};
-
-export type TreeInventoryPreviewStatus =
-  | "failed"
-  | "validated"
-  | "awaiting_variety_resolution"
-  | "ready_for_owner_confirm";
-
-export type TreeInventoryPreviewSummary = {
-  total_positions: number;
-  planned_tree_records: number;
-  missing_positions: number;
-  active_conflicts: number;
-  inactive_contexts: number;
-  known_variety_positions: number;
-  new_candidate_positions: number;
-  uncertain_variety_positions: number;
-  unknown_variety_positions: number;
-  grouped_variety_candidates: number;
-  unresolved_variety_candidates: number;
-  suggested_variety_candidates: number;
-  diagnostics: {
-    errors: number;
-    warnings: number;
-    info: number;
-    returned: number;
-  };
-};
-
-export type TreeInventoryPreviewResult = {
-  import_id: string | null;
-  status: TreeInventoryPreviewStatus;
-  summary: TreeInventoryPreviewSummary;
-  diagnostics: TreeInventoryDiagnostic[];
-  confirm_version: number | null;
-  confirm_token: string | null;
 };
 
 type PlotRow = {

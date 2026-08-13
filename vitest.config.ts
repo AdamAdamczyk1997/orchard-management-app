@@ -2,6 +2,12 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  oxc: {
+    jsx: {
+      runtime: "automatic",
+      importSource: "react",
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
@@ -11,7 +17,7 @@ export default defineConfig({
     globals: true,
     fileParallelism: false,
     setupFiles: ["./tests/setup/load-env.ts"],
-    include: ["tests/**/*.spec.ts"],
+    include: ["tests/**/*.spec.ts", "tests/**/*.spec.tsx"],
     exclude: ["tests/e2e/**"],
     testTimeout: 30_000,
     hookTimeout: 30_000,

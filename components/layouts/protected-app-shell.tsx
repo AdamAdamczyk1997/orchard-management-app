@@ -102,6 +102,12 @@ export function ProtectedAppShell({
           </Link>
           <Link
             className="rounded-2xl px-3 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
+            href="/trees/import"
+          >
+            Import drzew
+          </Link>
+          <Link
+            className="rounded-2xl px-3 py-2 text-sm font-medium text-[#274430] transition hover:bg-[#efe6d3]"
             href="/activities"
           >
             Aktywnosci

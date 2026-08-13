@@ -120,6 +120,9 @@ async function TreesPageContent({
           <LinkButton className="w-full sm:w-auto" href="/trees/batch/new" variant="secondary">
             Batch create
           </LinkButton>
+          <LinkButton className="w-full sm:w-auto" href="/trees/import" variant="secondary">
+            Import XLSX
+          </LinkButton>
           <LinkButton
             className="w-full sm:w-auto"
             href="/trees/batch/deactivate"

@@ -1,0 +1,451 @@
+"use client";
+
+import { useActionState, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
+import { FormMessage } from "@/components/ui/form-message";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { SubmitButton } from "@/components/ui/submit-button";
+import {
+  TREE_INVENTORY_UPLOAD_PREVIEW_DIAGNOSTIC_RENDER_LIMIT,
+  type TreeInventoryUploadPreviewConflict,
+  type TreeInventoryUploadPreviewData,
+  type TreeInventoryUploadPreviewVarietyCandidate,
+} from "@/lib/tree-inventory-import/upload-preview-contract";
+import type {
+  ActionResult,
+  OrchardMembershipRole,
+  PlotOption,
+} from "@/types/contracts";
+
+type TreeInventoryImportFormAction = (
+  previousState: ActionResult<TreeInventoryUploadPreviewData>,
+  formData: FormData,
+) => Promise<ActionResult<TreeInventoryUploadPreviewData>>;
+
+type TreeInventoryImportFormProps = {
+  action: TreeInventoryImportFormAction;
+  plotOptions: PlotOption[];
+  role: OrchardMembershipRole;
+};
+
+const initialState: ActionResult<TreeInventoryUploadPreviewData> = {
+  success: false,
+};
+
+const statusLabels: Record<TreeInventoryUploadPreviewData["status"], string> = {
+  failed: "Blad importu",
+  validated: "Wymaga poprawek",
+  awaiting_variety_resolution: "Wymaga odmian",
+  ready_for_owner_confirm: "Gotowy do confirm",
+};
+
+export function TreeInventoryImportForm({
+  action,
+  plotOptions,
+  role,
+}: TreeInventoryImportFormProps) {
+  const [state, formAction] = useActionState(action, initialState);
+  const [selectedPlotId, setSelectedPlotId] = useState(plotOptions[0]?.id ?? "");
+  const selectedPlot = plotOptions.find((plot) => plot.id === selectedPlotId);
+  const templateHref = selectedPlotId
+    ? `/trees/import/template?plot_id=${encodeURIComponent(selectedPlotId)}`
+    : "";
+  const preview = state.data;
+
+  return (
+    <div className="grid gap-6" data-testid="tree-inventory-import-form">
+      <Card className="grid gap-5">
+        <div className="grid gap-1">
+          <CardTitle className="text-lg">Szablon XLSX</CardTitle>
+          <CardDescription>
+            Szablon jest generowany dla aktywnego sadu i jednej dzialki rzedowej.
+          </CardDescription>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+          <Field htmlFor="template_plot_id" label="Dzialka">
+            <Select
+              data-testid="tree-inventory-template-plot-select"
+              id="template_plot_id"
+              onChange={(event) => setSelectedPlotId(event.target.value)}
+              value={selectedPlotId}
+            >
+              {plotOptions.map((plot) => (
+                <option key={plot.id} value={plot.id}>
+                  {plot.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {templateHref ? (
+            <a
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#21452d] px-4 py-2 text-sm font-semibold text-[#fff9f0] shadow-sm transition hover:bg-[#193622] focus:outline-none focus:ring-2 focus:ring-[#b48446] focus:ring-offset-2 focus:ring-offset-[#fbfaf7] sm:w-auto"
+              data-testid="tree-inventory-template-download"
+              download
+              href={templateHref}
+            >
+              Pobierz template
+            </a>
+          ) : (
+            <Button
+              className="w-full sm:w-auto"
+              data-testid="tree-inventory-template-download"
+              disabled
+              type="button"
+            >
+              Pobierz template
+            </Button>
+          )}
+        </div>
+        {selectedPlot ? (
+          <p className="text-sm text-[#5b6155]">
+            Wybrana dzialka:{" "}
+            <span className="font-medium text-[#304335]">{selectedPlot.name}</span>
+          </p>
+        ) : null}
+      </Card>
+
+      <form action={formAction} className="grid gap-5">
+        <Card className="grid gap-5">
+          <div className="grid gap-1">
+            <CardTitle className="text-lg">Upload workbooka</CardTitle>
+            <CardDescription>
+              Backend sprawdzi format pliku, sparsuje XLSX i zapisze staging preview.
+            </CardDescription>
+          </div>
+          <Field
+            error={state.field_errors?.workbook}
+            hint="Dozwolony jest plik .xlsx do 5 MB."
+            htmlFor="workbook"
+            label="Workbook XLSX"
+          >
+            <Input
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              data-testid="tree-inventory-upload-input"
+              id="workbook"
+              name="workbook"
+              type="file"
+            />
+          </Field>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <SubmitButton
+              className="w-full sm:w-auto"
+              pendingLabel="Sprawdzanie..."
+            >
+              Wgraj i pokaz preview
+            </SubmitButton>
+            <span
+              className="text-sm text-[#6d7269]"
+              data-testid="tree-inventory-upload-submit"
+            >
+              {state.success ? "Preview gotowy" : "Oczekuje na workbook"}
+            </span>
+          </div>
+          <FormMessage state={state} />
+        </Card>
+      </form>
+
+      {preview ? <PreviewPanel preview={preview} role={role} /> : null}
+    </div>
+  );
+}
+
+function PreviewPanel({
+  preview,
+  role,
+}: {
+  preview: TreeInventoryUploadPreviewData;
+  role: OrchardMembershipRole;
+}) {
+  const diagnostics = useMemo(
+    () =>
+      preview.diagnostics.slice(
+        0,
+        TREE_INVENTORY_UPLOAD_PREVIEW_DIAGNOSTIC_RENDER_LIMIT,
+      ),
+    [preview.diagnostics],
+  );
+  const hiddenDiagnosticsCount = Math.max(
+    0,
+    preview.diagnostics.length - diagnostics.length,
+  );
+
+  return (
+    <div className="grid gap-6" data-testid="tree-inventory-preview">
+      <Card className="grid gap-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="grid gap-1">
+            <CardTitle className="text-lg">Preview importu</CardTitle>
+            <CardDescription>
+              Status: {statusLabels[preview.status]} · Import ID:{" "}
+              {preview.import_id ?? "nie zapisano"}
+            </CardDescription>
+          </div>
+          <span className="rounded-full bg-[#efe6d3] px-3 py-1 text-sm font-medium text-[#355139]">
+            {preview.summary.planned_tree_records} planned trees
+          </span>
+        </div>
+        <SummaryGrid preview={preview} />
+      </Card>
+
+      <VarietyCandidatesPanel candidates={preview.candidates} />
+      <ConflictsPanel conflicts={preview.conflicts} />
+
+      <Card className="grid gap-4" data-testid="tree-inventory-confirm-disabled">
+        <div className="grid gap-1">
+          <CardTitle className="text-lg">Confirm</CardTitle>
+          <CardDescription>{buildConfirmMessage(preview, role)}</CardDescription>
+        </div>
+        <Button className="w-full sm:w-auto" disabled type="button">
+          Confirm import
+        </Button>
+      </Card>
+
+      <Card className="grid gap-4" data-testid="tree-inventory-diagnostics">
+        <div className="grid gap-1">
+          <CardTitle className="text-lg">Diagnostics</CardTitle>
+          <CardDescription>
+            Errors: {preview.summary.diagnostics.errors} · Warnings:{" "}
+            {preview.summary.diagnostics.warnings} · Info:{" "}
+            {preview.summary.diagnostics.info}
+          </CardDescription>
+        </div>
+        {diagnostics.length > 0 ? (
+          <div className="grid gap-3">
+            {diagnostics.map((diagnostic, index) => (
+              <div
+                className="grid gap-2 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3 text-sm"
+                id={diagnosticAnchorId(diagnostic)}
+                key={`${diagnostic.code}:${index}`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={severityClassName(diagnostic.severity)}>
+                    {diagnostic.severity}
+                  </span>
+                  <span className="font-medium text-[#304335]">
+                    {diagnostic.code}
+                  </span>
+                  <span className="text-[#6d7269]">
+                    {formatDiagnosticSource(diagnostic)}
+                  </span>
+                </div>
+                <p className="text-[#4f584e]">{diagnostic.message}</p>
+              </div>
+            ))}
+            {hiddenDiagnosticsCount > 0 ? (
+              <p className="text-sm text-[#6d7269]">
+                Ukryto {hiddenDiagnosticsCount} diagnostics po limicie renderowania.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-[#5b6155]">Brak diagnostics dla preview.</p>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function SummaryGrid({
+  preview,
+}: {
+  preview: TreeInventoryUploadPreviewData;
+}) {
+  const summary = preview.summary;
+  const items = [
+    ["Total positions", summary.total_positions],
+    ["Planned records", summary.planned_tree_records],
+    ["Missing positions", summary.missing_positions],
+    ["Active conflicts", summary.active_conflicts],
+    ["Known varieties", summary.known_variety_positions],
+    ["New candidates", summary.new_candidate_positions],
+    ["Uncertain", summary.uncertain_variety_positions],
+    ["Unknown", summary.unknown_variety_positions],
+    ["Grouped candidates", summary.grouped_variety_candidates],
+    ["Unresolved", summary.unresolved_variety_candidates],
+    ["Suggested", summary.suggested_variety_candidates],
+    ["Diagnostics", summary.diagnostics.returned],
+  ] as const;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {items.map(([label, value]) => (
+        <div
+          className="rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3"
+          key={label}
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9d7e4e]">
+            {label}
+          </p>
+          <p className="text-2xl font-semibold text-[#1f2a1f]">{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VarietyCandidatesPanel({
+  candidates,
+}: {
+  candidates: TreeInventoryUploadPreviewVarietyCandidate[];
+}) {
+  const unresolvedCandidates = candidates.filter((candidate) =>
+    candidate.resolution_status === "unresolved" ||
+    candidate.resolution_status === "suggested",
+  );
+
+  return (
+    <Card className="grid gap-4" data-testid="tree-inventory-variety-candidates">
+      <div className="grid gap-1">
+        <CardTitle className="text-lg">Variety candidates</CardTitle>
+        <CardDescription>
+          Unresolved groups: {unresolvedCandidates.length} · All groups:{" "}
+          {candidates.length}
+        </CardDescription>
+      </div>
+      {candidates.length > 0 ? (
+        <div className="grid gap-3">
+          {candidates.map((candidate) => (
+            <CandidateRow candidate={candidate} key={candidate.id} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-[#5b6155]">Brak kandydatow odmian.</p>
+      )}
+    </Card>
+  );
+}
+
+function CandidateRow({
+  candidate,
+}: {
+  candidate: TreeInventoryUploadPreviewVarietyCandidate;
+}) {
+  return (
+    <div className="grid gap-3 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium text-[#304335]">
+            {candidate.species} · {candidate.raw_name ?? "unknown variety"}
+          </p>
+          <p className="text-[#6d7269]">
+            {candidate.source_status} · {candidate.resolution_status}
+          </p>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 font-medium text-[#355139]">
+          {candidate.positions_count} planned trees
+        </span>
+      </div>
+      {candidate.source_rows.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {candidate.source_rows.map((sourceRow) => (
+            <a
+              className="rounded-full border border-[#dfd3bb] bg-white px-3 py-1 text-xs font-medium text-[#274430]"
+              href={`#source-${sourceRow.sheet_name}-${sourceRow.source_row_number}`}
+              key={sourceRow.id}
+            >
+              {sourceRow.sheet_name} row {sourceRow.source_row_number}
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ConflictsPanel({
+  conflicts,
+}: {
+  conflicts: TreeInventoryUploadPreviewConflict[];
+}) {
+  return (
+    <Card className="grid gap-4" data-testid="tree-inventory-conflicts">
+      <div className="grid gap-1">
+        <CardTitle className="text-lg">Conflicts</CardTitle>
+        <CardDescription>Active tree conflicts: {conflicts.length}</CardDescription>
+      </div>
+      {conflicts.length > 0 ? (
+        <div className="grid gap-3">
+          {conflicts.map((conflict) => (
+            <div
+              className="grid gap-2 rounded-2xl border border-[#ebc4bb] bg-[#fff4f1] px-4 py-3 text-sm"
+              key={conflict.id}
+            >
+              <p className="font-medium text-[#823225]">
+                Row {conflict.row_number ?? "-"}, position{" "}
+                {conflict.position_in_row ?? "-"}
+              </p>
+              <p className="text-[#6d584f]">
+                Existing tree: {conflict.existing_tree_id ?? "unknown"} · Species:{" "}
+                {conflict.species ?? "unknown"}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-[#5b6155]">Brak aktywnych konfliktow.</p>
+      )}
+    </Card>
+  );
+}
+
+function buildConfirmMessage(
+  preview: TreeInventoryUploadPreviewData,
+  role: OrchardMembershipRole,
+) {
+  if (role !== "owner") {
+    return "Worker moze przygotowac preview, ale nie moze confirmowac importu.";
+  }
+
+  if (preview.summary.unresolved_variety_candidates > 0) {
+    return "Owner musi najpierw rozstrzygnac blocking new_candidate groups. Resolution actions beda w kolejnej fazie.";
+  }
+
+  return "Owner confirm pozostaje wylaczony do Phase 9 final DB confirm.";
+}
+
+function formatDiagnosticSource(
+  diagnostic: TreeInventoryUploadPreviewData["diagnostics"][number],
+) {
+  const source = diagnostic.source;
+
+  if (!source) {
+    return "workbook";
+  }
+
+  const parts = [
+    source.sheet,
+    source.row_number ? `row ${source.row_number}` : null,
+    source.column ? `column ${source.column}` : null,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(" · ") : "workbook";
+}
+
+function diagnosticAnchorId(
+  diagnostic: TreeInventoryUploadPreviewData["diagnostics"][number],
+) {
+  const source = diagnostic.source;
+
+  if (!source?.sheet || !source.row_number) {
+    return undefined;
+  }
+
+  return `source-${source.sheet}-${source.row_number}`;
+}
+
+function severityClassName(
+  severity: TreeInventoryUploadPreviewData["diagnostics"][number]["severity"],
+) {
+  if (severity === "error") {
+    return "rounded-full bg-[#f7d8d0] px-2 py-0.5 text-xs font-semibold text-[#823225]";
+  }
+
+  if (severity === "warning") {
+    return "rounded-full bg-[#f8e9c7] px-2 py-0.5 text-xs font-semibold text-[#70521c]";
+  }
+
+  return "rounded-full bg-[#e7efe4] px-2 py-0.5 text-xs font-semibold text-[#355139]";
+}
