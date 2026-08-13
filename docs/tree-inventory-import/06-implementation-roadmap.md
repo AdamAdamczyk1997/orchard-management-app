@@ -41,7 +41,7 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 8:
+Status after Phase 8A:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
@@ -51,6 +51,7 @@ Status after Phase 8:
 - Phase 6 is complete.
 - Phase 7 is complete.
 - Phase 8 is complete.
+- Phase 8A is complete.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -106,11 +107,17 @@ Status after Phase 8:
 - Phase 8 composes the Phase 3 template generator, Phase 4 parser, Phase 5
   normalizer and Phase 7 preview service through
   `server/actions/tree-inventory-import.ts`.
-- Phase 8 keeps confirm disabled for everyone. Workers can upload/preview but
-  see that confirm is owner-only; owners see that blocking variety candidates
-  require Phase 8A resolution and final confirm requires Phase 9.
-- Phase 8 did not add owner variety resolution actions, confirm transactions or
-  final `trees` writes.
+- Phase 8A adds owner/super_admin variety candidate resolution in staging:
+  candidates can be mapped to an existing orchard-local `variety`, marked
+  `keep_unknown`, or marked `create_new` for atomic creation at Phase 9 confirm.
+- Phase 8A revalidates mapping targets against the active orchard and species,
+  increments `confirm_version`, updates staged position `variety_id` only for
+  `use_existing`, refreshes preview summary/status, and does not create
+  `varieties` before confirm.
+- Workers can still upload/preview unresolved candidates, but cannot finalize
+  resolution actions. No migration or RLS change was required because Phase 6
+  already guarded candidate updates with owner/super_admin semantics.
+- Phase 8A did not add confirm transactions or final `trees` writes.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
@@ -119,14 +126,15 @@ Status after Phase 8:
   `docs/tree-inventory-import/11-phase-5-completion-report.md` and
   `docs/tree-inventory-import/12-phase-6-completion-report.md` and
   `docs/tree-inventory-import/13-phase-7-completion-report.md` and
-  `docs/tree-inventory-import/14-phase-8-completion-report.md`.
+  `docs/tree-inventory-import/14-phase-8-completion-report.md` and
+  `docs/tree-inventory-import/15-phase-8a-completion-report.md`.
 
 Next planned step:
 
-- Phase 8A - Variety Resolution workflow.
-- Phase 8A may add owner/super_admin resolution actions for staged
-  `new_candidate` and `uncertain` variety groups.
-- Do not start Phase 9 final DB confirm before required variety resolution is
+- Phase 9 - Owner confirm transaction and final report.
+- Phase 9 may add the final owner/super_admin confirm path, transaction/RPC,
+  atomic `create_new` variety creation and final `trees` materialization.
+- Do not start Phase 10 hardening/release readiness before Phase 9 confirm is
   implemented and verified.
 
 ## 2. Verified repository assumptions
@@ -1949,14 +1957,14 @@ E2E:
 
 #### Acceptance criteria
 
-- [ ] `new_candidate` groups cannot reach confirm unresolved.
-- [ ] Owner can map to existing orchard-local variety.
-- [ ] Owner can choose explicit create-new-at-confirm.
-- [ ] Allowed `unknown`/`uncertain` states are represented without
+- [x] `new_candidate` groups cannot reach confirm unresolved.
+- [x] Owner can map to existing orchard-local variety.
+- [x] Owner can choose explicit create-new-at-confirm.
+- [x] Allowed `unknown`/`uncertain` states are represented without
       `variety_id`.
-- [ ] Worker cannot finalize new dictionary entries.
-- [ ] No `trees` writes occur.
-- [ ] No `varieties` rows are created before confirm in the preferred MVP path.
+- [x] Worker cannot finalize new dictionary entries.
+- [x] No `trees` writes occur.
+- [x] No `varieties` rows are created before confirm in the preferred MVP path.
 
 #### Verification commands
 
@@ -3004,7 +3012,7 @@ true:
 - [ ] `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test` and
       relevant `pnpm test:e2e` pass for release.
 
-## 17. Recommended prompt/task for Phase 8A
+## 17. Recommended prompt/task for Phase 9
 
 Use this as the next implementation prompt:
 
@@ -3024,37 +3032,48 @@ Najpierw przeczytaj:
 
 Sprawdz `git status --short`. Nie cofaj cudzych zmian.
 
-Wykonaj tylko Phase 8A z roadmapy:
-"Variety Resolution workflow".
+Wykonaj tylko Phase 9 z roadmapy:
+"Owner confirm transaction and final report".
 
 Zakres:
-- dodaj backend/service actions do rozstrzygania staged variety candidates;
-- owner/super_admin moze mapowac candidate do istniejacej orchard-local variety;
-- owner/super_admin moze wybrac explicit create-new-at-confirm bez tworzenia `varieties` przed confirm;
-- owner/super_admin moze oznaczyc dozwolona grupe jako unknown, zachowujac `variety_id=null`;
-- dla `uncertain` zachowaj jawne decyzje zgodnie z roadmapa;
-- worker moze widziec unresolved/new varieties, ale nie moze finalizowac resolution;
-- rewaliduj mapping targets wzgledem current DB i active orchard;
-- aktualizuj staged preview status, kiedy blocking candidates sa rozstrzygniete;
-- dodaj integration/security/E2E tests zgodnie z Phase 8A;
+- dodaj final owner/super_admin confirm path dla staged importu;
+- uzyj DB RPC/function albo row-lockowanej server-controlled transaction zgodnie z roadmapa;
+- confirm musi sprawdzac `import_id`, confirm token/version/current `confirm_version`, status i active orchard/member permissions;
+- worker, outsider i revoked membership nie moga confirmowac;
+- confirm musi rewalidowac current DB state: orchard/plot, resolved variety IDs, species, unresolved candidate groups i active tree conflicts;
+- unresolved blocking `new_candidate` nie moze przejsc przez confirm;
+- `resolution_action=create_new` ma tworzyc orchard-local `varieties` atomowo w tej samej final transaction przed insertami `trees`;
+- `keep_unknown`/dozwolone unknown/uncertain pozycje maja materializowac `trees.variety_id=null`;
+- `use_existing` ma materializowac `trees.variety_id` z revalidated staged position/candidate;
+- `missing_tree` nie tworzy `trees`;
+- confirm ma byc all-or-nothing i idempotentny, bez duplicate tree writes przy retry;
+- zapisz mapping utworzonych drzew w `inventory_import_created_trees`;
+- przygotuj final report/DTO dla confirm result;
+- dodaj integration/security/E2E tests zgodnie z Phase 9;
 - zaktualizuj dokumentacje/checkpoint;
-- nie tworz finalnych `trees`;
-- nie implementuj Phase 9 confirm transaction;
+- nie implementuj Phase 10 hardening/release readiness;
 - nie dodawaj silent fuzzy matching;
-- nie tworz `varieties` przed confirm w preferowanej sciezce MVP;
-- nie zmieniaj RLS/migracji, chyba ze Phase 6 faktycznie nie ma wymaganego pola resolution i wtedy zatrzymaj sie/zaraportuj conflict.
+- nie auto-create varieties z raw XLSX strings poza explicit `create_new` zatwierdzonym w Phase 8A;
+- nie dodawaj pre-confirm variety creation;
+- nie implementuj `update_existing`, `deactivate_and_create`, full snapshot ani async jobs.
 
-Przed zmianami uruchom bazowa weryfikacje z Phase 8A.
+Przed zmianami uruchom bazowa weryfikacje z Phase 9.
 Po zmianach uruchom:
+- supabase db lint
 - pnpm typecheck
 - pnpm lint
-- pnpm test -- tests/integration/tree-inventory-variety-resolution.spec.ts
+- pnpm test -- tests/integration/tree-inventory-confirm.spec.ts
 - pnpm test -- tests/security/tree-inventory-import-rls.spec.ts
+- pnpm test -- tests/integration/tree-batch-operations.spec.ts
+- pnpm test -- tests/security/tree-batch-rls.spec.ts
+- pnpm test -- tests/integration/variety-locations-report.spec.ts
 - pnpm test:e2e -- tests/e2e/tree-inventory-import.spec.ts
+- pnpm test:e2e -- tests/e2e/plot-visual-operations.spec.ts
+- pnpm test:e2e -- tests/e2e/tree-batch-and-export.spec.ts
 - git diff --check
 - git status --short
 
 Jesli trafisz na stop condition z roadmapy, zatrzymaj sie i zaraportuj.
-Na koniec podaj checkpoint report zgodny z Phase 8A completion report format.
-Nie przechodz do Phase 9.
+Na koniec podaj checkpoint report zgodny z Phase 9 completion report format.
+Nie przechodz do Phase 10.
 ```

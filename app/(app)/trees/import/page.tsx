@@ -3,11 +3,15 @@ import { PrerequisiteCard } from "@/components/ui/prerequisite-card";
 import { TreeInventoryImportForm } from "@/features/trees/tree-inventory-import-form";
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { listPlotOptionsForOrchard } from "@/lib/orchard-data/plots";
+import { listVarietyOptionsForOrchard } from "@/lib/orchard-data/varieties";
 import { submitTreeInventoryImportPreview } from "@/server/actions/tree-inventory-import";
 
 export default async function TreeInventoryImportPage() {
   const context = await requireActiveOrchard("/trees/import");
-  const plotOptions = await listPlotOptionsForOrchard(context.orchard.id);
+  const [plotOptions, varietyOptions] = await Promise.all([
+    listPlotOptionsForOrchard(context.orchard.id),
+    listVarietyOptionsForOrchard(context.orchard.id),
+  ]);
   const rowPlotOptions = plotOptions.filter(
     (plot) => plot.status !== "archived" && plot.layout_type === "rows",
   );
@@ -42,8 +46,13 @@ export default async function TreeInventoryImportPage() {
       </Card>
       <TreeInventoryImportForm
         action={submitTreeInventoryImportPreview}
+        canResolveVarietyCandidates={
+          context.membership.role === "owner" ||
+          context.profile?.system_role === "super_admin"
+        }
         plotOptions={rowPlotOptions}
         role={context.membership.role}
+        varietyOptions={varietyOptions}
       />
     </div>
   );

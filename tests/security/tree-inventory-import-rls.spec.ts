@@ -4,6 +4,9 @@ import {
   stageTreeInventoryPreviewForOrchard,
 } from "@/lib/tree-inventory-import/preview.server";
 import {
+  resolveTreeInventoryVarietyCandidateForOrchard,
+} from "@/lib/tree-inventory-import/variety-resolution.server";
+import {
   TREE_INVENTORY_CANONICAL_CONTRACT_VERSION,
   TREE_INVENTORY_XLSX_CONTRACT_VERSION,
   type TreeInventoryCanonicalImport,
@@ -16,6 +19,7 @@ import {
   createTestOrchardName,
   createTestUser,
   createTreeAsUser,
+  createVarietyAsUser,
   signInTestUser,
   updateMembershipAsAdmin,
 } from "../helpers/test-data";
@@ -545,5 +549,215 @@ describe("tree inventory import RLS", () => {
     expect(revokedPreview.status).toBe("failed");
     expect(ownerVisibleImports.error).toBeNull();
     expect(ownerVisibleImports.data).toHaveLength(2);
+  });
+
+  it("reserves variety candidate resolution for owner scope and blocks cross-orchard mappings", async () => {
+    const owner = await createTestUser("tree-inventory-resolution-rls-owner");
+    const worker = await createTestUser("tree-inventory-resolution-rls-worker");
+    const outsider = await createTestUser("tree-inventory-resolution-rls-outsider");
+    const foreignOwner = await createTestUser("tree-inventory-resolution-rls-foreign");
+    createdUserIds.push(
+      owner.user.id,
+      worker.user.id,
+      outsider.user.id,
+      foreignOwner.user.id,
+    );
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const workerClient = (await signInTestUser(worker.email, worker.password)).client;
+    const outsiderClient = (await signInTestUser(outsider.email, outsider.password)).client;
+    const foreignOwnerClient = (await signInTestUser(
+      foreignOwner.email,
+      foreignOwner.password,
+    )).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("tree-inventory-resolution-rls"),
+      code: "TVR-RLS",
+    });
+    const foreignOrchard = await createOrchardAsUser(foreignOwnerClient, {
+      name: createTestOrchardName("tree-inventory-resolution-foreign"),
+      code: "TVR-FGN",
+    });
+    const membership = await addWorkerMembership({
+      orchardId: orchard.orchard_id,
+      workerProfileId: worker.user.id,
+      invitedByProfileId: owner.user.id,
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Resolution RLS Plot",
+    });
+    const foreignPlot = await createPlotAsUser(foreignOwnerClient, {
+      orchardId: foreignOrchard.orchard_id,
+      name: "Foreign Resolution Plot",
+    });
+    const localVariety = await createVarietyAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      species: "apple",
+      name: "Owner Resolution Local",
+    });
+    const foreignVariety = await createVarietyAsUser(foreignOwnerClient, {
+      orchardId: foreignOrchard.orchard_id,
+      species: "apple",
+      name: "Foreign Resolution Variety",
+    });
+    const preview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+          varietyName: "Resolution RLS Candidate",
+        }),
+        file: { file_hash: hashWith("a") },
+      },
+      ownerClient,
+    );
+    const foreignPreview = await stageTreeInventoryPreviewForOrchard(
+      foreignOrchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: foreignOrchard.orchard_id,
+          plotId: foreignPlot.id,
+          varietyName: "Foreign Candidate",
+        }),
+        file: { file_hash: hashWith("b") },
+      },
+      foreignOwnerClient,
+    );
+    const candidates = await ownerClient
+      .from("inventory_import_variety_candidates")
+      .select("id, resolution_status, resolved_variety_id")
+      .eq("import_id", preview.import_id ?? "");
+    const candidate = candidates.data?.[0];
+
+    if (!candidate) {
+      throw new Error("Expected staged variety candidate.");
+    }
+
+    const workerResolution = await resolveTreeInventoryVarietyCandidateForOrchard(
+      orchard.orchard_id,
+      { profile_id: worker.user.id, orchard_role: "worker", system_role: "user" },
+      {
+        import_id: preview.import_id ?? "",
+        candidate_id: candidate.id,
+        resolution_action: "create_new",
+        confirm_version: preview.confirm_version,
+      },
+      workerClient,
+    );
+    const ownerCrossOrchardResolution =
+      await resolveTreeInventoryVarietyCandidateForOrchard(
+        orchard.orchard_id,
+        { profile_id: owner.user.id, orchard_role: "owner", system_role: "user" },
+        {
+          import_id: preview.import_id ?? "",
+          candidate_id: candidate.id,
+          resolution_action: "use_existing",
+          variety_id: foreignVariety.id,
+          confirm_version: preview.confirm_version,
+        },
+        ownerClient,
+      );
+    const ownerResolution = await resolveTreeInventoryVarietyCandidateForOrchard(
+      orchard.orchard_id,
+      { profile_id: owner.user.id, orchard_role: "owner", system_role: "user" },
+      {
+        import_id: preview.import_id ?? "",
+        candidate_id: candidate.id,
+        resolution_action: "use_existing",
+        variety_id: localVariety.id,
+        confirm_version: preview.confirm_version,
+      },
+      ownerClient,
+    );
+    const resolvedConfirmVersion = ownerResolution.success
+      ? ownerResolution.data.confirm_version
+      : 1;
+    const outsiderResolution = await resolveTreeInventoryVarietyCandidateForOrchard(
+      orchard.orchard_id,
+      { profile_id: outsider.user.id, orchard_role: "owner", system_role: "user" },
+      {
+        import_id: preview.import_id ?? "",
+        candidate_id: candidate.id,
+        resolution_action: "create_new",
+        confirm_version: resolvedConfirmVersion,
+      },
+      outsiderClient,
+    );
+    const directWorkerCandidateUpdate = await workerClient
+      .from("inventory_import_variety_candidates")
+      .update({
+        resolution_status: "resolved",
+        resolution_action: "create_new",
+      })
+      .eq("id", candidate.id)
+      .select("id")
+      .single();
+
+    await updateMembershipAsAdmin({
+      membershipId: membership.id,
+      patch: { status: "revoked" },
+    });
+
+    const foreignCandidates = await foreignOwnerClient
+      .from("inventory_import_variety_candidates")
+      .select("id")
+      .eq("import_id", foreignPreview.import_id ?? "");
+    const revokedResolution = await resolveTreeInventoryVarietyCandidateForOrchard(
+      orchard.orchard_id,
+      { profile_id: worker.user.id, orchard_role: "owner", system_role: "user" },
+      {
+        import_id: preview.import_id ?? "",
+        candidate_id: candidate.id,
+        resolution_action: "create_new",
+        confirm_version: resolvedConfirmVersion,
+      },
+      workerClient,
+    );
+    const finalCandidate = await ownerClient
+      .from("inventory_import_variety_candidates")
+      .select("resolution_status, resolution_action, resolved_variety_id")
+      .eq("id", candidate.id)
+      .single();
+
+    expect(workerResolution.success).toBe(false);
+    if (workerResolution.success) {
+      throw new Error("Expected worker resolution to be denied.");
+    }
+    expect(workerResolution.error_code).toBe("FORBIDDEN");
+    expect(ownerCrossOrchardResolution.success).toBe(false);
+    if (ownerCrossOrchardResolution.success) {
+      throw new Error("Expected cross-orchard mapping to be denied.");
+    }
+    expect(ownerCrossOrchardResolution.error_code).toBe("VALIDATION_ERROR");
+    expect(ownerCrossOrchardResolution.message).toBe(
+      "Wybierz odmiane z aktywnego sadu.",
+    );
+    expect(ownerResolution.success).toBe(true);
+    if (!ownerResolution.success) {
+      throw new Error(ownerResolution.message);
+    }
+    expect(ownerResolution.data.status).toBe("ready_for_owner_confirm");
+    expect(outsiderResolution.success).toBe(false);
+    if (outsiderResolution.success) {
+      throw new Error("Expected outsider resolution to be denied.");
+    }
+    expect(outsiderResolution.error_code).toBe("NOT_FOUND");
+    expect(directWorkerCandidateUpdate.data).toBeNull();
+    expect(["42501", "PGRST116"]).toContain(directWorkerCandidateUpdate.error?.code);
+    expect(foreignCandidates.error).toBeNull();
+    expect(foreignCandidates.data).toHaveLength(1);
+    expect(revokedResolution.success).toBe(false);
+    if (revokedResolution.success) {
+      throw new Error("Expected revoked member resolution to be denied.");
+    }
+    expect(revokedResolution.error_code).toBe("NOT_FOUND");
+    expect(finalCandidate.error).toBeNull();
+    expect(finalCandidate.data).toMatchObject({
+      resolution_status: "resolved",
+      resolution_action: "use_existing",
+      resolved_variety_id: localVariety.id,
+    });
   });
 });

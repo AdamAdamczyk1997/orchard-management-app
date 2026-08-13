@@ -18,6 +18,7 @@ import type {
   ActionResult,
   OrchardMembershipRole,
   PlotOption,
+  VarietyOption,
 } from "@/types/contracts";
 
 type TreeInventoryImportFormAction = (
@@ -27,9 +28,13 @@ type TreeInventoryImportFormAction = (
 
 type TreeInventoryImportFormProps = {
   action: TreeInventoryImportFormAction;
+  canResolveVarietyCandidates: boolean;
   plotOptions: PlotOption[];
   role: OrchardMembershipRole;
+  varietyOptions: VarietyOption[];
 };
+
+type TreeInventoryImportFormDispatch = (payload: FormData) => void;
 
 const initialState: ActionResult<TreeInventoryUploadPreviewData> = {
   success: false,
@@ -44,8 +49,10 @@ const statusLabels: Record<TreeInventoryUploadPreviewData["status"], string> = {
 
 export function TreeInventoryImportForm({
   action,
+  canResolveVarietyCandidates,
   plotOptions,
   role,
+  varietyOptions,
 }: TreeInventoryImportFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const [selectedPlotId, setSelectedPlotId] = useState(plotOptions[0]?.id ?? "");
@@ -147,17 +154,31 @@ export function TreeInventoryImportForm({
         </Card>
       </form>
 
-      {preview ? <PreviewPanel preview={preview} role={role} /> : null}
+      {preview ? (
+        <PreviewPanel
+          canResolveVarietyCandidates={canResolveVarietyCandidates}
+          formAction={formAction}
+          preview={preview}
+          role={role}
+          varietyOptions={varietyOptions}
+        />
+      ) : null}
     </div>
   );
 }
 
 function PreviewPanel({
+  canResolveVarietyCandidates,
+  formAction,
   preview,
   role,
+  varietyOptions,
 }: {
+  canResolveVarietyCandidates: boolean;
+  formAction: TreeInventoryImportFormDispatch;
   preview: TreeInventoryUploadPreviewData;
   role: OrchardMembershipRole;
+  varietyOptions: VarietyOption[];
 }) {
   const diagnostics = useMemo(
     () =>
@@ -190,7 +211,14 @@ function PreviewPanel({
         <SummaryGrid preview={preview} />
       </Card>
 
-      <VarietyCandidatesPanel candidates={preview.candidates} />
+      <VarietyCandidatesPanel
+        canResolveVarietyCandidates={canResolveVarietyCandidates}
+        candidates={preview.candidates}
+        confirmVersion={preview.confirm_version}
+        formAction={formAction}
+        importId={preview.import_id}
+        varietyOptions={varietyOptions}
+      />
       <ConflictsPanel conflicts={preview.conflicts} />
 
       <Card className="grid gap-4" data-testid="tree-inventory-confirm-disabled">
@@ -287,9 +315,19 @@ function SummaryGrid({
 }
 
 function VarietyCandidatesPanel({
+  canResolveVarietyCandidates,
   candidates,
+  confirmVersion,
+  formAction,
+  importId,
+  varietyOptions,
 }: {
+  canResolveVarietyCandidates: boolean;
   candidates: TreeInventoryUploadPreviewVarietyCandidate[];
+  confirmVersion: number | null;
+  formAction: TreeInventoryImportFormDispatch;
+  importId: string | null;
+  varietyOptions: VarietyOption[];
 }) {
   const unresolvedCandidates = candidates.filter((candidate) =>
     candidate.resolution_status === "unresolved" ||
@@ -308,7 +346,15 @@ function VarietyCandidatesPanel({
       {candidates.length > 0 ? (
         <div className="grid gap-3">
           {candidates.map((candidate) => (
-            <CandidateRow candidate={candidate} key={candidate.id} />
+            <CandidateRow
+              canResolveVarietyCandidates={canResolveVarietyCandidates}
+              candidate={candidate}
+              confirmVersion={confirmVersion}
+              formAction={formAction}
+              importId={importId}
+              key={candidate.id}
+              varietyOptions={varietyOptions}
+            />
           ))}
         </div>
       ) : (
@@ -319,12 +365,46 @@ function VarietyCandidatesPanel({
 }
 
 function CandidateRow({
+  canResolveVarietyCandidates,
   candidate,
+  confirmVersion,
+  formAction,
+  importId,
+  varietyOptions,
 }: {
+  canResolveVarietyCandidates: boolean;
   candidate: TreeInventoryUploadPreviewVarietyCandidate;
+  confirmVersion: number | null;
+  formAction: TreeInventoryImportFormDispatch;
+  importId: string | null;
+  varietyOptions: VarietyOption[];
 }) {
+  const canResolve =
+    canResolveVarietyCandidates &&
+    Boolean(importId) &&
+    (candidate.resolution_status === "unresolved" ||
+      candidate.resolution_status === "suggested");
+  const matchingVarieties = varietyOptions.filter(
+    (variety) =>
+      normalizeCandidateLookup(variety.species) ===
+      normalizeCandidateLookup(candidate.species),
+  );
+  const defaultVarietyId =
+    candidate.suggested_variety_id ??
+    matchingVarieties[0]?.id ??
+    "";
+  const canUseExisting = canResolve && matchingVarieties.length > 0;
+  const canCreateNew =
+    canResolve &&
+    candidate.source_status !== "unknown" &&
+    Boolean(candidate.raw_name?.trim());
+  const canKeepUnknown = canResolve && candidate.source_status !== "known";
+
   return (
-    <div className="grid gap-3 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3 text-sm">
+    <div
+      className="grid gap-3 rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3 text-sm"
+      data-testid="tree-inventory-variety-candidate"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-medium text-[#304335]">
@@ -351,7 +431,115 @@ function CandidateRow({
           ))}
         </div>
       ) : null}
+      {canResolve ? (
+        <div
+          className="grid gap-3 border-t border-[#dfd3bb] pt-3 lg:grid-cols-[minmax(0,1.4fr)_auto_auto]"
+          data-testid="tree-inventory-variety-resolution-controls"
+        >
+          <form action={formAction} className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <ResolutionHiddenFields
+              candidateId={candidate.id}
+              confirmVersion={confirmVersion}
+              importId={importId}
+              resolutionAction="use_existing"
+            />
+            <Select
+              aria-label="Existing variety"
+              data-testid="tree-inventory-resolve-variety-select"
+              defaultValue={defaultVarietyId}
+              disabled={!canUseExisting}
+              name="variety_id"
+            >
+              {matchingVarieties.length > 0 ? (
+                matchingVarieties.map((variety) => (
+                  <option key={variety.id} value={variety.id}>
+                    {variety.species} · {variety.name}
+                  </option>
+                ))
+              ) : (
+                <option value="">Brak odmian dla species</option>
+              )}
+            </Select>
+            <Button
+              className="w-full sm:w-auto"
+              data-testid="tree-inventory-resolve-use-existing"
+              disabled={!canUseExisting}
+              type="submit"
+            >
+              Use existing
+            </Button>
+          </form>
+
+          <form action={formAction}>
+            <ResolutionHiddenFields
+              candidateId={candidate.id}
+              confirmVersion={confirmVersion}
+              importId={importId}
+              resolutionAction="create_new"
+            />
+            <Button
+              className="w-full"
+              data-testid="tree-inventory-resolve-create-new"
+              disabled={!canCreateNew}
+              type="submit"
+              variant="secondary"
+            >
+              Create at confirm
+            </Button>
+          </form>
+
+          <form action={formAction}>
+            <ResolutionHiddenFields
+              candidateId={candidate.id}
+              confirmVersion={confirmVersion}
+              importId={importId}
+              resolutionAction="keep_unknown"
+            />
+            <Button
+              className="w-full"
+              data-testid="tree-inventory-resolve-keep-unknown"
+              disabled={!canKeepUnknown}
+              type="submit"
+              variant="ghost"
+            >
+              Keep unknown
+            </Button>
+          </form>
+        </div>
+      ) : (
+        <p className="text-xs font-medium text-[#6d7269]">
+          Resolution action: {candidate.resolution_action ?? "none"}
+        </p>
+      )}
     </div>
+  );
+}
+
+function ResolutionHiddenFields({
+  candidateId,
+  confirmVersion,
+  importId,
+  resolutionAction,
+}: {
+  candidateId: string;
+  confirmVersion: number | null;
+  importId: string | null;
+  resolutionAction: "use_existing" | "create_new" | "keep_unknown";
+}) {
+  return (
+    <>
+      <input name="intent" type="hidden" value="resolve_variety_candidate" />
+      <input name="import_id" type="hidden" value={importId ?? ""} />
+      <input name="candidate_id" type="hidden" value={candidateId} />
+      <input name="resolution_action" type="hidden" value={resolutionAction} />
+      {confirmVersion ? (
+        <input
+          name="confirm_version"
+          type="hidden"
+          value={String(confirmVersion)}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -400,10 +588,14 @@ function buildConfirmMessage(
   }
 
   if (preview.summary.unresolved_variety_candidates > 0) {
-    return "Owner musi najpierw rozstrzygnac blocking new_candidate groups. Resolution actions beda w kolejnej fazie.";
+    return "Owner musi najpierw rozstrzygnac blocking candidate groups.";
   }
 
   return "Owner confirm pozostaje wylaczony do Phase 9 final DB confirm.";
+}
+
+function normalizeCandidateLookup(value: string | null | undefined) {
+  return value?.trim().toLocaleLowerCase("pl") ?? "";
 }
 
 function formatDiagnosticSource(

@@ -13,11 +13,14 @@ import { normalizeTreeInventoryParsedWorkbook } from "@/lib/tree-inventory-impor
 import { parseTreeInventoryWorkbook } from "@/lib/tree-inventory-import/parser.server";
 import { stageTreeInventoryPreviewForOrchard } from "@/lib/tree-inventory-import/preview.server";
 import {
+  TREE_INVENTORY_UPLOAD_PREVIEW_VARIETY_RESOLUTION_ACTIONS,
   type TreeInventoryUploadPreviewConflict,
   type TreeInventoryUploadPreviewData,
   type TreeInventoryUploadPreviewSourceRowRef,
   type TreeInventoryUploadPreviewVarietyCandidate,
+  type TreeInventoryUploadPreviewVarietyResolutionRequest,
 } from "@/lib/tree-inventory-import/upload-preview-contract";
+import { resolveTreeInventoryVarietyCandidateForOrchard } from "@/lib/tree-inventory-import/variety-resolution.server";
 import type { ActionResult, OrchardMembershipRole } from "@/types/contracts";
 
 const TREE_INVENTORY_XLSX_CONTENT_TYPE =
@@ -65,6 +68,10 @@ export async function submitTreeInventoryImportPreview(
   _previousState: ActionResult<TreeInventoryUploadPreviewData>,
   formData: FormData,
 ): Promise<ActionResult<TreeInventoryUploadPreviewData>> {
+  if (formData.get("intent") === "resolve_variety_candidate") {
+    return handleResolveVarietyCandidateAction(formData);
+  }
+
   const file = formData.get("workbook");
   const fileValidation = validateWorkbookFile(file);
 
@@ -141,6 +148,153 @@ export async function submitTreeInventoryImportPreview(
       "Nie udalo sie przygotowac podgladu importu.",
     );
   }
+}
+
+async function handleResolveVarietyCandidateAction(
+  formData: FormData,
+): Promise<ActionResult<TreeInventoryUploadPreviewData>> {
+  const context = await requireActiveOrchard("/trees/import");
+  const orchard = context.orchard;
+  const role = context.membership.role;
+
+  if (!orchard) {
+    return createErrorResult(
+      "NO_ACTIVE_ORCHARD",
+      "Wybierz sad, aby rozstrzygnac candidate group.",
+    );
+  }
+
+  if (!context.profile?.id) {
+    return createErrorResult(
+      "PROFILE_BOOTSTRAP_REQUIRED",
+      "Profil uzytkownika jest wymagany do zapisania resolution.",
+    );
+  }
+
+  const request = parseResolutionRequest(formData);
+
+  if (!request.success || !request.data) {
+    return createErrorResult(
+      request.error_code ?? "VALIDATION_ERROR",
+      request.message ?? "Sprawdz resolution action i sprobuj ponownie.",
+      request.field_errors,
+    );
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const resolution = await resolveTreeInventoryVarietyCandidateForOrchard(
+      orchard.id,
+      {
+        profile_id: context.profile.id,
+        orchard_role: role,
+        system_role: context.profile.system_role,
+      },
+      request.data,
+      supabase,
+    );
+
+    if (!resolution.success) {
+      return createErrorResult(
+        resolution.error_code,
+        resolution.message,
+        resolution.field_errors,
+      );
+    }
+
+    const data = await buildUploadPreviewData({
+      supabase,
+      role,
+      preview: {
+        import_id: resolution.data.import_id,
+        status: resolution.data.status,
+        summary: resolution.data.summary,
+        diagnostics: resolution.data.diagnostics,
+        confirm_version: resolution.data.confirm_version,
+        confirm_token: null,
+      },
+    });
+
+    revalidatePath("/trees/import");
+
+    if (data.summary.unresolved_variety_candidates > 0) {
+      return createSuccessResult(
+        data,
+        "Resolution zapisane. Pozostaly jeszcze candidate groups do rozstrzygniecia.",
+      );
+    }
+
+    return createSuccessResult(
+      data,
+      "Resolution zapisane. Preview jest gotowy do Phase 9 confirm.",
+    );
+  } catch {
+    return createErrorResult(
+      "TREE_BATCH_MUTATION_FAILED",
+      "Nie udalo sie zapisac resolution dla candidate group.",
+    );
+  }
+}
+
+function parseResolutionRequest(
+  formData: FormData,
+): ActionResult<TreeInventoryUploadPreviewVarietyResolutionRequest> {
+  const importId = getStringFormValue(formData, "import_id");
+  const candidateId = getStringFormValue(formData, "candidate_id");
+  const resolutionAction = getStringFormValue(formData, "resolution_action");
+  const varietyId = getStringFormValue(formData, "variety_id");
+  const confirmVersionValue = getStringFormValue(formData, "confirm_version");
+  const fieldErrors: Record<string, string> = {};
+
+  if (!importId) {
+    fieldErrors.import_id = "Brakuje import_id.";
+  }
+
+  if (!candidateId) {
+    fieldErrors.candidate_id = "Brakuje candidate_id.";
+  }
+
+  if (
+    !TREE_INVENTORY_UPLOAD_PREVIEW_VARIETY_RESOLUTION_ACTIONS.includes(
+      resolutionAction as TreeInventoryUploadPreviewVarietyResolutionRequest["resolution_action"],
+    )
+  ) {
+    fieldErrors.resolution_action = "Nieobslugiwana resolution action.";
+  }
+
+  const confirmVersion = confirmVersionValue
+    ? Number.parseInt(confirmVersionValue, 10)
+    : null;
+
+  if (
+    confirmVersionValue &&
+    (!Number.isInteger(confirmVersion) || (confirmVersion ?? 0) <= 0)
+  ) {
+    fieldErrors.confirm_version = "Nieprawidlowa wersja preview.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "Sprawdz resolution action i sprobuj ponownie.",
+      fieldErrors,
+    );
+  }
+
+  return createSuccessResult({
+    import_id: importId ?? "",
+    candidate_id: candidateId ?? "",
+    resolution_action:
+      resolutionAction as TreeInventoryUploadPreviewVarietyResolutionRequest["resolution_action"],
+    variety_id: varietyId,
+    confirm_version: confirmVersion,
+  });
+}
+
+function getStringFormValue(formData: FormData, key: string) {
+  const value = formData.get(key);
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function validateWorkbookFile(

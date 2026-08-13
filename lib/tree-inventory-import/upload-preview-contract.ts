@@ -62,6 +62,15 @@ export type TreeInventoryUploadPreviewVarietyResolutionAction =
   | "reject"
   | null;
 
+export const TREE_INVENTORY_UPLOAD_PREVIEW_VARIETY_RESOLUTION_ACTIONS = [
+  "use_existing",
+  "create_new",
+  "keep_unknown",
+] as const;
+
+export type TreeInventoryUploadPreviewVarietyResolutionSubmitAction =
+  typeof TREE_INVENTORY_UPLOAD_PREVIEW_VARIETY_RESOLUTION_ACTIONS[number];
+
 export type TreeInventoryUploadPreviewVarietyCandidate = {
   id: string;
   candidate_key: string;
@@ -100,6 +109,23 @@ export type TreeInventoryUploadPreviewData = {
   can_confirm: false;
   candidates: TreeInventoryUploadPreviewVarietyCandidate[];
   conflicts: TreeInventoryUploadPreviewConflict[];
+};
+
+export type TreeInventoryUploadPreviewVarietyResolutionRequest = {
+  import_id: string;
+  candidate_id: string;
+  resolution_action: TreeInventoryUploadPreviewVarietyResolutionSubmitAction;
+  variety_id?: string | null;
+  confirm_version?: number | null;
+};
+
+export type TreeInventoryUploadPreviewVarietyResolutionResult = {
+  import_id: string;
+  candidate_id: string;
+  status: TreeInventoryPreviewStatus;
+  summary: TreeInventoryPreviewSummary;
+  diagnostics: TreeInventoryDiagnostic[];
+  confirm_version: number;
 };
 
 export const TREE_INVENTORY_UPLOAD_PREVIEW_DIAGNOSTIC_RENDER_LIMIT = 80;
