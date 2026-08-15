@@ -36,7 +36,7 @@ type TemplateRowInput = {
   variety_confidence: "known" | "unknown" | "uncertain" | "new_candidate";
 };
 
-test("owner downloads template, uploads a valid one-row workbook and sees preview", async ({
+test("owner downloads template, uploads a valid one-row workbook and confirms import", async ({
   page,
 }) => {
   test.setTimeout(180_000);
@@ -73,9 +73,14 @@ test("owner downloads template, uploads a valid one-row workbook and sees previe
   await expect(page.getByTestId("tree-inventory-preview")).toContainText(
     "Known varieties",
   );
-  await expect(page.getByTestId("tree-inventory-confirm-disabled")).toContainText(
-    "Owner confirm pozostaje wylaczony",
+  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
+    "Owner moze zatwierdzic import",
   );
+  await confirmImport(page, 1);
+  await expectTreesForPlot(page, plotName, "Pokazano 1-1 z 1 drzew", [
+    BASELINE_VARIETIES.ligol.name,
+    "Row 41, pos 1",
+  ]);
 });
 
 test("owner on empty orchard sees grouped new variety candidates", async ({
@@ -119,9 +124,10 @@ test("owner on empty orchard sees grouped new variety candidates", async ({
   await expect(page.getByTestId("tree-inventory-variety-candidates")).toContainText(
     "2 planned trees",
   );
-  await expect(page.getByTestId("tree-inventory-confirm-disabled")).toContainText(
+  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
     "rozstrzygnac blocking candidate groups",
   );
+  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeDisabled();
 });
 
 test("owner resolves first-import empty-orchard variety candidates before confirm gate", async ({
@@ -215,9 +221,19 @@ test("owner resolves first-import empty-orchard variety candidates before confir
   await expect(page.getByTestId("tree-inventory-preview")).toContainText(
     "Gotowy do confirm",
   );
-  await expect(page.getByTestId("tree-inventory-confirm-disabled")).toContainText(
-    "Owner confirm pozostaje wylaczony",
+  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
+    "Owner moze zatwierdzic import",
   );
+  await confirmImport(page, 4);
+  await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
+    "New varieties",
+  );
+  await expectTreesForPlot(page, plotName, "Pokazano 1-4 z 4 drzew", [
+    candidateA,
+    candidateB,
+    candidateC,
+    "Row 14, pos 1",
+  ]);
 });
 
 test("worker uploads and sees preview without confirm access", async ({ page }) => {
@@ -254,9 +270,10 @@ test("worker uploads and sees preview without confirm access", async ({ page }) 
     "Unresolved groups: 1",
   );
   await expect(page.getByTestId("tree-inventory-resolve-create-new")).toHaveCount(0);
-  await expect(page.getByTestId("tree-inventory-confirm-disabled")).toContainText(
+  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
     "Worker moze przygotowac preview",
   );
+  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeDisabled();
 });
 
 test("invalid workbook upload shows parser diagnostics", async ({ page }) => {
@@ -307,6 +324,43 @@ async function createRowsPlot(page: Page, plotName: string) {
   await page.getByRole("button", { name: "Utworz dzialke" }).click();
 
   await expectFeedback(page, "Dzialka zostala utworzona.");
+}
+
+async function confirmImport(page: Page, expectedCreatedTrees: number) {
+  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeEnabled();
+  await page.getByTestId("tree-inventory-confirm-button").click();
+  await expect(page.locator("body")).toContainText(
+    `Import confirmed. Utworzono ${expectedCreatedTrees} drzew.`,
+    { timeout: 30_000 },
+  );
+  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
+    "Import confirmed",
+  );
+  await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
+    "Created trees",
+  );
+  await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
+    String(expectedCreatedTrees),
+  );
+  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeDisabled();
+}
+
+async function expectTreesForPlot(
+  page: Page,
+  plotName: string,
+  expectedRangeText: string,
+  expectedTexts: string[],
+) {
+  await page.goto("/trees");
+  await selectOptionContaining(page.getByLabel("Dzialka"), plotName);
+  await page.getByRole("button", { name: "Zastosuj" }).click();
+  await expect(page.locator("body")).toContainText(expectedRangeText, {
+    timeout: 60_000,
+  });
+
+  for (const text of expectedTexts) {
+    await expect(page.locator("body")).toContainText(text);
+  }
 }
 
 async function downloadAndFillTemplate(

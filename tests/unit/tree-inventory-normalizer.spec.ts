@@ -314,14 +314,15 @@ describe("tree inventory normalizer", () => {
     );
   });
 
-  it("normalizes 5k expanded positions within the Phase 5 performance smoke", () => {
+  it("normalizes the accepted MVP limit within the Phase 5 performance smoke", () => {
     const parsed = buildParsedWorkbook({
       segments: [
         segmentRow(2, {
           segment_key: "S1",
           row_number: 1,
           from_position: 1,
-          to_position: 5_000,
+          to_position:
+            TREE_INVENTORY_IMPORT_LIMITS.max_expanded_tree_positions_mvp,
         }),
       ],
     });
@@ -329,7 +330,9 @@ describe("tree inventory normalizer", () => {
     const { canonical } = normalizeTreeInventoryParsedWorkbook(parsed);
     const elapsedMs = Date.now() - startedAt;
 
-    expect(canonical.expanded_positions).toHaveLength(5_000);
+    expect(canonical.expanded_positions).toHaveLength(
+      TREE_INVENTORY_IMPORT_LIMITS.max_expanded_tree_positions_mvp,
+    );
     expect(elapsedMs).toBeLessThan(1_000);
   });
 });

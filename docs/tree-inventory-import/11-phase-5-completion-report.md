@@ -54,11 +54,12 @@ Phase 5 - Normalization, segment expansion and pure validation
 - Covered parser-to-normalizer handoff from generated/filled workbook fixtures.
 - Covered unresolved variety states, known-without-name error, new candidate
   without ID, overlaps, gaps, exception behavior, exception conflicts, outside
-  exceptions, expanded limit and 5k performance smoke.
+  exceptions, expanded limit and accepted-limit performance smoke.
 
 ## Performance smoke
 
-- 5k expanded positions normalize within the local unit-test threshold.
+- Accepted-limit expanded positions normalize within the local unit-test
+  threshold.
 - Expanded position count is capped by
   `TREE_INVENTORY_IMPORT_LIMITS.max_expanded_tree_positions_mvp`.
 

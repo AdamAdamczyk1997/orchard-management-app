@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  confirmTreeInventoryImportForOrchard,
+} from "@/lib/tree-inventory-import/confirm.server";
+import {
   stageTreeInventoryPreviewForOrchard,
 } from "@/lib/tree-inventory-import/preview.server";
 import {
@@ -759,5 +762,101 @@ describe("tree inventory import RLS", () => {
       resolution_action: "use_existing",
       resolved_variety_id: localVariety.id,
     });
+  });
+
+  it("reserves tree inventory confirm for owners and super admins", async () => {
+    const owner = await createTestUser("tree-inventory-final-confirm-owner");
+    const worker = await createTestUser("tree-inventory-final-confirm-worker");
+    const outsider = await createTestUser("tree-inventory-final-confirm-outsider");
+    createdUserIds.push(owner.user.id, worker.user.id, outsider.user.id);
+
+    const ownerClient = (await signInTestUser(owner.email, owner.password)).client;
+    const workerClient = (await signInTestUser(worker.email, worker.password)).client;
+    const outsiderClient = (await signInTestUser(outsider.email, outsider.password)).client;
+    const orchard = await createOrchardAsUser(ownerClient, {
+      name: createTestOrchardName("tree-inventory-final-confirm"),
+      code: "TIC-RLS",
+    });
+    const membership = await addWorkerMembership({
+      orchardId: orchard.orchard_id,
+      workerProfileId: worker.user.id,
+      invitedByProfileId: owner.user.id,
+    });
+    const plot = await createPlotAsUser(ownerClient, {
+      orchardId: orchard.orchard_id,
+      name: "Final Confirm RLS Plot",
+    });
+    const preview = await stageTreeInventoryPreviewForOrchard(
+      orchard.orchard_id,
+      {
+        canonical: buildPreviewCanonical({
+          orchardId: orchard.orchard_id,
+          plotId: plot.id,
+        }),
+        file: { file_hash: hashWith("c") },
+      },
+      ownerClient,
+    );
+    const request = {
+      import_id: preview.import_id ?? "",
+      confirm_token: preview.confirm_token ?? "",
+      confirm_version: preview.confirm_version ?? 0,
+    };
+
+    expect(preview.status).toBe("ready_for_owner_confirm");
+
+    const workerConfirm = await confirmTreeInventoryImportForOrchard(
+      orchard.orchard_id,
+      request,
+      workerClient,
+    );
+    const outsiderConfirm = await confirmTreeInventoryImportForOrchard(
+      orchard.orchard_id,
+      request,
+      outsiderClient,
+    );
+
+    await updateMembershipAsAdmin({
+      membershipId: membership.id,
+      patch: { status: "revoked" },
+    });
+
+    const revokedConfirm = await confirmTreeInventoryImportForOrchard(
+      orchard.orchard_id,
+      request,
+      workerClient,
+    );
+    const ownerConfirm = await confirmTreeInventoryImportForOrchard(
+      orchard.orchard_id,
+      request,
+      ownerClient,
+    );
+    const workerCreatedTreesRead = await workerClient
+      .from("inventory_import_created_trees")
+      .select("id")
+      .eq("import_id", preview.import_id ?? "");
+
+    expect(workerConfirm.success).toBe(false);
+    if (workerConfirm.success) {
+      throw new Error("Expected worker confirm to be denied.");
+    }
+    expect(workerConfirm.error_code).toBe("FORBIDDEN");
+    expect(outsiderConfirm.success).toBe(false);
+    if (outsiderConfirm.success) {
+      throw new Error("Expected outsider confirm to be denied.");
+    }
+    expect(outsiderConfirm.error_code).toBe("FORBIDDEN");
+    expect(revokedConfirm.success).toBe(false);
+    if (revokedConfirm.success) {
+      throw new Error("Expected revoked member confirm to be denied.");
+    }
+    expect(revokedConfirm.error_code).toBe("FORBIDDEN");
+    expect(ownerConfirm.success).toBe(true);
+    if (!ownerConfirm.success) {
+      throw new Error(ownerConfirm.message);
+    }
+    expect(ownerConfirm.data.created_trees_count).toBe(1);
+    expect(workerCreatedTreesRead.error).toBeNull();
+    expect(workerCreatedTreesRead.data).toEqual([]);
   });
 });

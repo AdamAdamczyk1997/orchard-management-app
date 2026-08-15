@@ -69,10 +69,10 @@ test("worker sees membership restriction and gets HTTP 403 on account export", a
 }) => {
   await loginWithPassword(
     page,
-    SEEDED_USERS.worker.email,
-    SEEDED_USERS.worker.password,
+    SEEDED_USERS.workerRevoked.email,
+    SEEDED_USERS.workerRevoked.password,
   );
-  await waitForDashboard(page, SEEDED_USERS.worker.orchardName);
+  await waitForDashboard(page, SEEDED_USERS.workerRevoked.activeOrchardName);
   await expect(page.getByTestId("orchard-switcher-select")).toBeDisabled();
   await expect(page.getByTestId("orchard-switcher-hint")).toContainText(
     "Masz teraz dostep tylko do jednego sadu",

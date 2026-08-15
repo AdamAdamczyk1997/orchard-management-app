@@ -8,7 +8,8 @@ export type TreeInventoryPreviewStatus =
   | "failed"
   | "validated"
   | "awaiting_variety_resolution"
-  | "ready_for_owner_confirm";
+  | "ready_for_owner_confirm"
+  | "confirmed";
 
 export type TreeInventoryPreviewSummary = {
   total_positions: number;
@@ -105,8 +106,10 @@ export type TreeInventoryUploadPreviewData = {
   summary: TreeInventoryPreviewSummary;
   diagnostics: TreeInventoryDiagnostic[];
   confirm_version: number | null;
+  confirm_token: string | null;
   role: OrchardMembershipRole;
-  can_confirm: false;
+  can_confirm: boolean;
+  confirm_result: TreeInventoryImportConfirmReport | null;
   candidates: TreeInventoryUploadPreviewVarietyCandidate[];
   conflicts: TreeInventoryUploadPreviewConflict[];
 };
@@ -126,6 +129,19 @@ export type TreeInventoryUploadPreviewVarietyResolutionResult = {
   summary: TreeInventoryPreviewSummary;
   diagnostics: TreeInventoryDiagnostic[];
   confirm_version: number;
+};
+
+export type TreeInventoryImportConfirmReport = {
+  import_id: string;
+  status: "confirmed";
+  created_trees_count: number;
+  created_varieties_count: number;
+  missing_positions_count: number;
+  unknown_variety_trees_count: number;
+  mapped_existing_variety_trees_count: number;
+  created_variety_trees_count: number;
+  confirmed_by_profile_id?: string | null;
+  confirmed_at?: string | null;
 };
 
 export const TREE_INVENTORY_UPLOAD_PREVIEW_DIAGNOSTIC_RENDER_LIMIT = 80;

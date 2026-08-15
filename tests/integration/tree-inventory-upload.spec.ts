@@ -212,8 +212,9 @@ describe("tree inventory upload preview action", () => {
     expect(result.success).toBe(true);
     expect(result.data?.import_id).toBe("import-1");
     expect(result.data?.confirm_version).toBe(1);
-    expect(result.data).not.toHaveProperty("confirm_token");
+    expect(result.data?.confirm_token).toBe("server-only-token");
     expect(result.data?.can_confirm).toBe(false);
+    expect(result.data?.confirm_result).toBeNull();
     expect(result.data?.candidates).toEqual([
       expect.objectContaining({
         candidate_key: "apple:new_candidate:phase8",

@@ -32,7 +32,7 @@ Phase 1 - Import contracts, diagnostics and limits
   - `max_workbook_bytes = 5 MB`
   - `max_segment_rows = 500`
   - `max_exception_rows = 1000`
-  - `max_expanded_tree_positions_mvp = 5000`
+  - `max_expanded_tree_positions_mvp = 1000`
   - `max_diagnostics_returned = 500`
 
 ## Tests added

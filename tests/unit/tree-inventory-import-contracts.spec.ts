@@ -198,7 +198,7 @@ describe("tree inventory import contracts", () => {
       max_workbook_bytes: 5_242_880,
       max_segment_rows: 500,
       max_exception_rows: 1000,
-      max_expanded_tree_positions_mvp: 5000,
+      max_expanded_tree_positions_mvp: 1000,
       max_diagnostics_returned: 500,
     });
     expect(TREE_INVENTORY_IMPORT_LIMITS.max_workbook_bytes).toBeGreaterThan(0);

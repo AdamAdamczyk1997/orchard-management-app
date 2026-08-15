@@ -137,6 +137,7 @@ export const SEEDED_USERS = {
   superAdmin: BASELINE_PERSONAS.super_admin,
   owner: BASELINE_PERSONAS.owner_primary,
   worker: BASELINE_PERSONAS.worker_primary,
+  workerRevoked: BASELINE_PERSONAS.worker_revoked,
   outsider: BASELINE_PERSONAS.outsider,
   ownerEmpty: BASELINE_PERSONAS.owner_empty,
 } as const;

@@ -6,6 +6,10 @@ import { createDataErrorResult, createErrorResult, createSuccessResult } from "@
 import { requireActiveOrchard } from "@/lib/orchard-context/require-active-orchard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
+  confirmTreeInventoryImportForOrchard,
+  type TreeInventoryImportConfirmRequest,
+} from "@/lib/tree-inventory-import/confirm.server";
+import {
   type TreeInventoryDiagnostic,
 } from "@/lib/tree-inventory-import/contracts";
 import { TREE_INVENTORY_IMPORT_LIMITS } from "@/lib/tree-inventory-import/limits";
@@ -14,6 +18,7 @@ import { parseTreeInventoryWorkbook } from "@/lib/tree-inventory-import/parser.s
 import { stageTreeInventoryPreviewForOrchard } from "@/lib/tree-inventory-import/preview.server";
 import {
   TREE_INVENTORY_UPLOAD_PREVIEW_VARIETY_RESOLUTION_ACTIONS,
+  type TreeInventoryImportConfirmReport,
   type TreeInventoryUploadPreviewConflict,
   type TreeInventoryUploadPreviewData,
   type TreeInventoryUploadPreviewSourceRowRef,
@@ -65,11 +70,15 @@ type ConflictPositionRow = {
 };
 
 export async function submitTreeInventoryImportPreview(
-  _previousState: ActionResult<TreeInventoryUploadPreviewData>,
+  previousState: ActionResult<TreeInventoryUploadPreviewData>,
   formData: FormData,
 ): Promise<ActionResult<TreeInventoryUploadPreviewData>> {
   if (formData.get("intent") === "resolve_variety_candidate") {
-    return handleResolveVarietyCandidateAction(formData);
+    return handleResolveVarietyCandidateAction(previousState, formData);
+  }
+
+  if (formData.get("intent") === "confirm_import") {
+    return handleConfirmImportAction(previousState, formData);
   }
 
   const file = formData.get("workbook");
@@ -86,6 +95,7 @@ export async function submitTreeInventoryImportPreview(
   const context = await requireActiveOrchard("/trees/import");
   const orchard = context.orchard;
   const role = context.membership.role;
+  const canManageImport = canManageTreeInventoryImport(context);
 
   if (!orchard) {
     return createErrorResult(
@@ -116,6 +126,7 @@ export async function submitTreeInventoryImportPreview(
       supabase,
     );
     const data = await buildUploadPreviewData({
+      canManageImport,
       supabase,
       role,
       preview,
@@ -151,11 +162,13 @@ export async function submitTreeInventoryImportPreview(
 }
 
 async function handleResolveVarietyCandidateAction(
+  previousState: ActionResult<TreeInventoryUploadPreviewData>,
   formData: FormData,
 ): Promise<ActionResult<TreeInventoryUploadPreviewData>> {
   const context = await requireActiveOrchard("/trees/import");
   const orchard = context.orchard;
   const role = context.membership.role;
+  const canManageImport = canManageTreeInventoryImport(context);
 
   if (!orchard) {
     return createErrorResult(
@@ -203,6 +216,7 @@ async function handleResolveVarietyCandidateAction(
     }
 
     const data = await buildUploadPreviewData({
+      canManageImport,
       supabase,
       role,
       preview: {
@@ -211,7 +225,9 @@ async function handleResolveVarietyCandidateAction(
         summary: resolution.data.summary,
         diagnostics: resolution.data.diagnostics,
         confirm_version: resolution.data.confirm_version,
-        confirm_token: null,
+        confirm_token: previousState.data?.import_id === resolution.data.import_id
+          ? previousState.data.confirm_token
+          : null,
       },
     });
 
@@ -232,6 +248,86 @@ async function handleResolveVarietyCandidateAction(
     return createErrorResult(
       "TREE_BATCH_MUTATION_FAILED",
       "Nie udalo sie zapisac resolution dla candidate group.",
+    );
+  }
+}
+
+async function handleConfirmImportAction(
+  previousState: ActionResult<TreeInventoryUploadPreviewData>,
+  formData: FormData,
+): Promise<ActionResult<TreeInventoryUploadPreviewData>> {
+  const context = await requireActiveOrchard("/trees/import");
+  const orchard = context.orchard;
+  const role = context.membership.role;
+  const canManageImport = canManageTreeInventoryImport(context);
+
+  if (!orchard) {
+    return createErrorResult(
+      "NO_ACTIVE_ORCHARD",
+      "Wybierz sad, aby zatwierdzic import.",
+    );
+  }
+
+  const request = parseConfirmRequest(formData, previousState.data);
+
+  if (!request.success || !request.data) {
+    return createErrorResult(
+      request.error_code ?? "VALIDATION_ERROR",
+      request.message ?? "Sprawdz confirm request i sprobuj ponownie.",
+      request.field_errors,
+    );
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const confirmResult = await confirmTreeInventoryImportForOrchard(
+      orchard.id,
+      request.data,
+      supabase,
+    );
+
+    if (!confirmResult.success) {
+      if (previousState.data) {
+        return createDataErrorResult(
+          confirmResult.error_code,
+          confirmResult.message,
+          previousState.data,
+          confirmResult.field_errors,
+        );
+      }
+
+      return createErrorResult(
+        confirmResult.error_code,
+        confirmResult.message,
+        confirmResult.field_errors,
+      );
+    }
+
+    const preview = await readStoredPreviewHeader({
+      supabase,
+      importId: confirmResult.data.import_id,
+      confirmToken: request.data.confirm_token,
+    });
+    const data = await buildUploadPreviewData({
+      canManageImport,
+      supabase,
+      role,
+      preview,
+      confirmResult: confirmResult.data.final_report,
+    });
+
+    revalidatePath("/trees/import");
+    revalidatePath("/trees");
+    revalidatePath("/dashboard");
+
+    return createSuccessResult(
+      data,
+      `Import confirmed. Utworzono ${confirmResult.data.created_trees_count} drzew.`,
+    );
+  } catch {
+    return createErrorResult(
+      "TREE_BATCH_MUTATION_FAILED",
+      "Nie udalo sie zatwierdzic importu drzew.",
     );
   }
 }
@@ -291,10 +387,60 @@ function parseResolutionRequest(
   });
 }
 
+function parseConfirmRequest(
+  formData: FormData,
+  previousPreview?: TreeInventoryUploadPreviewData,
+): ActionResult<TreeInventoryImportConfirmRequest> {
+  const importId = getStringFormValue(formData, "import_id") ??
+    previousPreview?.import_id ??
+    null;
+  const confirmToken = getStringFormValue(formData, "confirm_token") ??
+    previousPreview?.confirm_token ??
+    null;
+  const confirmVersionValue = getStringFormValue(formData, "confirm_version");
+  const confirmVersion = confirmVersionValue
+    ? Number.parseInt(confirmVersionValue, 10)
+    : previousPreview?.confirm_version ?? null;
+  const fieldErrors: Record<string, string> = {};
+
+  if (!importId) {
+    fieldErrors.import_id = "Brakuje import_id.";
+  }
+
+  if (!confirmToken) {
+    fieldErrors.confirm_token = "Brakuje confirm token.";
+  }
+
+  if (!Number.isInteger(confirmVersion) || (confirmVersion ?? 0) <= 0) {
+    fieldErrors.confirm_version = "Nieprawidlowa wersja preview.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return createErrorResult(
+      "VALIDATION_ERROR",
+      "Sprawdz confirm request i sprobuj ponownie.",
+      fieldErrors,
+    );
+  }
+
+  return createSuccessResult({
+    import_id: importId ?? "",
+    confirm_token: confirmToken ?? "",
+    confirm_version: confirmVersion ?? 0,
+  });
+}
+
 function getStringFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
 
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function canManageTreeInventoryImport(context: Awaited<ReturnType<typeof requireActiveOrchard>>) {
+  return (
+    context.membership.role === "owner" ||
+    context.profile?.system_role === "super_admin"
+  );
 }
 
 function validateWorkbookFile(
@@ -337,6 +483,8 @@ function validateWorkbookFile(
 }
 
 async function buildUploadPreviewData(input: {
+  canManageImport: boolean;
+  confirmResult?: TreeInventoryImportConfirmReport | null;
   supabase: QueryClient;
   role: OrchardMembershipRole;
   preview: Awaited<ReturnType<typeof stageTreeInventoryPreviewForOrchard>>;
@@ -348,8 +496,10 @@ async function buildUploadPreviewData(input: {
       summary: input.preview.summary,
       diagnostics: input.preview.diagnostics,
       confirm_version: input.preview.confirm_version,
+      confirm_token: input.preview.confirm_token,
       role: input.role,
       can_confirm: false,
+      confirm_result: input.confirmResult ?? null,
       candidates: [],
       conflicts: [],
     };
@@ -368,14 +518,52 @@ async function buildUploadPreviewData(input: {
     summary: input.preview.summary,
     diagnostics: input.preview.diagnostics,
     confirm_version: input.preview.confirm_version,
+    confirm_token: input.preview.confirm_token,
     role: input.role,
-    can_confirm: false,
+    can_confirm:
+      input.canManageImport &&
+      input.preview.status === "ready_for_owner_confirm" &&
+      Boolean(input.preview.confirm_token),
+    confirm_result: input.confirmResult ?? null,
     candidates: candidates.map((candidate) =>
       mapCandidateRow(candidate, sourceRowsById),
     ),
     conflicts: conflicts.map((conflict) =>
       mapConflictRow(conflict, sourceRowsById),
     ),
+  };
+}
+
+async function readStoredPreviewHeader(input: {
+  supabase: QueryClient;
+  importId: string;
+  confirmToken: string | null;
+}) {
+  const { data, error } = await input.supabase
+    .from("inventory_imports")
+    .select("id, status, summary_json, diagnostics_json, confirm_version")
+    .eq("id", input.importId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const row = data as {
+    id: string;
+    status: TreeInventoryUploadPreviewData["status"];
+    summary_json: unknown;
+    diagnostics_json: unknown;
+    confirm_version: number;
+  };
+
+  return {
+    import_id: row.id,
+    status: row.status,
+    summary: asSummary(row.summary_json),
+    diagnostics: asDiagnostics(row.diagnostics_json),
+    confirm_version: row.confirm_version,
+    confirm_token: input.confirmToken,
   };
 }
 
@@ -473,6 +661,44 @@ function mapConflictRow(
 
 function asDiagnostics(value: unknown): TreeInventoryDiagnostic[] {
   return Array.isArray(value) ? value as TreeInventoryDiagnostic[] : [];
+}
+
+function asSummary(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return emptySummary();
+  }
+
+  return {
+    ...emptySummary(),
+    ...(value as Partial<TreeInventoryUploadPreviewData["summary"]>),
+    diagnostics: {
+      ...emptySummary().diagnostics,
+      ...((value as Partial<TreeInventoryUploadPreviewData["summary"]>).diagnostics ?? {}),
+    },
+  };
+}
+
+function emptySummary(): TreeInventoryUploadPreviewData["summary"] {
+  return {
+    total_positions: 0,
+    planned_tree_records: 0,
+    missing_positions: 0,
+    active_conflicts: 0,
+    inactive_contexts: 0,
+    known_variety_positions: 0,
+    new_candidate_positions: 0,
+    uncertain_variety_positions: 0,
+    unknown_variety_positions: 0,
+    grouped_variety_candidates: 0,
+    unresolved_variety_candidates: 0,
+    suggested_variety_candidates: 0,
+    diagnostics: {
+      errors: 0,
+      warnings: 0,
+      info: 0,
+      returned: 0,
+    },
+  };
 }
 
 function formatBytes(bytes: number) {

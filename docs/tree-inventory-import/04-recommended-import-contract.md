@@ -26,6 +26,8 @@ MVP importu powinien byc waski:
 - importer nie tworzy automatycznie nowych odmian bez jawnej decyzji w preview;
 - missing positions nie sa zapisywane jako `trees`;
 - brak rekordu w pliku nie zmienia istniejacego drzewa;
+- MVP limituje jeden import do 1k expanded positions; wieksze kwatery nalezy
+  dzielic na mniejsze importy;
 - brak dependency XLSX w repo oznacza, ze wybor biblioteki jest osobnym krokiem.
 
 ## Proponowane arkusze XLSX

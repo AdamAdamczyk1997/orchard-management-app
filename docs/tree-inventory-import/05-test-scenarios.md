@@ -209,7 +209,8 @@ Te testy beda potrzebne, jesli powstana tabele staging:
 
 ### Large plot
 
-- Import kilku tysiecy drzew pokazuje preview bez zamrozenia UI.
+- Import do 1k expanded positions pokazuje preview bez zamrozenia UI.
+- Wieksze kwatery sa dzielone na mniejsze importy w MVP.
 - Confirm konczy sie w zalozonym limicie albo zwraca queued status, jesli async.
 - Po confirm `/plots/:id` przechodzi w large scale overview zamiast pelnego PVO gridu.
 
@@ -218,14 +219,15 @@ Te testy beda potrzebne, jesli powstana tabele staging:
 ### Parser/normalizer
 
 - 1k trees equivalent.
-- 5k trees equivalent.
-- 10k trees equivalent as stress, jesli poza MVP.
+- 1001 trees equivalent rejects with the accepted MVP limit diagnostic.
+- 5k trees equivalent remains future hardening/stress, outside MVP.
 - Wiele arkuszy i ukryte slowniki.
 - Memory bounded parsing.
 
 ### DB preview
 
-- Conflict check dla 1k/5k positions wykorzystuje indeks `(orchard_id, plot_id, row_number, position_in_row)`/pokrewne indeksy.
+- Conflict check dla 1k positions wykorzystuje indeks `(orchard_id, plot_id, row_number, position_in_row)`/pokrewne indeksy.
+- 5k conflict/confirm/read evidence wraca w future hardening.
 - Variety lookup batched, nie per row.
 - Plot lookup jednorazowy.
 
@@ -290,7 +292,8 @@ Rekomendowane fixture:
 - `unknown-variety.xlsx`
 - `overlapping-ranges.xlsx`
 - `conflict-existing-tree.xlsx`
-- `large-plot-5k.xlsx` albo generator testowy, jesli binary bylby zbyt duzy
+- `large-plot-1k.xlsx` albo generator testowy, jesli binary bylby zbyt duzy
+- `large-plot-5k.xlsx` jako future hardening fixture poza MVP
 
 Dla arkuszy z formulami/listami/ukrytymi slownikami:
 

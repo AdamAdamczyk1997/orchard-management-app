@@ -41,7 +41,7 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 8A:
+Status after Phase 10 lower-limit decision:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
@@ -52,6 +52,9 @@ Status after Phase 8A:
 - Phase 7 is complete.
 - Phase 8 is complete.
 - Phase 8A is complete.
+- Phase 9 is complete.
+- Phase 10 accepted a lower MVP import limit of 1k expanded positions after 5k
+  confirm remained unstable under the local statement timeout.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -117,7 +120,33 @@ Status after Phase 8A:
 - Workers can still upload/preview unresolved candidates, but cannot finalize
   resolution actions. No migration or RLS change was required because Phase 6
   already guarded candidate updates with owner/super_admin semantics.
-- Phase 8A did not add confirm transactions or final `trees` writes.
+- Phase 9 adds owner/super_admin final confirm through
+  `confirm_tree_inventory_import`, a `SECURITY DEFINER` RPC with fixed
+  `search_path`, explicit auth/member checks, confirm token/version validation,
+  row locking, final revalidation and idempotent retry behavior.
+- Phase 9 materializes staged planned tree records into `trees`, skips
+  `missing_tree`, maps created rows through `inventory_import_created_trees`,
+  persists a final `confirm_report`, and preserves import-only planting year
+  information in notes without adding import-only columns to `trees`.
+- Phase 9 creates only explicitly approved `resolution_action=create_new`
+  orchard-local varieties inside the same final transaction before tree insert.
+  `keep_unknown` materializes with `trees.variety_id=null`.
+- Phase 10 baseline regression passed before the performance blocker: full
+  `pnpm test` passed, baseline reset/status passed, large plot fixture seeded,
+  and full `pnpm test:e2e` passed after the orchard-access E2E persona was
+  adjusted for the PERF fixture.
+- Phase 10 performance evidence shows 1k import passes through template,
+  parse, normalize, staging/preview, confirm and read models.
+- The initial 5k failure was in post-confirm focused row read models. A scoped
+  read-side hardening split exact counts from joined page reads and removed
+  redundant source ordering from tree scale pagination.
+- After read-side hardening, 5k can pass read models when confirm succeeds, but
+  `confirm_tree_inventory_import` still hits the local statement timeout around
+  8s in repeat runs.
+- The accepted MVP limit is now 1k expanded positions. Larger plots should be
+  split into smaller imports during MVP.
+- Stable 5k import remains future hardening and is tracked in
+  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
 - Checkpoint reports are recorded in
   `docs/tree-inventory-import/07-phase-1-completion-report.md` and
   `docs/tree-inventory-import/08-phase-2-completion-report.md` and
@@ -127,15 +156,21 @@ Status after Phase 8A:
   `docs/tree-inventory-import/12-phase-6-completion-report.md` and
   `docs/tree-inventory-import/13-phase-7-completion-report.md` and
   `docs/tree-inventory-import/14-phase-8-completion-report.md` and
-  `docs/tree-inventory-import/15-phase-8a-completion-report.md`.
+  `docs/tree-inventory-import/15-phase-8a-completion-report.md` and
+  `docs/tree-inventory-import/16-phase-9-completion-report.md`,
+  `docs/tree-inventory-import/17-phase-10-stop-report.md` and
+  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`. MVP
+  support guidance is recorded in
+  `docs/tree-inventory-import/19-mvp-import-support-notes.md`.
 
 Next planned step:
 
-- Phase 9 - Owner confirm transaction and final report.
-- Phase 9 may add the final owner/super_admin confirm path, transaction/RPC,
-  atomic `create_new` variety creation and final `trees` materialization.
-- Do not start Phase 10 hardening/release readiness before Phase 9 confirm is
-  implemented and verified.
+- Continue Phase 10 release readiness with the accepted 1k MVP import limit:
+  rerun the performance gate, complete user/support/rollback docs, manual QA and
+  full regression.
+- Keep 5k work out of MVP until the future hardening plan is explicitly picked
+  up.
+- Do not add new product modes unless the roadmap is explicitly changed.
 
 ## 2. Verified repository assumptions
 
@@ -1211,7 +1246,9 @@ Unit:
 
 Performance:
 
-- Normalize 1k and 5k expanded positions within agreed local threshold.
+- Normalize the accepted MVP expanded-position limit within agreed local
+  threshold.
+- Reject positions above the accepted MVP limit with a deterministic diagnostic.
 
 #### Existing regression tests to run
 
@@ -1392,7 +1429,8 @@ E2E:
 
 Performance:
 
-- Insert 1k/5k staged positions in test/helper if practical.
+- Insert 1k staged positions in test/helper if practical.
+- Keep 5k staged-position evidence for future hardening.
 
 #### Existing regression tests to run
 
@@ -2174,17 +2212,17 @@ Performance:
 
 #### Acceptance criteria
 
-- [ ] Owner can confirm.
-- [ ] Worker cannot confirm.
-- [ ] Confirm revalidates conflicts.
-- [ ] Confirm revalidates all resolved variety IDs against current DB.
-- [ ] Unresolved `new_candidate` cannot pass confirm.
-- [ ] Explicit new variety creation and tree creation are atomic.
-- [ ] Confirm is all-or-nothing.
-- [ ] Duplicate confirm cannot create duplicate trees.
-- [ ] Missing positions create no records.
-- [ ] Final report is persisted/visible.
-- [ ] Existing bulk/PVO/report tests still pass.
+- [x] Owner can confirm.
+- [x] Worker cannot confirm.
+- [x] Confirm revalidates conflicts.
+- [x] Confirm revalidates all resolved variety IDs against current DB.
+- [x] Unresolved `new_candidate` cannot pass confirm.
+- [x] Explicit new variety creation and tree creation are atomic.
+- [x] Confirm is all-or-nothing.
+- [x] Duplicate confirm cannot create duplicate trees.
+- [x] Missing positions create no records.
+- [x] Final report is persisted/visible.
+- [x] Existing bulk/PVO/report tests still pass.
 
 #### Verification commands
 
@@ -2267,13 +2305,15 @@ and release risk.
 
 #### Scope
 
-- 1k and 5k import performance measurements:
+- 1k accepted-limit import performance measurements:
   - parse
   - normalize
   - staging
   - preview conflict query
   - confirm transaction
   - read models after confirm
+- 5k evidence is retained as future hardening evidence, not as an MVP release
+  gate after the 2026-08-14 lower-limit decision.
 - Regression verification:
   - single tree create/update
   - existing bulk tree create
@@ -2333,8 +2373,9 @@ No new contract. Stabilization only.
 
 Performance:
 
-- 1k import benchmark.
-- 5k import benchmark.
+- 1k accepted-limit import benchmark.
+- Above-limit rejection benchmark/test.
+- 5k future-hardening benchmark when the future 5k plan is resumed.
 - Parser memory check.
 - Conflict query evidence.
 - Confirm transaction timing.
@@ -2388,7 +2429,8 @@ pnpm seed:large-plot-fixture
 #### Acceptance criteria
 
 - [ ] 1k performance evidence recorded.
-- [ ] 5k performance evidence recorded.
+- [ ] 1k accepted-limit performance evidence recorded.
+- [ ] Above-limit behavior documented and tested.
 - [ ] Full test gate green or documented accepted exceptions.
 - [ ] Manual QA checklist complete.
 - [ ] Rollback/recovery procedure documented.
@@ -2417,6 +2459,20 @@ Run `pnpm seed:large-plot-fixture` before performance checks when needed.
 - 5k import fails and no accepted MVP limit is set.
 - Full regression shows PVO, reports, RLS or active orchard regression.
 - Rollback/recovery story is unclear.
+
+2026-08-14 attempts:
+
+- 1k import passed end to end.
+- 5k import passed template, parser, normalizer, staging/preview and confirm,
+  then failed during read models after confirm with `canceling statement due to
+  statement timeout`.
+- A scoped read-model hardening resolved the initial focused-row read timeout in
+  at least one targeted 5k run.
+- Repeat 5k runs now fail during confirm RPC with
+  `Confirm importu przekroczyl limit czasu lokalnej bazy.` around 8s.
+- A lower MVP limit of 1k expanded positions was accepted after this stop. See
+  `docs/tree-inventory-import/17-phase-10-stop-report.md` and
+  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
 
 #### Completion report format
 
@@ -2829,7 +2885,7 @@ Checkpoint decision must answer:
 | cross-orchard staging integrity | 6/7/9 | integration/security/RLS | 6 |
 | SECURITY DEFINER confirm safeguards | 9 | SQL/integration/security review | 9 |
 | 1k import | 5/7/9/10 | unit/performance/integration | 5 |
-| 5k import | 5/10 | performance | 10 |
+| future 5k import | 5/10+ | performance/future hardening | future |
 | malformed XLSX | 4/8 | unit parser/E2E | 4 |
 | old contract version | 4 | unit parser | 4 |
 | account export regression | 10 | integration/E2E regression | 10 |
@@ -2857,7 +2913,8 @@ Measure at least:
   - `/trees` and plot detail after confirm.
 - 5k expanded positions:
   - same metrics;
-  - if 5k fails, either improve architecture or set explicit MVP max below 5k.
+  - after the 2026-08-14 decision, 5k is future hardening, not an MVP release
+    gate.
 
 Do not claim support for 10k/100k until measured in a later dedicated phase.
 
@@ -2990,29 +3047,29 @@ true:
 - [ ] Owner/super_admin can explicitly resolve variety candidates before
       confirm.
 - [ ] New candidate varieties are never silently inserted from raw XLSX strings.
-- [ ] Owner confirmation is implemented.
-- [ ] Worker can download/upload/validate/preview but cannot confirm.
-- [ ] Confirm is all-or-nothing and idempotent.
-- [ ] Confirm revalidates current DB state, resolved variety IDs and stale
+- [x] Owner confirmation is implemented.
+- [x] Worker can download/upload/validate/preview but cannot confirm.
+- [x] Confirm is all-or-nothing and idempotent.
+- [x] Confirm revalidates current DB state, resolved variety IDs and stale
       preview/token.
-- [ ] Explicit new variety creation, when selected, is atomic with tree
+- [x] Explicit new variety creation, when selected, is atomic with tree
       creation.
-- [ ] Final report is available after confirm.
-- [ ] RLS covers all staging tables and confirm path.
+- [x] Final report is available after confirm.
+- [x] RLS covers all staging tables and confirm path.
 - [ ] Existing single tree create/update still works.
 - [ ] Existing bulk tree create/deactivate still works.
 - [ ] PVO, focused row, large plot overview, activity prefill, harvest flows,
       variety locations and account export do not regress.
 - [ ] 1k import performance evidence is recorded.
-- [ ] 5k import performance evidence is recorded or a lower explicit MVP limit
-      is accepted.
+- [x] Lower explicit MVP limit is accepted.
+- [x] Lower explicit MVP limit is documented and tested.
 - [ ] Documentation and user instructions are updated.
 - [ ] Manual QA checklist is complete.
 - [ ] Rollback/recovery procedure is documented.
 - [ ] `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test` and
       relevant `pnpm test:e2e` pass for release.
 
-## 17. Recommended prompt/task for Phase 9
+## 17. Recommended prompt/task for Phase 10
 
 Use this as the next implementation prompt:
 
@@ -3032,48 +3089,37 @@ Najpierw przeczytaj:
 
 Sprawdz `git status --short`. Nie cofaj cudzych zmian.
 
-Wykonaj tylko Phase 9 z roadmapy:
-"Owner confirm transaction and final report".
+Wykonaj tylko Phase 10 z roadmapy:
+"Compatibility, performance and release hardening".
 
 Zakres:
-- dodaj final owner/super_admin confirm path dla staged importu;
-- uzyj DB RPC/function albo row-lockowanej server-controlled transaction zgodnie z roadmapa;
-- confirm musi sprawdzac `import_id`, confirm token/version/current `confirm_version`, status i active orchard/member permissions;
-- worker, outsider i revoked membership nie moga confirmowac;
-- confirm musi rewalidowac current DB state: orchard/plot, resolved variety IDs, species, unresolved candidate groups i active tree conflicts;
-- unresolved blocking `new_candidate` nie moze przejsc przez confirm;
-- `resolution_action=create_new` ma tworzyc orchard-local `varieties` atomowo w tej samej final transaction przed insertami `trees`;
-- `keep_unknown`/dozwolone unknown/uncertain pozycje maja materializowac `trees.variety_id=null`;
-- `use_existing` ma materializowac `trees.variety_id` z revalidated staged position/candidate;
-- `missing_tree` nie tworzy `trees`;
-- confirm ma byc all-or-nothing i idempotentny, bez duplicate tree writes przy retry;
-- zapisz mapping utworzonych drzew w `inventory_import_created_trees`;
-- przygotuj final report/DTO dla confirm result;
-- dodaj integration/security/E2E tests zgodnie z Phase 9;
+- zbierz 1k import performance evidence dla parse/normalize/stage/preview/confirm/read models;
+- sprawdz, czy 5k import jest realny, albo zaproponuj jawny zaakceptowany MVP limit;
+- wykonaj broad regression zgodnie z Phase 10 compatibility list;
+- sprawdz single tree create/update, bulk create/deactivate, PVO/focused row/large plot,
+  activity prefill, harvest flows, variety locations, account export, RLS, active orchard handling i baseline seeds;
+- zaktualizuj user/support/troubleshooting docs dla workflow importu, first-import empty orchard, variety resolution, known limits i rollback/recovery;
+- przygotuj manual QA checklist i zapisz wyniki;
+- rozważ feature flag/nav gating tylko jesli release risk tego wymaga;
 - zaktualizuj dokumentacje/checkpoint;
-- nie implementuj Phase 10 hardening/release readiness;
-- nie dodawaj silent fuzzy matching;
-- nie auto-create varieties z raw XLSX strings poza explicit `create_new` zatwierdzonym w Phase 8A;
-- nie dodawaj pre-confirm variety creation;
-- nie implementuj `update_existing`, `deactivate_and_create`, full snapshot ani async jobs.
+- nie dodawaj nowych product modes;
+- nie implementuj `update_existing`, `deactivate_and_create`, full snapshot, multi-plot XLSX ani permanent station model;
+- nie tworz migracji bez jawnego konfliktu i osobnej akceptacji;
+- nie przechodz poza hardening/release readiness.
 
-Przed zmianami uruchom bazowa weryfikacje z Phase 9.
+Przed zmianami uruchom bazowa weryfikacje z Phase 10.
 Po zmianach uruchom:
 - supabase db lint
 - pnpm typecheck
 - pnpm lint
-- pnpm test -- tests/integration/tree-inventory-confirm.spec.ts
-- pnpm test -- tests/security/tree-inventory-import-rls.spec.ts
-- pnpm test -- tests/integration/tree-batch-operations.spec.ts
-- pnpm test -- tests/security/tree-batch-rls.spec.ts
-- pnpm test -- tests/integration/variety-locations-report.spec.ts
-- pnpm test:e2e -- tests/e2e/tree-inventory-import.spec.ts
-- pnpm test:e2e -- tests/e2e/plot-visual-operations.spec.ts
-- pnpm test:e2e -- tests/e2e/tree-batch-and-export.spec.ts
+- pnpm test
+- pnpm test:e2e
+- pnpm seed:baseline-reset
+- pnpm qa:baseline-status
 - git diff --check
 - git status --short
 
 Jesli trafisz na stop condition z roadmapy, zatrzymaj sie i zaraportuj.
-Na koniec podaj checkpoint report zgodny z Phase 9 completion report format.
-Nie przechodz do Phase 10.
+Na koniec podaj checkpoint report zgodny z Phase 10 completion report format.
+Nie przechodz poza Phase 10.
 ```

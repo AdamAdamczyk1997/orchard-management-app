@@ -45,6 +45,7 @@ const statusLabels: Record<TreeInventoryUploadPreviewData["status"], string> = {
   validated: "Wymaga poprawek",
   awaiting_variety_resolution: "Wymaga odmian",
   ready_for_owner_confirm: "Gotowy do confirm",
+  confirmed: "Confirmed",
 };
 
 export function TreeInventoryImportForm({
@@ -221,15 +222,7 @@ function PreviewPanel({
       />
       <ConflictsPanel conflicts={preview.conflicts} />
 
-      <Card className="grid gap-4" data-testid="tree-inventory-confirm-disabled">
-        <div className="grid gap-1">
-          <CardTitle className="text-lg">Confirm</CardTitle>
-          <CardDescription>{buildConfirmMessage(preview, role)}</CardDescription>
-        </div>
-        <Button className="w-full sm:w-auto" disabled type="button">
-          Confirm import
-        </Button>
-      </Card>
+      <ConfirmPanel formAction={formAction} preview={preview} role={role} />
 
       <Card className="grid gap-4" data-testid="tree-inventory-diagnostics">
         <div className="grid gap-1">
@@ -273,6 +266,74 @@ function PreviewPanel({
         )}
       </Card>
     </div>
+  );
+}
+
+function ConfirmPanel({
+  formAction,
+  preview,
+  role,
+}: {
+  formAction: TreeInventoryImportFormDispatch;
+  preview: TreeInventoryUploadPreviewData;
+  role: OrchardMembershipRole;
+}) {
+  return (
+    <Card className="grid gap-4" data-testid="tree-inventory-confirm-panel">
+      <div className="grid gap-1">
+        <CardTitle className="text-lg">Confirm</CardTitle>
+        <CardDescription>{buildConfirmMessage(preview, role)}</CardDescription>
+      </div>
+
+      {preview.confirm_result ? (
+        <div
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          data-testid="tree-inventory-confirm-report"
+        >
+          {[
+            ["Created trees", preview.confirm_result.created_trees_count],
+            ["New varieties", preview.confirm_result.created_varieties_count],
+            ["Unknown variety", preview.confirm_result.unknown_variety_trees_count],
+            ["Missing positions", preview.confirm_result.missing_positions_count],
+          ].map(([label, value]) => (
+            <div
+              className="rounded-2xl border border-[#b9d2be] bg-[#edf6ef] px-4 py-3"
+              key={label}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#54795a]">
+                {label}
+              </p>
+              <p className="text-2xl font-semibold text-[#1f2a1f]">{value}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <form action={formAction}>
+        <input name="intent" type="hidden" value="confirm_import" />
+        <input name="import_id" type="hidden" value={preview.import_id ?? ""} />
+        <input
+          name="confirm_token"
+          type="hidden"
+          value={preview.confirm_token ?? ""}
+        />
+        {preview.confirm_version ? (
+          <input
+            name="confirm_version"
+            type="hidden"
+            value={String(preview.confirm_version)}
+          />
+        ) : null}
+        <Button
+          className="w-full sm:w-auto"
+          data-testid="tree-inventory-confirm-button"
+          disabled={!preview.can_confirm}
+          type="submit"
+        >
+          Confirm import
+        </Button>
+      </form>
+    </Card>
   );
 }
 
@@ -583,7 +644,11 @@ function buildConfirmMessage(
   preview: TreeInventoryUploadPreviewData,
   role: OrchardMembershipRole,
 ) {
-  if (role !== "owner") {
+  if (preview.status === "confirmed") {
+    return "Import confirmed. Final report is persisted in staging audit.";
+  }
+
+  if (!preview.can_confirm && role !== "owner") {
     return "Worker moze przygotowac preview, ale nie moze confirmowac importu.";
   }
 
@@ -591,7 +656,11 @@ function buildConfirmMessage(
     return "Owner musi najpierw rozstrzygnac blocking candidate groups.";
   }
 
-  return "Owner confirm pozostaje wylaczony do Phase 9 final DB confirm.";
+  if (preview.can_confirm) {
+    return "Owner moze zatwierdzic import. Confirm ponownie sprawdzi DB state.";
+  }
+
+  return "Confirm bedzie dostepny, gdy preview bedzie gotowy i bez blocking diagnostics.";
 }
 
 function normalizeCandidateLookup(value: string | null | undefined) {

@@ -433,7 +433,10 @@ Ryzyko:
 Masowy confirm synchroniczny w server action/RPC moze przekroczyc limity czasu hostingu lub klienta Supabase przy bardzo duzych plikach.
 
 Rekomendacja:
-MVP importu ograniczyc limitem liczby tworzonych/zmienianych drzew na confirm i mierzyc scenariusze 1k/5k. Dla wiekszych importow projektowac job/staging.
+MVP importu ograniczyc limitem 1k expanded positions na confirm. Dla
+wiekszych kwater user/support docs powinny zalecac dzielenie pracy na mniejsze
+importy. Stabilne 5k pozostaje future hardening, wymagajacy osobnej decyzji o
+DB/RPC performance, indeksach, chunkingu albo async job/staging.
 
 ## Ustalenie 17 - export, import i storage
 

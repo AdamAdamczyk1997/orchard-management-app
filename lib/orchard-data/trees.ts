@@ -352,9 +352,6 @@ export async function getPlotTreeScaleProfileForOrchard(
       )
       .eq("orchard_id", orchardId)
       .eq("plot_id", plotId)
-      .order("section_name", { ascending: true, nullsFirst: false })
-      .order("row_number", { ascending: true, nullsFirst: false })
-      .order("position_in_row", { ascending: true, nullsFirst: false })
       .order("id", { ascending: true })
       .range(from, to);
 
@@ -380,23 +377,42 @@ export async function getPlotVisualRowDetailForOrchard(
   supabaseClient?: QueryClient,
 ): Promise<PlotVisualRowDetail> {
   const supabase = await resolveSupabaseClient(supabaseClient);
-  let rowQuery = supabase
+  let rowCountQuery = supabase
     .from("trees")
-    .select(treeSelect, { count: "exact" })
+    .select("id", { count: "exact", head: true })
+    .eq("orchard_id", orchardId)
+    .eq("plot_id", plotId)
+    .eq("row_number", filters.row_number);
+  let rowDataQuery = supabase
+    .from("trees")
+    .select(treeSelect)
     .eq("orchard_id", orchardId)
     .eq("plot_id", plotId)
     .eq("row_number", filters.row_number);
 
-  rowQuery = filters.section_name
-    ? rowQuery.eq("section_name", filters.section_name)
-    : rowQuery.is("section_name", null);
+  rowCountQuery = filters.section_name
+    ? rowCountQuery.eq("section_name", filters.section_name)
+    : rowCountQuery.is("section_name", null);
+  rowDataQuery = filters.section_name
+    ? rowDataQuery.eq("section_name", filters.section_name)
+    : rowDataQuery.is("section_name", null);
 
-  const { data: rowData, error: rowError, count: rowCount } = await rowQuery
-    .order("position_in_row", { ascending: true, nullsFirst: false })
-    .order("tree_code", { ascending: true, nullsFirst: false })
-    .order("display_name", { ascending: true, nullsFirst: false })
-    .order("id", { ascending: true })
-    .range(0, PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT - 1);
+  const [
+    { error: rowCountError, count: rowCount },
+    { data: rowData, error: rowError },
+  ] = await Promise.all([
+    rowCountQuery,
+    rowDataQuery
+      .order("position_in_row", { ascending: true, nullsFirst: false })
+      .order("tree_code", { ascending: true, nullsFirst: false })
+      .order("display_name", { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(0, PLOT_VISUAL_ROW_DETAIL_MARKER_LIMIT - 1),
+  ]);
+
+  if (rowCountError) {
+    throw rowCountError;
+  }
 
   if (rowError) {
     throw rowError;
@@ -408,60 +424,89 @@ export async function getPlotVisualRowDetailForOrchard(
   let filteredTreeCount = rowTreeCount;
 
   if (hasActivePlotVisualRowDetailFilters(filters)) {
-    let filteredQuery = supabase
+    let filteredCountQuery = supabase
       .from("trees")
-      .select(treeSelect, { count: "exact" })
+      .select("id", { count: "exact", head: true })
+      .eq("orchard_id", orchardId)
+      .eq("plot_id", plotId)
+      .eq("row_number", filters.row_number);
+    let filteredDataQuery = supabase
+      .from("trees")
+      .select(treeSelect)
       .eq("orchard_id", orchardId)
       .eq("plot_id", plotId)
       .eq("row_number", filters.row_number);
 
-    filteredQuery = filters.section_name
-      ? filteredQuery.eq("section_name", filters.section_name)
-      : filteredQuery.is("section_name", null);
+    filteredCountQuery = filters.section_name
+      ? filteredCountQuery.eq("section_name", filters.section_name)
+      : filteredCountQuery.is("section_name", null);
+    filteredDataQuery = filters.section_name
+      ? filteredDataQuery.eq("section_name", filters.section_name)
+      : filteredDataQuery.is("section_name", null);
 
     if (filters.lifecycle === "active") {
-      filteredQuery = filteredQuery
+      filteredCountQuery = filteredCountQuery
+        .eq("is_active", true)
+        .neq("condition_status", "removed");
+      filteredDataQuery = filteredDataQuery
         .eq("is_active", true)
         .neq("condition_status", "removed");
     }
 
     if (filters.lifecycle === "removed") {
-      filteredQuery = filteredQuery.or(
+      filteredCountQuery = filteredCountQuery.or(
+        "is_active.eq.false,condition_status.eq.removed",
+      );
+      filteredDataQuery = filteredDataQuery.or(
         "is_active.eq.false,condition_status.eq.removed",
       );
     }
 
     if (filters.variety_id === "unassigned") {
-      filteredQuery = filteredQuery.is("variety_id", null);
+      filteredCountQuery = filteredCountQuery.is("variety_id", null);
+      filteredDataQuery = filteredDataQuery.is("variety_id", null);
     } else if (filters.variety_id !== "all") {
-      filteredQuery = filteredQuery.eq("variety_id", filters.variety_id);
+      filteredCountQuery = filteredCountQuery.eq("variety_id", filters.variety_id);
+      filteredDataQuery = filteredDataQuery.eq("variety_id", filters.variety_id);
     }
 
     if (filters.condition_status !== "all") {
-      filteredQuery = filteredQuery.eq(
+      filteredCountQuery = filteredCountQuery.eq(
+        "condition_status",
+        filters.condition_status,
+      );
+      filteredDataQuery = filteredDataQuery.eq(
         "condition_status",
         filters.condition_status,
       );
     }
 
     if (filters.location_verified === "verified") {
-      filteredQuery = filteredQuery.eq("location_verified", true);
+      filteredCountQuery = filteredCountQuery.eq("location_verified", true);
+      filteredDataQuery = filteredDataQuery.eq("location_verified", true);
     }
 
     if (filters.location_verified === "unverified") {
-      filteredQuery = filteredQuery.eq("location_verified", false);
+      filteredCountQuery = filteredCountQuery.eq("location_verified", false);
+      filteredDataQuery = filteredDataQuery.eq("location_verified", false);
     }
 
-    const {
-      data: filteredData,
-      error: filteredError,
-      count: filteredCount,
-    } = await filteredQuery
-      .order("position_in_row", { ascending: true, nullsFirst: false })
-      .order("tree_code", { ascending: true, nullsFirst: false })
-      .order("display_name", { ascending: true, nullsFirst: false })
-      .order("id", { ascending: true })
-      .range(0, PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT - 1);
+    const [
+      { error: filteredCountError, count: filteredCount },
+      { data: filteredData, error: filteredError },
+    ] = await Promise.all([
+      filteredCountQuery,
+      filteredDataQuery
+        .order("position_in_row", { ascending: true, nullsFirst: false })
+        .order("tree_code", { ascending: true, nullsFirst: false })
+        .order("display_name", { ascending: true, nullsFirst: false })
+        .order("id", { ascending: true })
+        .range(0, PLOT_VISUAL_ROW_DETAIL_TABLE_PREVIEW_LIMIT - 1),
+    ]);
+
+    if (filteredCountError) {
+      throw filteredCountError;
+    }
 
     if (filteredError) {
       throw filteredError;
