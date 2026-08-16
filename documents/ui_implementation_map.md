@@ -391,6 +391,45 @@ Missing functionality: only row-range deactivate is supported; irregular layouts
 
 Source file: `app/(app)/trees/batch/deactivate/page.tsx`.
 
+### Tree Inventory Import
+
+Route: `/trees/import`
+
+Purpose: Download a one-plot `tree_inventory_v1` XLSX template, upload a filled
+workbook, stage preview data, resolve variety candidates and confirm final tree
+creation for one active orchard and one `rows` plot.
+
+Main components: `TreeInventoryImportForm`, `PrerequisiteCard`, `Card`.
+
+Server actions: `submitTreeInventoryImportPreview`.
+
+Database tables: `inventory_imports`, `inventory_import_source_rows`,
+`inventory_import_variety_candidates`, `inventory_import_positions`,
+`inventory_import_created_trees`, `trees`, `varieties`; RPC
+`confirm_tree_inventory_import`.
+
+Related tests: `tests/e2e/tree-inventory-import-full-cycle.spec.ts`,
+`tests/e2e/tree-inventory-import.spec.ts`,
+`tests/unit/tree-inventory-e2e-workbook-builder.spec.ts`,
+`tests/integration/tree-inventory-preview.spec.ts`,
+`tests/integration/tree-inventory-confirm.spec.ts`,
+`tests/integration/tree-inventory-variety-resolution.spec.ts`,
+`tests/security/tree-inventory-import-rls.spec.ts`,
+`tests/unit/tree-inventory-normalizer.spec.ts`.
+
+Status: Implemented for the MVP scope: one active orchard, one `rows` plot,
+`incremental_create`, `reject`, owner/super_admin variety resolution and
+owner/super_admin confirm up to 1k expanded positions.
+
+Stable test IDs: preview summary cards use `tree-inventory-summary-*`; confirm
+report cards use `tree-inventory-confirm-*`.
+
+Missing functionality: stable 5k imports, multi-plot XLSX, full snapshot,
+`update_existing`, `deactivate_and_create` and automatic rollback are future
+scope.
+
+Source file: `app/(app)/trees/import/page.tsx`.
+
 ### Activities List
 
 Route: `/activities`
@@ -570,10 +609,15 @@ Server actions: none.
 
 Database tables: `varieties`, `trees`, `plots`.
 
-Related tests: `tests/unit/variety-locations-report.spec.ts`, `tests/integration/variety-locations-report.spec.ts`, `tests/e2e/tree-batch-and-export.spec.ts`.
+Related tests: `tests/unit/variety-locations-report.spec.ts`, `tests/integration/variety-locations-report.spec.ts`, `tests/e2e/tree-batch-and-export.spec.ts`, `tests/e2e/tree-inventory-import-full-cycle.spec.ts`.
 
 Status: Implemented. The report reads active variety trees through paginated
 `.range()` chunks, so one variety can exceed the default PostgREST page cap.
+
+Stable test IDs: `variety-locations-summary-active-trees`,
+`variety-locations-summary-located-trees`,
+`variety-locations-summary-verified-trees`, `variety-locations-group` and
+`variety-locations-range`.
 
 Missing functionality: no visual plot overlay in this report; ranges are textual/grouped.
 
@@ -721,9 +765,32 @@ Related tests: `tests/integration/account-export.spec.ts`, `tests/e2e/orchard-ac
 Status: Implemented. Export read model paginates table reads with `.range()`
 so super-admin exports are not silently capped at 1,000 rows.
 
-Missing functionality: no import/restore counterpart.
+Missing functionality: no account-level restore counterpart.
 
 Source file: `app/(account)/settings/profile/export/route.ts`.
+
+### Tree Inventory Template
+
+Route: `GET /trees/import/template`
+
+Purpose: Generate and download a protected `tree_inventory_v1` XLSX template for
+one active-orchard `rows` plot.
+
+Main components: none; route handler returns an XLSX attachment.
+
+Server actions: none.
+
+Database tables: `plots`, `varieties`.
+
+Related tests: `tests/unit/tree-inventory-template-generator.spec.ts`,
+`tests/integration/tree-inventory-upload.spec.ts`,
+`tests/e2e/tree-inventory-import.spec.ts`.
+
+Status: Implemented.
+
+Missing functionality: no multi-plot workbook generation in MVP.
+
+Source file: `app/(app)/trees/import/template/route.ts`.
 
 ### Favicon
 

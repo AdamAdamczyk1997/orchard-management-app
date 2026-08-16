@@ -7,8 +7,10 @@ Ten plik jest jednym, lekkim punktem wejscia do dokumentacji.
 Po audycie dokumentacji przyjmujemy jedna prosta zasade:
 
 - aktywna dokumentacja mieszka w `documents/`
+- aktywne, waskie plany funkcji takze mieszkaja w `documents/`, najczesciej w
+  `documents/01_implementation_materials/`
 - materialy historyczne mieszka w `documents/archive/`
-- nie utrzymujemy drugiego rownoleglego katalogu dokumentacji
+- nie utrzymujemy drugiego rownoleglego katalogu dokumentacji poza `documents/`
 
 ## Gdzie zaczynac
 
@@ -39,6 +41,11 @@ fakty o tym obszarze sa w mapach i pomiarach.
 - [validations_and_integrity.md](../03_domain_and_business_rules/validations_and_integrity.md)
 - [api_and_system_operations.md](../06_backend_and_contracts/api_and_system_operations.md)
 - [data_contracts.md](../06_backend_and_contracts/data_contracts.md)
+- Tree Inventory import:
+  - [active maintenance index](../01_implementation_materials/tree_inventory_import/README.md)
+  - [recommended import contract](../01_implementation_materials/tree_inventory_import/recommended_import_contract.md)
+  - [release readiness](../01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md)
+  - [future 5k hardening plan](../01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md)
 
 ### Dla UX i flow
 
@@ -66,6 +73,9 @@ fakty o tym obszarze sa w mapach i pomiarach.
 - dashboard operacyjny z blokiem `upcoming_activities`
 - export konta dla eligible `owner`, a administracyjnie takze dla `super_admin`
 - batch create i bulk deactivate dla `trees`
+- `tree_inventory_v1` XLSX import na `/trees/import` dla jednego aktywnego
+  orchard, jednej dzialki `rows`, `incremental_create` i limitu 1k expanded
+  positions
 - plot-aware layout rules dla `plots`, `trees`, `activities` i `harvests`
 - seed / QA workflow
 - browser E2E przez `pnpm test:e2e`
@@ -80,6 +90,10 @@ fakty o tym obszarze sa w mapach i pomiarach.
 
 - `Plot Visual Operations MVP` jest wdrozony: `/plots` ma operacyjne cards, a `/plots/[plotId]` ma visual overview, filters, tree panel, selection prefill oraz structural actions.
 - Planistyczne dokumenty PVO sa zarchiwizowane i nie sa aktywnym backlogiem.
+- `tree_inventory_v1` MVP jest domkniety i release-ready dla limitu 1k expanded
+  positions. Aktywne dokumenty sa w
+  `documents/01_implementation_materials/tree_inventory_import/`, a 5k import
+  jest odlozony do future hardening.
 
 ### Planowane aktywne slice'y
 
@@ -103,7 +117,9 @@ fakty o tym obszarze sa w mapach i pomiarach.
 - detail pages dla `varieties` i `trees`
 - delete UI dla `varieties` i `trees`
 - zmiana roli membership orchard
-- import UI i restore workflow
+- restore workflow dla account export
+- tryby importu poza `tree_inventory_v1` MVP: stable 5k, multi-plot XLSX, full
+  snapshot, `update_existing`, `deactivate_and_create`
 - storage / attachments
 - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 

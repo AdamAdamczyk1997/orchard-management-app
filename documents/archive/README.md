@@ -30,3 +30,4 @@ implementacji.
 - `large_plot_tree_scale_plan.md`
 - `phase_1_auth_onboarding_vertical_slice.md`
 - `phase_2_core_orchard_structure_vertical_slice.md`
+- `tree_inventory_import/`

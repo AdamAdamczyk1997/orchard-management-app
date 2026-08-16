@@ -73,6 +73,11 @@ Main entities:
 - `activity_materials`: materials used in activity
 - `harvest_records`: quantitative harvest records
 - `bulk_tree_import_batches`: technical batch-create records
+- `inventory_imports`: staged `tree_inventory_v1` import headers
+- `inventory_import_source_rows`: source-provenance rows for staged imports
+- `inventory_import_variety_candidates`: owner-resolved variety candidates
+- `inventory_import_positions`: expanded staged tree positions
+- `inventory_import_created_trees`: final audit mapping from staged positions to created trees
 
 Key relationships:
 
@@ -139,6 +144,9 @@ Structure:
 - trees create/list/edit/filter
 - batch create trees with preview/confirmation
 - bulk deactivate trees with preview/confirmation
+- `tree_inventory_v1` XLSX import on `/trees/import` with template download,
+  upload preview, owner/super_admin variety resolution and owner/super_admin
+  confirm for up to 1k expanded positions
 
 Activities:
 
@@ -185,7 +193,9 @@ Do not assume these exist:
 - true Accept Invitation route/action
 - role-change UI for orchard memberships
 - storage/attachments
-- import/restore counterpart to account export
+- restore counterpart to account export
+- import modes beyond the `tree_inventory_v1` MVP: stable 5k, multi-plot XLSX,
+  full snapshot, `update_existing`, `deactivate_and_create`
 - future harvest entry points from the PVO map
 - richer planning/calendar workflow beyond upcoming activities feed
 - report export/download artifacts
@@ -210,6 +220,8 @@ Start here for operational modules:
 - `app/(app)/plots/[plotId]/page.tsx`
 - `features/plots/plot-visual-overview.tsx`
 - `app/(app)/trees/page.tsx`
+- `app/(app)/trees/import/page.tsx`
+- `app/(app)/trees/import/template/route.ts`
 - `app/(app)/activities/page.tsx`
 - `app/(app)/harvests/page.tsx`
 
@@ -219,6 +231,17 @@ Start here for data access:
 - `lib/orchard-data/trees.ts`
 - `lib/orchard-data/activities.ts`
 - `lib/orchard-data/harvests.ts`
+
+Start here for Tree Inventory import:
+
+- `documents/01_implementation_materials/tree_inventory_import/README.md`
+- `documents/01_implementation_materials/tree_inventory_import/recommended_import_contract.md`
+- `documents/01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md`
+- `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`
+- `server/actions/tree-inventory-import.ts`
+- `lib/tree-inventory-import/`
+- `supabase/migrations/037_create_tree_inventory_import_staging.sql`
+- `supabase/migrations/038_create_tree_inventory_confirm_rpc.sql`
 - `lib/orchard-data/dashboard.ts`
 - `lib/orchard-data/export.ts`
 

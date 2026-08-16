@@ -7,7 +7,11 @@ Ten dokument porzadkuje formaty plikow i zakres danych dla importu i eksportu.
 ## 1. Decyzja etapowa
 
 - Eksport danych konta jest juz dostepny z poziomu aplikacji dla `owner`.
-- Import pozostaje funkcja planowana i nie ma jeszcze wspieranego UI ani workflow recovery.
+- `tree_inventory_v1` import drzew jest dostepny na `/trees/import` dla
+  jednego aktywnego orchard, jednej dzialki `rows`, `incremental_create` i
+  limitu 1k expanded positions.
+- Account-level restore z eksportu oraz szersze tryby importu pozostaja
+  future scope.
 
 ## 2. Format eksportu pelnego
 
@@ -95,21 +99,38 @@ Dzialka 1,jablon,Ligol,3,50,good
 
 ## 5. Import drzew - zasady
 
-- import powinien byc walidowany przed zapisem
-- brak zgodnosci dzialki lub odmiany musi blokowac rekord
-- konflikt lokalizacji powinien byc raportowany jawnie
-- preferowane jest `all or nothing` dla paczki importu
-- import działa w kontekscie wybranego orchard
+- aktualny wspierany import drzew to `tree_inventory_v1`
+- entry point UI: `/trees/import`
+- szablon XLSX: `GET /trees/import/template?plot_id=...`
+- import jest walidowany przed zapisem przez parser, normalizer i staging
+  preview
+- brak zgodnosci active orchard, dzialki lub odmiany blokuje preview albo
+  confirm
+- konflikty z aktywnymi drzewami sa raportowane jawnie i blokuja confirm
+- confirm jest `all-or-nothing`
+- confirm jest owner/`super_admin` only
+- worker moze pobrac szablon, uploadowac plik i obejrzec preview, ale nie moze
+  resolve candidate groups ani confirm
+- nowe odmiany nie powstaja automatycznie z raw XLSX; wymagaja jawnej decyzji
+  ownera/`super_admin` w variety resolution
+- limit MVP to 1k expanded positions na import
+- wieksze kwatery nalezy dzielic na mniejsze importy albo wrocic do
+  [future_5k_import_hardening_plan.md](../01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md)
+  jako osobnego future work
+- aktywne szczegoly kontraktu:
+  [tree_inventory_import/README.md](../01_implementation_materials/tree_inventory_import/README.md)
 
 ## 6. Import odmian - zasady
 
-- unikalnosc `species + name` per `orchard`
-- przy duplikacie mozliwy tryb:
-  - odrzuc
-  - pomin
-  - zaktualizuj
+- standalone import odmian nie jest aktualnie wdrozony
+- w ramach `tree_inventory_v1` owner/`super_admin` moze jawnie oznaczyc
+  candidate group jako `create_new`
+- finalne `varieties` sa tworzone dopiero podczas confirm importu i atomowo z
+  finalnym zapisem `trees`
+- unikalnosc `species + name` per `orchard` pozostaje wymagana
 
-Na start rekomendacja:
+Future standalone import odmian wymaga osobnego kontraktu. Na start
+rekomendacja pozostaje:
 
 - odrzuc lub pomin, bez automatycznego merge
 

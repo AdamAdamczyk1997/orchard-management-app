@@ -83,6 +83,7 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 - `ui_implementation_map.md`
 - `diagrams/` - Mermaid maps for app architecture, routes, domain, data flow, testing and business flows
 - `01_implementation_materials/README.md`
+- `01_implementation_materials/tree_inventory_import/README.md`
 - `01_implementation_materials/user_flows.md`
 - `02_product_documents/mvp_scope_and_priorities.md`
 - `02_product_documents/personas_and_user_types.md`
@@ -107,6 +108,9 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
   - `archive/plot_visual_operations_implementation_master_plan.md`
 - Zamkniety plan skalowania duzych dzialek jest trzymany w:
   - `archive/large_plot_tree_scale_plan.md`
+- Zamkniete historyczne materialy implementacyjne `tree_inventory_v1` sa
+  trzymane w:
+  - `archive/tree_inventory_import/`
 - Dokumenty w archiwum nie sa podstawa do migracji, API, RLS, ekranow ani testow.
 - Jesli pojawi sie konflikt miedzy aktywnym dokumentem a plikiem archiwalnym, pierwszenstwo ma dokument aktywny.
 
@@ -163,6 +167,12 @@ Te pliki nie sa glowna specyfikacja SQL/API, ale nadal wspieraja produkt i imple
 
 - `README.md`
 - `large_plot_phase0_measurements.md`
+- `tree_inventory_import/README.md`
+- `tree_inventory_import/recommended_import_contract.md`
+- `tree_inventory_import/test_scenarios.md`
+- `tree_inventory_import/phase_10_release_readiness.md`
+- `tree_inventory_import/mvp_import_support_notes.md`
+- `tree_inventory_import/future_5k_import_hardening_plan.md`
 - `user_flows.md`
 
 ### `02_product_documents`

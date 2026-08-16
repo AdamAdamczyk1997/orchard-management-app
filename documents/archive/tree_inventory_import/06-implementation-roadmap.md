@@ -41,7 +41,7 @@ not on worksheet layout details.
 
 ### Current checkpoint
 
-Status after Phase 10 lower-limit decision:
+Status after Phase 10 completion:
 
 - Phase 1 is complete.
 - Phase 2 is complete.
@@ -53,8 +53,9 @@ Status after Phase 10 lower-limit decision:
 - Phase 8 is complete.
 - Phase 8A is complete.
 - Phase 9 is complete.
-- Phase 10 accepted a lower MVP import limit of 1k expanded positions after 5k
-  confirm remained unstable under the local statement timeout.
+- Phase 10 is complete for the accepted MVP limit of 1k expanded positions.
+- Phase 10 accepted the lower MVP limit after 5k confirm remained unstable
+  under the local statement timeout.
 - `exceljs@4.4.0` is selected and installed as the server-side XLSX
   read/write dependency.
 - `pnpm.overrides` pins `exceljs>uuid` to `11.1.1` and old
@@ -146,28 +147,33 @@ Status after Phase 10 lower-limit decision:
 - The accepted MVP limit is now 1k expanded positions. Larger plots should be
   split into smaller imports during MVP.
 - Stable 5k import remains future hardening and is tracked in
-  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
+  `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`.
+- Phase 10 release readiness docs, manual QA checklist, rollback/recovery notes,
+  final regression and accepted-limit performance evidence are complete.
 - Checkpoint reports are recorded in
-  `docs/tree-inventory-import/07-phase-1-completion-report.md` and
-  `docs/tree-inventory-import/08-phase-2-completion-report.md` and
-  `docs/tree-inventory-import/09-phase-3-completion-report.md` and
-  `docs/tree-inventory-import/10-phase-4-completion-report.md` and
-  `docs/tree-inventory-import/11-phase-5-completion-report.md` and
-  `docs/tree-inventory-import/12-phase-6-completion-report.md` and
-  `docs/tree-inventory-import/13-phase-7-completion-report.md` and
-  `docs/tree-inventory-import/14-phase-8-completion-report.md` and
-  `docs/tree-inventory-import/15-phase-8a-completion-report.md` and
-  `docs/tree-inventory-import/16-phase-9-completion-report.md`,
-  `docs/tree-inventory-import/17-phase-10-stop-report.md` and
-  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`. MVP
+  `documents/archive/tree_inventory_import/07-phase-1-completion-report.md` and
+  `documents/archive/tree_inventory_import/08-phase-2-completion-report.md` and
+  `documents/archive/tree_inventory_import/09-phase-3-completion-report.md` and
+  `documents/archive/tree_inventory_import/10-phase-4-completion-report.md` and
+  `documents/archive/tree_inventory_import/11-phase-5-completion-report.md` and
+  `documents/archive/tree_inventory_import/12-phase-6-completion-report.md` and
+  `documents/archive/tree_inventory_import/13-phase-7-completion-report.md` and
+  `documents/archive/tree_inventory_import/14-phase-8-completion-report.md` and
+  `documents/archive/tree_inventory_import/15-phase-8a-completion-report.md` and
+  `documents/archive/tree_inventory_import/16-phase-9-completion-report.md`,
+  `documents/archive/tree_inventory_import/17-phase-10-stop-report.md` and
+  `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`. MVP
   support guidance is recorded in
-  `docs/tree-inventory-import/19-mvp-import-support-notes.md`.
+  `documents/01_implementation_materials/tree_inventory_import/mvp_import_support_notes.md`. Phase 10 release
+  readiness guidance is recorded in
+  `documents/01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md`. The Phase 10
+  completion report is recorded in
+  `documents/archive/tree_inventory_import/21-phase-10-completion-report.md`.
 
 Next planned step:
 
-- Continue Phase 10 release readiness with the accepted 1k MVP import limit:
-  rerun the performance gate, complete user/support/rollback docs, manual QA and
-  full regression.
+- Safe stop after Phase 10. The `tree_inventory_v1` MVP is release-ready for
+  imports up to 1k expanded positions.
 - Keep 5k work out of MVP until the future hardening plan is explicitly picked
   up.
 - Do not add new product modes unless the roadmap is explicitly changed.
@@ -2428,14 +2434,14 @@ pnpm seed:large-plot-fixture
 
 #### Acceptance criteria
 
-- [ ] 1k performance evidence recorded.
-- [ ] 1k accepted-limit performance evidence recorded.
-- [ ] Above-limit behavior documented and tested.
-- [ ] Full test gate green or documented accepted exceptions.
-- [ ] Manual QA checklist complete.
-- [ ] Rollback/recovery procedure documented.
-- [ ] Feature limits documented.
-- [ ] Existing workflows protected.
+- [x] 1k performance evidence recorded.
+- [x] 1k accepted-limit performance evidence recorded.
+- [x] Above-limit behavior documented and tested.
+- [x] Full test gate green or documented accepted exceptions.
+- [x] Manual QA checklist complete.
+- [x] Rollback/recovery procedure documented.
+- [x] Feature limits documented.
+- [x] Existing workflows protected.
 
 #### Verification commands
 
@@ -2471,8 +2477,8 @@ Run `pnpm seed:large-plot-fixture` before performance checks when needed.
 - Repeat 5k runs now fail during confirm RPC with
   `Confirm importu przekroczyl limit czasu lokalnej bazy.` around 8s.
 - A lower MVP limit of 1k expanded positions was accepted after this stop. See
-  `docs/tree-inventory-import/17-phase-10-stop-report.md` and
-  `docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
+  `documents/archive/tree_inventory_import/17-phase-10-stop-report.md` and
+  `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`.
 
 #### Completion report format
 
@@ -3028,25 +3034,25 @@ Suggested commit names:
 The Tree Inventory XLSX Import MVP is production-ready only when all items are
 true:
 
-- [ ] Versioned template generation exists for `tree_inventory_v1`.
-- [ ] Template generation works for a new orchard with an existing plot, zero
+- [x] Versioned template generation exists for `tree_inventory_v1`.
+- [x] Template generation works for a new orchard with an existing plot, zero
       trees and zero varieties.
-- [ ] XLSX parser is server-only and preserves source provenance.
-- [ ] Canonical normalization is deterministic and covered by unit tests.
-- [ ] Pure validation covers required values, ranges, enums, years, overlaps,
+- [x] XLSX parser is server-only and preserves source provenance.
+- [x] Canonical normalization is deterministic and covered by unit tests.
+- [x] Pure validation covers required values, ranges, enums, years, overlaps,
       gaps and exceptions.
-- [ ] `known`, `unknown`, `uncertain` and `new_candidate` are first-class
+- [x] `known`, `unknown`, `uncertain` and `new_candidate` are first-class
       variety states before resolution.
-- [ ] DB/domain preview validates active orchard, plot, layout, varieties,
+- [x] DB/domain preview validates active orchard, plot, layout, varieties,
       conflicts and permissions.
-- [ ] Preview groups unresolved/new variety candidates and uses current database
+- [x] Preview groups unresolved/new variety candidates and uses current database
       dictionaries as authority.
-- [ ] Persisted staging/audit stores import status, hashes, diagnostics,
+- [x] Persisted staging/audit stores import status, hashes, diagnostics,
       canonical payload, source rows, variety candidates, positions and final
       mapping.
-- [ ] Owner/super_admin can explicitly resolve variety candidates before
+- [x] Owner/super_admin can explicitly resolve variety candidates before
       confirm.
-- [ ] New candidate varieties are never silently inserted from raw XLSX strings.
+- [x] New candidate varieties are never silently inserted from raw XLSX strings.
 - [x] Owner confirmation is implemented.
 - [x] Worker can download/upload/validate/preview but cannot confirm.
 - [x] Confirm is all-or-nothing and idempotent.
@@ -3056,17 +3062,17 @@ true:
       creation.
 - [x] Final report is available after confirm.
 - [x] RLS covers all staging tables and confirm path.
-- [ ] Existing single tree create/update still works.
-- [ ] Existing bulk tree create/deactivate still works.
-- [ ] PVO, focused row, large plot overview, activity prefill, harvest flows,
+- [x] Existing single tree create/update still works.
+- [x] Existing bulk tree create/deactivate still works.
+- [x] PVO, focused row, large plot overview, activity prefill, harvest flows,
       variety locations and account export do not regress.
-- [ ] 1k import performance evidence is recorded.
+- [x] 1k import performance evidence is recorded.
 - [x] Lower explicit MVP limit is accepted.
 - [x] Lower explicit MVP limit is documented and tested.
-- [ ] Documentation and user instructions are updated.
-- [ ] Manual QA checklist is complete.
-- [ ] Rollback/recovery procedure is documented.
-- [ ] `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test` and
+- [x] Documentation and user instructions are updated.
+- [x] Manual QA checklist is complete.
+- [x] Rollback/recovery procedure is documented.
+- [x] `supabase db lint`, `pnpm typecheck`, `pnpm lint`, `pnpm test` and
       relevant `pnpm test:e2e` pass for release.
 
 ## 17. Recommended prompt/task for Phase 10
@@ -3080,12 +3086,12 @@ Rozmawiamy po polsku, ale nazwy techniczne, pliki, DTO, endpointy, encje i SQL t
 Najpierw przeczytaj:
 - documents/00_overview_and_checklists/project_context_for_new_chat.md
 - documents/00_overview_and_checklists/codex_working_prompt.md
-- docs/tree-inventory-import/01-current-state-audit.md
-- docs/tree-inventory-import/02-import-gap-analysis.md
-- docs/tree-inventory-import/03-open-product-questions.md
-- docs/tree-inventory-import/04-recommended-import-contract.md
-- docs/tree-inventory-import/05-test-scenarios.md
-- docs/tree-inventory-import/06-implementation-roadmap.md
+- documents/archive/tree_inventory_import/01-current-state-audit.md
+- documents/archive/tree_inventory_import/02-import-gap-analysis.md
+- documents/archive/tree_inventory_import/03-open-product-questions.md
+- documents/01_implementation_materials/tree_inventory_import/recommended_import_contract.md
+- documents/01_implementation_materials/tree_inventory_import/test_scenarios.md
+- documents/archive/tree_inventory_import/06-implementation-roadmap.md
 
 Sprawdz `git status --short`. Nie cofaj cudzych zmian.
 

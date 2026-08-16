@@ -105,13 +105,14 @@ Fixture:
 - Confirm zachowuje `notes` z import-only planted year range.
 - Confirm nie zmienia istniejacych drzew, gdy import jest incremental create.
 
-### Future staging model
+### Staging model
 
-Te testy beda potrzebne, jesli powstana tabele staging:
+Te scenariusze dotycza aktualnego staging/audit modelu:
 
-- Upload tworzy `inventory_import` w statusie `draft`/`validated`.
+- Upload tworzy `inventory_imports` oraz source rows, candidates i positions.
 - Reupload tego samego pliku jest wykrywany po `file_hash`.
-- Confirm zatwierdzonego importu drugi raz jest blokowany.
+- Confirm zatwierdzonego importu drugi raz jest idempotentny albo blokowany
+  zgodnie z aktualnym confirm contract.
 - Staging rows sa orchard-scoped i RLS protected.
 - Final report jest dostepny tylko dla uprawnionych czlonkow orchard.
 - Expired staging nie pozwala na confirm.
@@ -165,6 +166,34 @@ Te testy beda potrzebne, jesli powstana tabele staging:
 - Server action nie ufa `orchard_id` z formularza.
 
 ## E2E tests
+
+### Full-cycle XLSX import acceptance
+
+Implemented in `tests/e2e/tree-inventory-import-full-cycle.spec.ts`.
+
+- Register a fresh user and create the first orchard through onboarding.
+- Verify the new orchard dashboard empty state.
+- Create one `rows` plot through `/plots/new`.
+- Download the live `/trees/import` XLSX template for that plot.
+- Fill the template from
+  `tests/fixtures/tree-inventory-import/e2e-full-cycle.ts` using the shared
+  workbook builder.
+- Attach the generated XLSX to Playwright artifacts.
+- Upload through the browser UI and assert preview summary counts:
+  total positions, planned records, missing positions, active conflicts,
+  new-candidate positions, unknown positions, grouped candidates, unresolved
+  candidates and diagnostics.
+- Resolve two `new_candidate` groups with `create_new`.
+- Keep the `unknown` group through the current automatic `accepted_unknown`
+  behavior.
+- Confirm the import and assert created trees, created varieties,
+  unknown-variety trees and missing positions.
+- Verify `/trees` filtered by the new plot, including the missing position not
+  appearing as a tree.
+- Verify `/plots/[plotId]` renders the PVO grid, active markers, one inferred
+  empty marker and an imported tree detail panel.
+- Verify `/reports/variety-locations` for both created varieties and confirm
+  the unknown-variety tree is not included in those variety reports.
 
 ### Happy path
 

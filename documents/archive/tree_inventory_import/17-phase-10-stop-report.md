@@ -40,7 +40,7 @@ the roadmap.
 After reviewing the tradeoff, the accepted MVP limit is now 1k expanded
 positions. Larger plots should be split into smaller imports for MVP. Stable 5k
 imports remain future hardening and are tracked in
-`docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
+`documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`.
 
 Post-decision accepted-limit benchmark:
 
@@ -184,14 +184,7 @@ Additional targeted checks after read-side/RPC hardening:
 
 ## Next recommended step
 
-Choose one of these explicitly before continuing Phase 10:
-
-- Approve deeper DB-level confirm performance work for 5k imports. This may
-  require SQL function restructuring, statement-timeout strategy or an approved
-  migration/index decision.
-- Accept a lower MVP expanded-position limit, then update
-  `TREE_INVENTORY_IMPORT_LIMITS`, user/support docs, tests and roadmap before
-  rerunning Phase 10.
-
-Do not proceed to release readiness, manual QA completion or product docs as
-complete until this blocker is resolved.
+Resolved after this stop: the accepted MVP limit is 1k expanded positions, and
+5k support moved to future hardening. Continue from
+`documents/archive/tree_inventory_import/21-phase-10-completion-report.md` for final Phase 10
+release readiness evidence.

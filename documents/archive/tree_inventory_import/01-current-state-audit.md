@@ -15,9 +15,9 @@ Nota po rozpoczeciu implementacji:
 
 - Ten audyt opisuje stan sprzed implementacji `tree_inventory_v1`.
 - Aktualne checkpointy implementacyjne sa w:
-  - `docs/tree-inventory-import/07-phase-1-completion-report.md`
-  - `docs/tree-inventory-import/08-phase-2-completion-report.md`
-  - `docs/tree-inventory-import/09-phase-3-completion-report.md`
+  - `documents/archive/tree_inventory_import/07-phase-1-completion-report.md`
+  - `documents/archive/tree_inventory_import/08-phase-2-completion-report.md`
+  - `documents/archive/tree_inventory_import/09-phase-3-completion-report.md`
 - Po Phase 2 repo ma juz `exceljs@4.4.0`; sekcja o braku biblioteki XLSX jest
   zachowana jako historyczny wynik audytu startowego.
 
@@ -544,7 +544,7 @@ Ryzyko:
 Parser XLSX moze wprowadzic roznice runtime server/client, rozmiar bundla albo ryzyko supply-chain.
 
 Rekomendacja:
-Historyczna rekomendacja zostala wykonana w Phase 2. Wybrano `exceljs@4.4.0`; szczegoly ryzyk i security overrides sa w `docs/tree-inventory-import/08-phase-2-completion-report.md`.
+Historyczna rekomendacja zostala wykonana w Phase 2. Wybrano `exceljs@4.4.0`; szczegoly ryzyk i security overrides sa w `documents/archive/tree_inventory_import/08-phase-2-completion-report.md`.
 
 ## Podsumowanie
 

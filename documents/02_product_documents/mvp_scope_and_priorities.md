@@ -155,6 +155,7 @@ Pierwsze wydanie ma byc przydatne w codziennej pracy, nawet bez map, zdjec, przy
 - lista dzialek + create / edit
 - operacyjny detail dzialki `/plots/[plotId]` jako `Plot Visual Operations`
 - lista drzew + create / edit
+- import drzew `/trees/import` dla `tree_inventory_v1` MVP
 - lista odmian + create / edit
 - dziennik prac
 - lista zbiorow
@@ -173,7 +174,9 @@ ponizsze elementy sa w duzej czesci juz wdrozone jako Phase 6:
 rozszerzone lokalizacje dzialek i drzew, batch tree create, bulk deactivate,
 raport lokalizacji odmiany, raport lokalizacji zbiorow oraz export danych konta.
 Aktywne rozroznienie po obecnym closeoucie jest nastepujace:
-`export` jest wdrozony, natomiast `import` i `restore workflow` pozostaja odlozone.
+`export` jest wdrozony, `tree_inventory_v1` import drzew jest wdrozony dla
+limitu 1k expanded positions, natomiast account-level restore workflow i
+szersze tryby importu pozostaja odlozone.
 
 ### 1. Lokalizacja drzew w modelu rozszerzonym
 

@@ -64,6 +64,8 @@ Aktywny kontekst orchard jest rozwiazywany po stronie serwera i trzymany w `http
 - mozemy tworzyc, edytowac i przegladac `plots`,
 - mozemy tworzyc, edytowac, wyszukiwac i przegladac `varieties`,
 - mozemy tworzyc, edytowac, filtrowac i przegladac `trees`,
+- mozemy importowac `tree_inventory_v1` XLSX na `/trees/import` dla jednej
+  aktywnej dzialki `rows` i do 1k expanded positions,
 - `plots` maja ustawienia ukladu, np. `layout_type`, numeracje rzedow i drzew oraz wskazowki terenowe,
 - `trees` korzystaja z ustawien wybranej dzialki i pilnuja zgodnosci lokalizacji,
 - `/plots/[plotId]` ma wdrozony ekran `Plot Visual Operations` z visual overview, filtrami, tree panel, selection mode i prefill do operacji terenowych.
@@ -94,6 +96,8 @@ Aktywny kontekst orchard jest rozwiazywany po stronie serwera i trzymany w `http
 
 - mozemy robic batch create drzew dla zakresu pozycji w rzedzie,
 - mozemy masowo oznaczac drzewa jako `removed`,
+- mozemy pobrac szablon `tree_inventory_v1`, wgrac workbook, obejrzec preview,
+  rozstrzygnac kandydatow odmian jako owner i potwierdzic import,
 - owner moze eksportowac dane konta i swoich orchard,
 - `super_admin` moze administracyjnie eksportowac szerszy zestaw orchard.
 
@@ -132,7 +136,9 @@ Na teraz nadal odlozone sa miedzy innymi:
 - detail pages dla `varieties` i `trees`,
 - delete UI dla `varieties` i `trees`,
 - zmiana roli membership orchard,
-- import UI i restore workflow,
+- restore workflow dla account export,
+- tryby importu poza `tree_inventory_v1` MVP, np. stable 5k, multi-plot XLSX,
+  full snapshot, `update_existing` i `deactivate_and_create`,
 - storage / attachments,
 - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`.
 

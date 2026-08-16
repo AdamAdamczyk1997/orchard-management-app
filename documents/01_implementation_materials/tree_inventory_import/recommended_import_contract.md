@@ -2,17 +2,29 @@
 
 ## Status dokumentu
 
-To jest rekomendacja projektowa, nie implementacja. Nie tworzy nowych endpointow, migracji ani bibliotek. Kontrakt jest dopasowany do aktualnego modelu `orchards`, `plots`, `varieties`, `trees`, RLS i obecnych bulk workflows.
+To jest aktywny maintenance reference dla wdrozonego `tree_inventory_v1` MVP.
+Nie zastepuje kodu ani testow, ale porzadkuje kontrakt workbook/canonical JSON
+i zasady, ktore trzeba zachowac przy refaktorach parsera, normalizera, preview,
+variety resolution albo confirm.
 
-Aktualizacja po Phase 5: TypeScript canonical JSON v1 jest juz finalizowany w
-kodzie. Przy polach odmian nalezy uwzgledniac `variety` reference z
-`status`, `raw_name`, `raw_variety_id` i `resolved_variety_id`; stare pola
-`variety_id`/`variety_name` zostaja wygodnym odbiciem dla obecnego modelu
-`trees`, ale nie sa jedynym nosnikiem stanu resolution.
+Aktualny kod source of truth:
 
-## Rekomendowany zakres MVP
+- `lib/tree-inventory-import/contracts.ts`
+- `lib/tree-inventory-import/template-generator.server.ts`
+- `lib/tree-inventory-import/parser.server.ts`
+- `lib/tree-inventory-import/normalizer.ts`
+- `lib/tree-inventory-import/preview.server.ts`
+- `lib/tree-inventory-import/variety-resolution.server.ts`
+- `lib/tree-inventory-import/confirm.server.ts`
 
-MVP importu powinien byc waski:
+Przy polach odmian nalezy uwzgledniac `variety` reference z `status`,
+`raw_name`, `raw_variety_id` i `resolved_variety_id`; stare pola
+`variety_id`/`variety_name` sa tylko wygodnym odbiciem dla obecnego modelu
+`trees` i nie sa jedynym nosnikiem stanu resolution.
+
+## Wspierany zakres MVP
+
+MVP importu jest waski:
 
 - jeden plik XLSX dotyczy jednego `active_orchard`;
 - jeden plik dotyczy jednego `plot`;
@@ -28,7 +40,7 @@ MVP importu powinien byc waski:
 - brak rekordu w pliku nie zmienia istniejacego drzewa;
 - MVP limituje jeden import do 1k expanded positions; wieksze kwatery nalezy
   dzielic na mniejsze importy;
-- brak dependency XLSX w repo oznacza, ze wybor biblioteki jest osobnym krokiem.
+- `exceljs@4.4.0` jest wybrana server-side dependency do XLSX.
 
 ## Proponowane arkusze XLSX
 

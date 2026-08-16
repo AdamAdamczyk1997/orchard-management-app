@@ -48,6 +48,10 @@ Aktywny lokalny zapis pomiarow dla tego obszaru zostaje tutaj:
 
 - [large_plot_phase0_measurements.md](./large_plot_phase0_measurements.md)
 
+Aktywne materialy maintenance dla `tree_inventory_v1` importu sa tutaj:
+
+- [tree_inventory_import/README.md](./tree_inventory_import/README.md)
+
 Phase 0 ma lokalny fixture do pomiarow:
 
 - `pnpm seed:large-plot-fixture`
@@ -89,6 +93,7 @@ Zamkniete notatki z wczesnych vertical slice zostaly przeniesione do archiwum:
 - [phase_1_auth_onboarding_vertical_slice.md](../archive/phase_1_auth_onboarding_vertical_slice.md)
 - [phase_2_core_orchard_structure_vertical_slice.md](../archive/phase_2_core_orchard_structure_vertical_slice.md)
 - [large_plot_tree_scale_plan.md](../archive/large_plot_tree_scale_plan.md)
+- [tree_inventory_import](../archive/tree_inventory_import/)
 
 ## Ważna zasada
 

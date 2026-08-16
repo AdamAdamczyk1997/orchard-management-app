@@ -30,7 +30,7 @@ When a file exceeds the accepted MVP limit, ask the user to split the workbook
 into smaller imports of at most 1k expanded positions each.
 
 Do not promise stable 5k imports in MVP. Stable 5k is tracked separately in
-`docs/tree-inventory-import/18-future-5k-import-hardening-plan.md`.
+`documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`.
 
 ## What should not change for splitting
 

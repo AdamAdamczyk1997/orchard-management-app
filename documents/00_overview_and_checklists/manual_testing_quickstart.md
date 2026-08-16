@@ -126,7 +126,9 @@ Te obszary sa nadal odlozone albo nie sa jeszcze domkniete:
 - detail pages dla `varieties` i `trees`
 - delete UI dla `varieties` i `trees`
 - zmiana roli membership orchard
-- import UI i restore workflow
+- restore workflow dla account export
+- tryby importu poza `tree_inventory_v1` MVP: stable 5k, multi-plot XLSX, full
+  snapshot, `update_existing`, `deactivate_and_create`
 - storage / attachments
 - szerszy planning block wykraczajacy poza prosty feed `upcoming_activities`
 - osobny globalny panel admina poza obecnym account shell dla `super_admin`

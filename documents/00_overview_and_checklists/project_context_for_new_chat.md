@@ -14,7 +14,9 @@ This file is not a full specification. It is an orientation layer over:
 - Supabase migrations,
 - seeds,
 - tests,
-- active documentation in `documents/`.
+- active documentation in `documents/`,
+- active Tree Inventory import maintenance documents in
+  `documents/01_implementation_materials/tree_inventory_import/`.
 
 ## Working Rules For AI Agents
 
@@ -29,6 +31,7 @@ This file is not a full specification. It is an orientation layer over:
 - Keep `orchard_id` trusted only server-side. Client query params and forms may prefill UI state, but writes must still go through validation, server actions, RLS and DB constraints.
 - If the user asks about large plots, hundreds of trees, performance, pagination, async tree selectors or PVO scaling, start from the current code, `documents/01_implementation_materials/large_plot_phase0_measurements.md`, `documents/ui_implementation_map.md` and `documents/ai_project_map.md`.
 - The first large-plot scale plan is closed and archived at `documents/archive/large_plot_tree_scale_plan.md`; use it only as historical context.
+- If the user asks about `tree_inventory_v1`, `/trees/import`, XLSX import, empty-orchard first import, variety resolution or future 5k import hardening, start from `documents/01_implementation_materials/tree_inventory_import/README.md`, `documents/01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md` and `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`.
 
 ## Startup Prompt
 
@@ -88,6 +91,8 @@ Implemented core:
 - `plots`, `varieties`, `trees`,
 - tree batch create with preview / confirmation,
 - tree bulk deactivate with preview / confirmation,
+- `tree_inventory_v1` XLSX import on `/trees/import` for one active orchard,
+  one `rows` plot, `incremental_create` and imports up to 1k expanded positions,
 - `activities` with scopes, materials, detail, edit, delete and status changes,
 - `harvests` with detail, edit, delete, activity linkage and normalized quantities,
 - dashboard with orchard snapshot, recent records and `upcoming_activities`,
@@ -114,6 +119,26 @@ PVO current state:
 - PVO planning docs are complete and archived:
   - `documents/archive/plot_visual_operations_roadmap.md`
   - `documents/archive/plot_visual_operations_implementation_master_plan.md`
+
+Tree Inventory import current state:
+
+- `tree_inventory_v1` MVP is complete and release-ready for the accepted 1k
+  expanded-position limit:
+  - active maintenance index:
+    `documents/01_implementation_materials/tree_inventory_import/README.md`
+  - release readiness notes:
+    `documents/01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md`
+  - historical completion report:
+    `documents/archive/tree_inventory_import/21-phase-10-completion-report.md`
+- `/trees/import` supports template download, XLSX upload, parse/normalize,
+  staging preview, owner/super_admin variety resolution and owner/super_admin
+  confirm.
+- First import into an empty orchard is supported when the orchard and target
+  `rows` plot already exist; zero initial `trees` and zero initial `varieties`
+  are valid.
+- Workers can download/upload/preview but cannot resolve candidates or confirm.
+- Stable 5k imports, multi-plot XLSX, full snapshot, `update_existing` and
+  `deactivate_and_create` are future scope, not MVP behavior.
 
 Baseline seed enrichment current state:
 
@@ -211,6 +236,14 @@ Start here:
 7. `documents/01_implementation_materials/large_plot_phase0_measurements.md`
 8. `documents/00_overview_and_checklists/app_high_level_overview.md`
 
+For Tree Inventory import work:
+
+- `documents/01_implementation_materials/tree_inventory_import/README.md`
+- `documents/01_implementation_materials/tree_inventory_import/recommended_import_contract.md`
+- `documents/01_implementation_materials/tree_inventory_import/test_scenarios.md`
+- `documents/01_implementation_materials/tree_inventory_import/phase_10_release_readiness.md`
+- `documents/01_implementation_materials/tree_inventory_import/future_5k_import_hardening_plan.md`
+
 For domain and backend work:
 
 - `documents/03_domain_and_business_rules/orchardlog_database_model.md`
@@ -219,6 +252,7 @@ For domain and backend work:
 - `documents/05_technical/authorization_and_rls_strategy.md`
 - `documents/06_backend_and_contracts/api_and_system_operations.md`
 - `documents/06_backend_and_contracts/data_contracts.md`
+- `documents/01_implementation_materials/tree_inventory_import/recommended_import_contract.md`
 - `supabase/migrations/*.sql`
 - `types/contracts.ts`
 
@@ -259,6 +293,8 @@ For large plot / tree-scale performance work:
 - `lib/orchard-data/activities.ts`
 - `lib/orchard-data/harvests.ts`
 - `app/(app)/trees/page.tsx`
+- `app/(app)/trees/import/page.tsx`
+- `app/(app)/trees/import/template/route.ts`
 - `features/activities/activity-form.tsx`
 - `features/harvests/harvest-form.tsx`
 
@@ -297,12 +333,14 @@ Server actions:
 - `server/actions/activities.ts`
 - `server/actions/harvests.ts`
 - `server/actions/profile.ts`
+- `server/actions/tree-inventory-import.ts`
 
 Domain and validation:
 
 - `lib/domain/`
 - `lib/validation/`
 - `lib/orchard-data/`
+- `lib/tree-inventory-import/`
 - `types/contracts.ts`
 
 PVO-specific:
@@ -357,8 +395,10 @@ Do not assume these exist:
 - true Accept Invitation route/action,
 - role-change UI for orchard memberships,
 - storage/attachments,
-- import UI,
 - restore counterpart to account export,
+- import modes beyond the `tree_inventory_v1` MVP, including stable 5k imports,
+  multi-plot XLSX, full snapshot, `update_existing` and
+  `deactivate_and_create`,
 - future harvest entry points from the PVO map,
 - richer planning/calendar workflow beyond `upcoming_activities`,
 - report export/download artifacts,

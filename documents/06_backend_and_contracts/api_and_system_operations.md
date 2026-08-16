@@ -294,8 +294,10 @@ Uwaga Phase 5F:
 | Operacja | Cel | Wejscie | Wynik | Priorytet |
 |---|---|---|---|---|
 | `exportAccountData` | eksport danych konta | format eksportu | plik z danymi profilu i orchard w zakresie owner albo admin | 0.2 |
-| `importVarieties` | import odmian | plik | raport walidacji + zapis | 0.2 |
-| `importTrees` | import drzew | plik | raport walidacji + zapis | 0.2 |
+| `generateTreeInventoryTemplateBuffer` | szablon XLSX `tree_inventory_v1` | aktywny orchard + `plot_id` dzialki `rows` | workbook XLSX dla jednej dzialki | 0.2 |
+| `submitTreeInventoryImportPreview` | upload i preview importu drzew | workbook XLSX `tree_inventory_v1` | staged import, diagnostics, summary, conflicts, variety candidates | 0.2 |
+| `resolveTreeInventoryVarietyCandidateForOrchard` | resolution kandydatow odmian | `import_id`, candidate, resolution action | zaktualizowany staging i `confirm_version` | 0.2 |
+| `confirmTreeInventoryImportForOrchard` | finalne zatwierdzenie importu | `import_id`, `confirm_token`, `confirm_version` | finalne `trees`, opcjonalne `varieties`, audit mapping, confirm report | 0.2 |
 
 ### Zasady eksportu
 
@@ -316,6 +318,23 @@ Uwaga Phase 5F:
   - `activity_materials`
 - `harvest_records`
 - orchard, w ktorym zwykly user jest tylko `worker`, nie trafia do eksportu
+
+### Zasady `tree_inventory_v1`
+
+- aktualny entry point UI znajduje sie na `/trees/import`
+- route handler `GET /trees/import/template` generuje szablon XLSX dla jednej
+  aktywnej dzialki `rows`
+- import pracuje w trybie `incremental_create` i strategii konfliktu `reject`
+- limit MVP to 1k expanded positions na jeden import
+- worker moze pobrac szablon, uploadowac workbook i obejrzec preview
+- owner albo `super_admin` rozstrzyga variety candidates i wykonuje confirm
+- first import into empty orchard jest wspierany, jesli istnieje orchard i
+  target `plot`
+- standalone `importVarieties` nie jest wdrozony; nowe odmiany moga powstac
+  tylko przez jawna decyzje ownera/super_admina w resolution i dopiero podczas
+  confirm
+- stable 5k, multi-plot XLSX, full snapshot, `update_existing` i
+  `deactivate_and_create` sa future scope
 
 ## 10. Rekomendowane typy odpowiedzi operacji
 
