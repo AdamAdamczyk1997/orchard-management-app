@@ -1,40 +1,24 @@
-import os from "node:os";
-import path from "node:path";
-import ExcelJS from "exceljs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
-  expectFeedback,
   loginWithPassword,
   selectOptionContaining,
   waitForOnboarding,
   waitForDashboard,
 } from "./support/app";
 import {
+  confirmTreeInventoryImport,
+  createRowsPlot,
+  downloadAndFillTreeInventoryTemplateRows,
+  expectTreesForPlot,
+  TREE_INVENTORY_XLSX_CONTENT_TYPE,
+  uploadTreeInventoryWorkbook,
+} from "./support/tree-inventory-import";
+import {
   BASELINE_PLOTS,
   BASELINE_VARIETIES,
   SEEDED_USERS,
   uniqueName,
 } from "./support/fixtures";
-
-const XLSX_CONTENT_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-type WorkbookUpload = {
-  name: string;
-  mimeType: string;
-  buffer: Buffer;
-};
-
-type TemplateRowInput = {
-  segment_key?: string;
-  row_number: number;
-  from_position: number;
-  to_position: number;
-  species: string;
-  variety_id: string | null;
-  variety_name: string | null;
-  variety_confidence: "known" | "unknown" | "uncertain" | "new_candidate";
-};
 
 test("owner downloads template, uploads a valid one-row workbook and confirms import", async ({
   page,
@@ -48,14 +32,14 @@ test("owner downloads template, uploads a valid one-row workbook and confirms im
     SEEDED_USERS.owner.password,
   );
   await waitForDashboard(page, SEEDED_USERS.owner.primaryOrchardName);
-  await createRowsPlot(page, plotName);
+  await createRowsPlot(page, { plotName });
 
   await page.goto("/trees/import");
   await selectOptionContaining(
     page.getByTestId("tree-inventory-template-plot-select"),
     plotName,
   );
-  const upload = await downloadAndFillTemplate(page, {
+  const upload = await downloadAndFillTreeInventoryTemplateRows(page, [{
     row_number: 41,
     from_position: 1,
     to_position: 1,
@@ -63,9 +47,11 @@ test("owner downloads template, uploads a valid one-row workbook and confirms im
     variety_id: BASELINE_VARIETIES.ligol.id,
     variety_name: BASELINE_VARIETIES.ligol.name,
     variety_confidence: "known",
-  });
+    condition_status: "good",
+    segment_key: "S1",
+  }]);
 
-  await uploadWorkbook(page, upload);
+  await uploadTreeInventoryWorkbook(page, upload);
 
   await expect(page.getByTestId("tree-inventory-preview")).toBeVisible({
     timeout: 60_000,
@@ -76,7 +62,7 @@ test("owner downloads template, uploads a valid one-row workbook and confirms im
   await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
     "Owner moze zatwierdzic import",
   );
-  await confirmImport(page, 1);
+  await confirmTreeInventoryImport(page, 1);
   await expectTreesForPlot(page, plotName, "Pokazano 1-1 z 1 drzew", [
     BASELINE_VARIETIES.ligol.name,
     "Row 41, pos 1",
@@ -96,14 +82,14 @@ test("owner on empty orchard sees grouped new variety candidates", async ({
     SEEDED_USERS.ownerEmpty.password,
   );
   await waitForDashboard(page, SEEDED_USERS.ownerEmpty.orchardName);
-  await createRowsPlot(page, plotName);
+  await createRowsPlot(page, { plotName });
 
   await page.goto("/trees/import");
   await selectOptionContaining(
     page.getByTestId("tree-inventory-template-plot-select"),
     plotName,
   );
-  const upload = await downloadAndFillTemplate(page, {
+  const upload = await downloadAndFillTreeInventoryTemplateRows(page, [{
     row_number: 3,
     from_position: 1,
     to_position: 2,
@@ -111,9 +97,11 @@ test("owner on empty orchard sees grouped new variety candidates", async ({
     variety_id: null,
     variety_name: candidateName,
     variety_confidence: "new_candidate",
-  });
+    condition_status: "good",
+    segment_key: "S1",
+  }]);
 
-  await uploadWorkbook(page, upload);
+  await uploadTreeInventoryWorkbook(page, upload);
 
   await expect(page.getByTestId("tree-inventory-preview")).toBeVisible({
     timeout: 60_000,
@@ -145,14 +133,14 @@ test("owner resolves first-import empty-orchard variety candidates before confir
     SEEDED_USERS.ownerEmpty.password,
   );
   await waitForDashboard(page, SEEDED_USERS.ownerEmpty.orchardName);
-  await createRowsPlot(page, plotName);
+  await createRowsPlot(page, { plotName });
 
   await page.goto("/trees/import");
   await selectOptionContaining(
     page.getByTestId("tree-inventory-template-plot-select"),
     plotName,
   );
-  const upload = await downloadAndFillTemplateRows(page, [
+  const upload = await downloadAndFillTreeInventoryTemplateRows(page, [
     {
       segment_key: "S1",
       row_number: 11,
@@ -162,6 +150,7 @@ test("owner resolves first-import empty-orchard variety candidates before confir
       variety_id: null,
       variety_name: candidateA,
       variety_confidence: "new_candidate",
+      condition_status: "good",
     },
     {
       segment_key: "S2",
@@ -172,6 +161,7 @@ test("owner resolves first-import empty-orchard variety candidates before confir
       variety_id: null,
       variety_name: candidateB,
       variety_confidence: "new_candidate",
+      condition_status: "good",
     },
     {
       segment_key: "S3",
@@ -182,6 +172,7 @@ test("owner resolves first-import empty-orchard variety candidates before confir
       variety_id: null,
       variety_name: candidateC,
       variety_confidence: "new_candidate",
+      condition_status: "good",
     },
     {
       segment_key: "S4",
@@ -192,10 +183,11 @@ test("owner resolves first-import empty-orchard variety candidates before confir
       variety_id: null,
       variety_name: null,
       variety_confidence: "unknown",
+      condition_status: "good",
     },
   ]);
 
-  await uploadWorkbook(page, upload);
+  await uploadTreeInventoryWorkbook(page, upload);
 
   const candidatesPanel = page.getByTestId("tree-inventory-variety-candidates");
   await expect(page.getByTestId("tree-inventory-preview")).toBeVisible({
@@ -224,7 +216,7 @@ test("owner resolves first-import empty-orchard variety candidates before confir
   await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
     "Owner moze zatwierdzic import",
   );
-  await confirmImport(page, 4);
+  await confirmTreeInventoryImport(page, 4);
   await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
     "New varieties",
   );
@@ -251,7 +243,7 @@ test("worker uploads and sees preview without confirm access", async ({ page }) 
     page.getByTestId("tree-inventory-template-plot-select"),
     BASELINE_PLOTS.plot_main_north.name,
   );
-  const upload = await downloadAndFillTemplate(page, {
+  const upload = await downloadAndFillTreeInventoryTemplateRows(page, [{
     row_number: 99,
     from_position: 1,
     to_position: 1,
@@ -259,9 +251,11 @@ test("worker uploads and sees preview without confirm access", async ({ page }) 
     variety_id: null,
     variety_name: uniqueName("PW Worker Candidate"),
     variety_confidence: "new_candidate",
-  });
+    condition_status: "good",
+    segment_key: "S1",
+  }]);
 
-  await uploadWorkbook(page, upload);
+  await uploadTreeInventoryWorkbook(page, upload);
 
   await expect(page.getByTestId("tree-inventory-preview")).toBeVisible({
     timeout: 60_000,
@@ -287,9 +281,9 @@ test("invalid workbook upload shows parser diagnostics", async ({ page }) => {
   await waitForDashboard(page, SEEDED_USERS.owner.primaryOrchardName);
   await page.goto("/trees/import");
 
-  await uploadWorkbook(page, {
+  await uploadTreeInventoryWorkbook(page, {
     name: `tree-inventory-invalid-${Date.now()}.xlsx`,
-    mimeType: XLSX_CONTENT_TYPE,
+    mimeType: TREE_INVENTORY_XLSX_CONTENT_TYPE,
     buffer: Buffer.from("not a valid xlsx workbook"),
   });
 
@@ -312,111 +306,3 @@ test("outsider cannot open tree inventory import page", async ({ page }) => {
   await page.goto("/trees/import");
   await waitForOnboarding(page);
 });
-
-async function createRowsPlot(page: Page, plotName: string) {
-  await page.goto("/plots/new");
-  await page.getByLabel("Nazwa dzialki").fill(plotName);
-  await page.locator("#layout_type").selectOption("rows");
-  await page
-    .locator("#row_numbering_scheme")
-    .selectOption("left_to_right_from_entrance");
-  await page.locator("#tree_numbering_scheme").selectOption("from_row_start");
-  await page.getByRole("button", { name: "Utworz dzialke" }).click();
-
-  await expectFeedback(page, "Dzialka zostala utworzona.");
-}
-
-async function confirmImport(page: Page, expectedCreatedTrees: number) {
-  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeEnabled();
-  await page.getByTestId("tree-inventory-confirm-button").click();
-  await expect(page.locator("body")).toContainText(
-    `Import confirmed. Utworzono ${expectedCreatedTrees} drzew.`,
-    { timeout: 30_000 },
-  );
-  await expect(page.getByTestId("tree-inventory-confirm-panel")).toContainText(
-    "Import confirmed",
-  );
-  await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
-    "Created trees",
-  );
-  await expect(page.getByTestId("tree-inventory-confirm-report")).toContainText(
-    String(expectedCreatedTrees),
-  );
-  await expect(page.getByTestId("tree-inventory-confirm-button")).toBeDisabled();
-}
-
-async function expectTreesForPlot(
-  page: Page,
-  plotName: string,
-  expectedRangeText: string,
-  expectedTexts: string[],
-) {
-  await page.goto("/trees");
-  await selectOptionContaining(page.getByLabel("Dzialka"), plotName);
-  await page.getByRole("button", { name: "Zastosuj" }).click();
-  await expect(page.locator("body")).toContainText(expectedRangeText, {
-    timeout: 60_000,
-  });
-
-  for (const text of expectedTexts) {
-    await expect(page.locator("body")).toContainText(text);
-  }
-}
-
-async function downloadAndFillTemplate(
-  page: Page,
-  input: TemplateRowInput,
-) {
-  return downloadAndFillTemplateRows(page, [input]);
-}
-
-async function downloadAndFillTemplateRows(
-  page: Page,
-  rows: TemplateRowInput[],
-) {
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByTestId("tree-inventory-template-download").click();
-  const download = await downloadPromise;
-  const templatePath = path.join(
-    os.tmpdir(),
-    `tree-inventory-template-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2)}.xlsx`,
-  );
-  await download.saveAs(templatePath);
-
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(templatePath);
-  const worksheet = workbook.getWorksheet("NASADZENIA");
-
-  if (!worksheet) {
-    throw new Error("Downloaded workbook does not contain NASADZENIA sheet.");
-  }
-
-  rows.forEach((input, index) => {
-    const rowNumber = index + 2;
-
-    worksheet.getCell(`A${rowNumber}`).value = input.segment_key ?? `S${index + 1}`;
-    worksheet.getCell(`D${rowNumber}`).value = input.row_number;
-    worksheet.getCell(`E${rowNumber}`).value = input.from_position;
-    worksheet.getCell(`F${rowNumber}`).value = input.to_position;
-    worksheet.getCell(`G${rowNumber}`).value = input.species;
-    worksheet.getCell(`H${rowNumber}`).value = input.variety_id;
-    worksheet.getCell(`I${rowNumber}`).value = input.variety_name;
-    worksheet.getCell(`J${rowNumber}`).value = input.variety_confidence;
-    worksheet.getCell(`K${rowNumber}`).value = "good";
-  });
-
-  const uploadBuffer = await workbook.xlsx.writeBuffer();
-
-  return {
-    name: path.basename(templatePath).replace(".xlsx", "-filled.xlsx"),
-    mimeType: XLSX_CONTENT_TYPE,
-    buffer: Buffer.isBuffer(uploadBuffer) ? uploadBuffer : Buffer.from(uploadBuffer),
-  };
-}
-
-async function uploadWorkbook(page: Page, upload: WorkbookUpload) {
-  await page.getByTestId("tree-inventory-upload-input").setInputFiles(upload);
-  await page.getByRole("button", { name: "Wgraj i pokaz preview" }).click();
-}

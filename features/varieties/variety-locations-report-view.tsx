@@ -158,7 +158,10 @@ export function VarietyLocationsReportView({
               </Card>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <Card className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none">
+                <Card
+                  className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none"
+                  data-testid="variety-locations-summary-active-trees"
+                >
                   <CardTitle className="text-lg">Aktywne drzewa</CardTitle>
                   <p className="text-3xl font-semibold text-[#1f2a1f]">
                     {report.total_active_trees_count}
@@ -167,7 +170,10 @@ export function VarietyLocationsReportView({
                     Wszystkie aktywne drzewa tej odmiany w biezacym sadzie.
                   </CardDescription>
                 </Card>
-                <Card className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none">
+                <Card
+                  className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none"
+                  data-testid="variety-locations-summary-located-trees"
+                >
                   <CardTitle className="text-lg">Drzewa w raporcie</CardTitle>
                   <p className="text-3xl font-semibold text-[#1f2a1f]">
                     {report.located_trees_count}
@@ -176,7 +182,10 @@ export function VarietyLocationsReportView({
                     Rekordy z row i position gotowe do grupowania w zakresy.
                   </CardDescription>
                 </Card>
-                <Card className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none">
+                <Card
+                  className="grid gap-2 border-[#eadfcb] bg-[#fbfaf7] p-5 shadow-none"
+                  data-testid="variety-locations-summary-verified-trees"
+                >
                   <CardTitle className="text-lg">Potwierdzone lokalizacje</CardTitle>
                   <p className="text-3xl font-semibold text-[#1f2a1f]">
                     {report.verified_trees_count}
@@ -251,6 +260,7 @@ export function VarietyLocationsReportView({
                       {report.groups.map((group) => (
                         <div
                           className="grid gap-4 rounded-2xl border border-[#e3d8c4] bg-white px-4 py-4"
+                          data-testid="variety-locations-group"
                           key={`${group.plot_id}:${group.section_name ?? ""}:${group.row_number}`}
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -293,6 +303,7 @@ export function VarietyLocationsReportView({
                             {group.ranges.map((range) => (
                               <div
                                 className="grid gap-2 rounded-2xl border border-[#efe6d3] bg-[#fbfaf7] px-4 py-4 sm:grid-cols-[minmax(0,1fr)_220px]"
+                                data-testid="variety-locations-range"
                                 key={`${group.plot_id}:${group.row_number}:${range.from_position}:${range.to_position}`}
                               >
                                 <div className="grid gap-1">

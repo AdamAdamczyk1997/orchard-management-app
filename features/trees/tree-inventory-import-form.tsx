@@ -291,19 +291,38 @@ function ConfirmPanel({
           data-testid="tree-inventory-confirm-report"
         >
           {[
-            ["Created trees", preview.confirm_result.created_trees_count],
-            ["New varieties", preview.confirm_result.created_varieties_count],
-            ["Unknown variety", preview.confirm_result.unknown_variety_trees_count],
-            ["Missing positions", preview.confirm_result.missing_positions_count],
-          ].map(([label, value]) => (
+            {
+              key: "created-trees",
+              label: "Created trees",
+              value: preview.confirm_result.created_trees_count,
+            },
+            {
+              key: "new-varieties",
+              label: "New varieties",
+              value: preview.confirm_result.created_varieties_count,
+            },
+            {
+              key: "unknown-variety",
+              label: "Unknown variety",
+              value: preview.confirm_result.unknown_variety_trees_count,
+            },
+            {
+              key: "missing-positions",
+              label: "Missing positions",
+              value: preview.confirm_result.missing_positions_count,
+            },
+          ].map((item) => (
             <div
               className="rounded-2xl border border-[#b9d2be] bg-[#edf6ef] px-4 py-3"
-              key={label}
+              data-testid={`tree-inventory-confirm-${item.key}`}
+              key={item.key}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#54795a]">
-                {label}
+                {item.label}
               </p>
-              <p className="text-2xl font-semibold text-[#1f2a1f]">{value}</p>
+              <p className="text-2xl font-semibold text-[#1f2a1f]">
+                {item.value}
+              </p>
             </div>
           ))}
         </div>
@@ -344,31 +363,60 @@ function SummaryGrid({
 }) {
   const summary = preview.summary;
   const items = [
-    ["Total positions", summary.total_positions],
-    ["Planned records", summary.planned_tree_records],
-    ["Missing positions", summary.missing_positions],
-    ["Active conflicts", summary.active_conflicts],
-    ["Known varieties", summary.known_variety_positions],
-    ["New candidates", summary.new_candidate_positions],
-    ["Uncertain", summary.uncertain_variety_positions],
-    ["Unknown", summary.unknown_variety_positions],
-    ["Grouped candidates", summary.grouped_variety_candidates],
-    ["Unresolved", summary.unresolved_variety_candidates],
-    ["Suggested", summary.suggested_variety_candidates],
-    ["Diagnostics", summary.diagnostics.returned],
+    { key: "total-positions", label: "Total positions", value: summary.total_positions },
+    {
+      key: "planned-records",
+      label: "Planned records",
+      value: summary.planned_tree_records,
+    },
+    {
+      key: "missing-positions",
+      label: "Missing positions",
+      value: summary.missing_positions,
+    },
+    {
+      key: "active-conflicts",
+      label: "Active conflicts",
+      value: summary.active_conflicts,
+    },
+    {
+      key: "known-varieties",
+      label: "Known varieties",
+      value: summary.known_variety_positions,
+    },
+    {
+      key: "new-candidates",
+      label: "New candidates",
+      value: summary.new_candidate_positions,
+    },
+    { key: "uncertain", label: "Uncertain", value: summary.uncertain_variety_positions },
+    { key: "unknown", label: "Unknown", value: summary.unknown_variety_positions },
+    {
+      key: "grouped-candidates",
+      label: "Grouped candidates",
+      value: summary.grouped_variety_candidates,
+    },
+    {
+      key: "unresolved",
+      label: "Unresolved",
+      value: summary.unresolved_variety_candidates,
+    },
+    { key: "suggested", label: "Suggested", value: summary.suggested_variety_candidates },
+    { key: "diagnostics", label: "Diagnostics", value: summary.diagnostics.returned },
   ] as const;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map(([label, value]) => (
+      {items.map((item) => (
         <div
           className="rounded-2xl border border-[#dfd3bb] bg-[#fbfaf7] px-4 py-3"
-          key={label}
+          data-testid={`tree-inventory-summary-${item.key}`}
+          key={item.key}
         >
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9d7e4e]">
-            {label}
+            {item.label}
           </p>
-          <p className="text-2xl font-semibold text-[#1f2a1f]">{value}</p>
+          <p className="text-2xl font-semibold text-[#1f2a1f]">{item.value}</p>
         </div>
       ))}
     </div>
